@@ -46,7 +46,7 @@ class DriverRegistrationSection extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
-            height: 320,
+            height: 400,
             child: _buildVisualPanel(context, false),
           ),
           _buildContent(context, false),
@@ -128,11 +128,12 @@ class DriverRegistrationSection extends StatelessWidget {
                 // Car in a gradient circle
                 Stack(
                   alignment: Alignment.center,
+                  clipBehavior: Clip.none,
                   children: [
                     // Outer glow ring
                     Container(
-                      width: isDesktop ? 200 : 150,
-                      height: isDesktop ? 200 : 150,
+                      width: isDesktop ? 240 : 180,
+                      height: isDesktop ? 240 : 180,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
@@ -145,8 +146,8 @@ class DriverRegistrationSection extends StatelessWidget {
                     ),
                     // Circle border
                     Container(
-                      width: isDesktop ? 160 : 120,
-                      height: isDesktop ? 160 : 120,
+                      width: isDesktop ? 200 : 150,
+                      height: isDesktop ? 200 : 150,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: AppTheme.cardFillColor,
@@ -164,14 +165,14 @@ class DriverRegistrationSection extends StatelessWidget {
                       ),
                       child: ClipOval(
                         child: Padding(
-                          padding: const EdgeInsets.all(20),
+                          padding: EdgeInsets.all(isDesktop ? 10 : 5),
                           child: Image.asset(
                             'assets/images/cars/driver_partner.png',
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) {
                               return Icon(
                                 Icons.electric_car,
-                                size: isDesktop ? 50 : 36,
+                                size: isDesktop ? 60 : 42,
                                 color: AppTheme.primaryColor,
                               );
                             },
@@ -181,21 +182,31 @@ class DriverRegistrationSection extends StatelessWidget {
                     ),
                     // Charging bolt badge
                     Positioned(
-                      bottom: isDesktop ? 15 : 8,
-                      right: isDesktop ? 15 : 8,
+                      bottom: 0,
+                      right: 0,
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        width: isDesktop ? 72 : 54,
+                        height: isDesktop ? 72 : 54,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
+                          color: const Color(0xFF00C853), // Vivid Green
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 3,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                              blurRadius: 10,
+                              color: const Color(0xFF00C853).withValues(alpha: 0.4),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.bolt, color: Colors.white, size: 16),
+                        child: Icon(
+                          Icons.bolt,
+                          color: Colors.white,
+                          size: isDesktop ? 40 : 28,
+                        ),
                       ),
                     ),
                   ],

@@ -136,7 +136,7 @@ class EVFleetSection extends StatelessWidget {
                 aspectRatio = 0.72;
               } else {
                 crossAxisCount = 1;
-                aspectRatio = 0.82;
+                aspectRatio = 0.75; // Taller card for mobile
               }
 
               return GridView.builder(
@@ -297,7 +297,7 @@ class _EVCarCardState extends State<_EVCarCard> {
                   : Matrix4.identity(),
               transformAlignment: Alignment.center,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 4), // Reduced padding for larger image
                 child: Image.asset(
                   widget.car['image']!,
                   fit: BoxFit.contain,
@@ -368,7 +368,7 @@ class _EVCarCardState extends State<_EVCarCard> {
                   widget.car['name']!,
                   style: TextStyle(
                     color: Theme.of(context).textTheme.bodyLarge?.color,
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                   maxLines: 1,
@@ -441,9 +441,9 @@ class _EVCarCardState extends State<_EVCarCard> {
               color: AppTheme.primaryColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icon, size: 13, color: AppTheme.primaryColor),
+            child: Icon(icon, size: 16, color: AppTheme.primaryColor),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,7 +453,7 @@ class _EVCarCardState extends State<_EVCarCard> {
                   label,
                   style: TextStyle(
                     color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.45),
-                    fontSize: 9,
+                    fontSize: 10,
                     letterSpacing: 0.3,
                   ),
                 ),
@@ -461,7 +461,7 @@ class _EVCarCardState extends State<_EVCarCard> {
                   value,
                   style: TextStyle(
                     color: Theme.of(context).textTheme.bodyLarge?.color,
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
                   maxLines: 1,
