@@ -123,43 +123,22 @@ class NavBar extends StatelessWidget {
                       ),
                     )
                   else
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: PopupMenuButton<String>(
-                        icon: const Icon(Icons.menu_rounded, color: AppTheme.primaryColor),
-                        offset: const Offset(0, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    GestureDetector(
+                      onTap: () => _showMobileMenu(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.2),
                           ),
                         ),
-                        color: Colors.white,
-                        elevation: 8,
-                        onSelected: (value) {
-                          switch (value) {
-                            case 'home':
-                              onHomeTap?.call();
-                            case 'drivers':
-                              onDriversTap?.call();
-                            case 'franchise':
-                              onFranchiseTap?.call();
-                            case 'ev_stations':
-                              onEvStationsTap?.call();
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          _buildPopupItem('home', Icons.home_rounded, 'Home'),
-                          _buildPopupItem('drivers', Icons.person_outline, 'Drivers'),
-                          _buildPopupItem('franchise', Icons.business_outlined, 'Franchise'),
-                          _buildPopupItem('ev_stations', Icons.ev_station_outlined, 'EV Stations'),
-                        ],
+                        child: const Icon(
+                          Icons.menu_rounded,
+                          color: AppTheme.primaryColor,
+                          size: 24,
+                        ),
                       ),
                     ),
                 ],
@@ -170,29 +149,234 @@ class NavBar extends StatelessWidget {
     );
   }
 
-  static PopupMenuEntry<String> _buildPopupItem(String value, IconData icon, String title) {
-    return PopupMenuItem<String>(
-      value: value,
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+  void _showMobileMenu(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Dismiss',
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      transitionDuration: const Duration(milliseconds: 600),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.topCenter,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 20,
+                    offset: Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header with Logo and Close Button (No stagger, just fade)
+                    FadeTransition(
+                      opacity: animation,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Logo
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.bolt, color: Colors.white, size: 24),
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'EV TAXI',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Close Button
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.close, color: AppTheme.textColor, size: 28),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // Menu Items
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          _buildAnimatedMenuItem(
+                            context: context,
+                            animation: animation,
+                            index: 0,
+                            child: _MobileMenuItem(
+                              title: 'Home',
+                              onTap: () {
+                                Navigator.pop(context);
+                                onHomeTap?.call();
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildAnimatedMenuItem(
+                            context: context,
+                            animation: animation,
+                            index: 1,
+                            child: _MobileMenuItem(
+                              title: 'Drivers',
+                              onTap: () {
+                                Navigator.pop(context);
+                                onDriversTap?.call();
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildAnimatedMenuItem(
+                            context: context,
+                            animation: animation,
+                            index: 2,
+                            child: _MobileMenuItem(
+                              title: 'Franchise',
+                              onTap: () {
+                                Navigator.pop(context);
+                                onFranchiseTap?.call();
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildAnimatedMenuItem(
+                            context: context,
+                            animation: animation,
+                            index: 3,
+                            child: _MobileMenuItem(
+                              title: 'EV Stations',
+                              onTap: () {
+                                Navigator.pop(context);
+                                onEvStationsTap?.call();
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 30), // Bottom padding
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Icon(icon, color: AppTheme.primaryColor, size: 18),
           ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textColor,
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, -1),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          )),
+          child: child,
+        );
+      },
+    );
+  }
+
+  Widget _buildAnimatedMenuItem({
+    required BuildContext context,
+    required Animation<double> animation,
+    required int index,
+    required Widget child,
+  }) {
+    // Alternating direction: Even -> Left (-1), Odd -> Right (1)
+    final double beginX = index.isEven ? -0.5 : 0.5;
+
+    // Staggered interval
+    final double startTime = 0.2 + (index * 0.1);
+    final double endTime = startTime + 0.4;
+
+    final curvedAnimation = CurvedAnimation(
+      parent: animation,
+      curve: Interval(
+        startTime.clamp(0.0, 1.0),
+        endTime.clamp(0.0, 1.0),
+        curve: Curves.easeOutBack,
+      ),
+    );
+
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: Offset(beginX, 0),
+        end: Offset.zero,
+      ).animate(curvedAnimation),
+      child: FadeTransition(
+        opacity: curvedAnimation,
+        child: child,
+      ),
+    );
+  }
+}
+
+class _MobileMenuItem extends StatelessWidget {
+  final String title;
+  final VoidCallback onTap;
+
+  const _MobileMenuItem({
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F9FA), // Very light grey
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textColor,
+              ),
             ),
-          ),
-        ],
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 24,
+              color: AppTheme.primaryColor,
+            ),
+          ],
+        ),
       ),
     );
   }

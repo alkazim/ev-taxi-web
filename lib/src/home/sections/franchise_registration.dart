@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../../widgets/responsive_widget.dart';
 import '../../theme/app_theme.dart';
 import '../forms/franchise_application_dialog.dart';
 
@@ -68,27 +69,31 @@ class _FranchiseRegistrationSectionState extends State<FranchiseRegistrationSect
 
   @override
   Widget build(BuildContext context) {
+    bool isMobile = ResponsiveWidget.isSmallScreen(context);
+
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
-      padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 20),
+      padding: EdgeInsets.symmetric(vertical: 80, horizontal: isMobile ? 16 : 20),
       child: Column(
         children: [
-          const Text(
+          Text(
             'FRANCHISE OPPORTUNITIES',
             style: TextStyle(
-              fontSize: 32,
+              fontSize: isMobile ? 24 : 32,
               fontWeight: FontWeight.bold,
               color: AppTheme.primaryColor,
               letterSpacing: 2,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
           Text(
             'Partner with the future of transportation',
             style: TextStyle(
               color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 60),
           // Animated Tab Bar
@@ -101,14 +106,42 @@ class _FranchiseRegistrationSectionState extends State<FranchiseRegistrationSect
               indicatorSize: TabBarIndicatorSize.label,
               labelColor: AppTheme.primaryColor,
               unselectedLabelColor: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.35),
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: 14),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, letterSpacing: 1, fontSize: 14),
+              labelStyle: TextStyle(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+                fontSize: isMobile ? 11 : 14,
+                height: 1.2,
+              ),
+              unselectedLabelStyle: TextStyle(
+                fontWeight: FontWeight.w500,
+                letterSpacing: 1,
+                fontSize: isMobile ? 11 : 14,
+                height: 1.2,
+              ),
               dividerColor: Colors.transparent,
               splashBorderRadius: BorderRadius.circular(8),
-              tabs: const [
-                Tab(text: 'MEGA FRANCHISE'),
-                Tab(text: 'MASTER FRANCHISE'),
-                Tab(text: 'SUPER FRANCHISE'),
+              tabs: [
+                Tab(
+                  height: isMobile ? 48 : 46,
+                  child: Text(
+                    isMobile ? 'MEGA\nFRANCHISE' : 'MEGA FRANCHISE',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Tab(
+                  height: isMobile ? 48 : 46,
+                  child: Text(
+                    isMobile ? 'MASTER\nFRANCHISE' : 'MASTER FRANCHISE',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Tab(
+                  height: isMobile ? 48 : 46,
+                  child: Text(
+                    isMobile ? 'SUPER\nFRANCHISE' : 'SUPER FRANCHISE',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ],
             ),
           ),

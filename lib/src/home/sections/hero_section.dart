@@ -42,6 +42,25 @@ class HeroSection extends StatelessWidget {
               ),
             ),
           ),
+          // Bottom fade-out gradient for smooth transition to next section
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 120,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppTheme.scaffoldBackgroundColor.withValues(alpha: 0.0),
+                    AppTheme.scaffoldBackgroundColor,
+                  ],
+                ),
+              ),
+            ),
+          ),
           // Main content (non-positioned, determines Stack size, drawn on top)
           Padding(
             padding: EdgeInsets.only(top: isDesktop ? 100 : 90),
@@ -497,96 +516,104 @@ class HeroSection extends StatelessWidget {
                 ],
               ),
             ),
-            // Orbiting feature icons (positioned safely within bounds)
+            // Unified Feature Nodes (Icon + Text Badge)
             Positioned(
-              top: isDesktop ? 40 : 25,
-              left: isDesktop ? 80 : 55,
-              child: _buildOrbitIcon(Icons.eco, isDesktop),
-            ),
-            Positioned(
-              top: isDesktop ? 55 : 35,
-              right: isDesktop ? 60 : 40,
-              child: _buildOrbitIcon(Icons.bolt, isDesktop),
-            ),
-            Positioned(
-              bottom: isDesktop ? 65 : 45,
-              left: isDesktop ? 65 : 40,
-              child: _buildOrbitIcon(Icons.route, isDesktop),
-            ),
-            Positioned(
-              bottom: isDesktop ? 45 : 30,
-              right: isDesktop ? 75 : 50,
-              child: _buildOrbitIcon(Icons.ev_station, isDesktop),
-            ),
-            // Floating feature badges (positioned within the SizedBox)
-            if (isDesktop) ...[
-              Positioned(
-                top: 15,
-                right: 5,
-                child: _buildFloatingBadge(Icons.bolt, '0 Emission'),
+              top: isDesktop ? 20 : 10,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(isDesktop ? -130 : -95, 0),
+                  child: _buildFeatureNode(Icons.eco, 'Eco Friendly', isDesktop),
+                ),
               ),
-              Positioned(
-                bottom: 55,
-                left: 5,
-                child: _buildFloatingBadge(Icons.access_time_filled, '24/7 Service'),
+            ),
+            Positioned(
+              top: isDesktop ? 30 : 18,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(isDesktop ? 140 : 100, 0),
+                  child: _buildFeatureNode(Icons.bolt, '0 Emission', isDesktop),
+                ),
               ),
-              Positioned(
-                bottom: 15,
-                right: 15,
-                child: _buildFloatingBadge(Icons.ev_station, '100% Electric'),
+            ),
+            Positioned(
+              bottom: isDesktop ? 50 : 35,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(isDesktop ? -150 : -105, 0),
+                  child: _buildFeatureNode(Icons.access_time_filled, '24/7 Service', isDesktop),
+                ),
               ),
-            ],
+            ),
+            Positioned(
+              bottom: isDesktop ? 30 : 20,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(isDesktop ? 135 : 95, 0),
+                  child: _buildFeatureNode(Icons.ev_station, '100% Electric', isDesktop),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildOrbitIcon(IconData icon, bool isDesktop) {
-    return Container(
-      padding: EdgeInsets.all(isDesktop ? 10 : 7),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.9),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.15),
-            blurRadius: 10,
-            spreadRadius: 1,
+  Widget _buildFeatureNode(IconData icon, String text, bool isDesktop) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Circular Icon
+        Container(
+          padding: EdgeInsets.all(isDesktop ? 12 : 8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppTheme.cardFillColor,
+            border: Border.all(
+              color: AppTheme.primaryColor.withValues(alpha: 0.2),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                blurRadius: 12,
+                spreadRadius: 2,
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Icon(
-        icon,
-        size: isDesktop ? 18 : 13,
-        color: AppTheme.primaryColor,
-      ),
-    );
-  }
-
-  Widget _buildFloatingBadge(IconData icon, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppTheme.cardFillColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.2),
+          child: Icon(
+            icon,
+            size: isDesktop ? 20 : 14,
+            color: AppTheme.primaryColor,
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
+        const SizedBox(height: 8),
+        // Text Badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppTheme.cardFillColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.primaryColor.withValues(alpha: 0.15),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: AppTheme.primaryColor, size: 16),
-          const SizedBox(width: 6),
-          Text(
+          child: Text(
             text,
             style: const TextStyle(
               color: AppTheme.textColor,
@@ -594,8 +621,8 @@ class HeroSection extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

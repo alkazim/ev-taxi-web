@@ -57,16 +57,22 @@ class DriverRegistrationSection extends StatelessWidget {
 
   Widget _buildVisualPanel(BuildContext context, bool isDesktop) {
     return Container(
+      margin: isDesktop ? const EdgeInsets.all(80) : const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppTheme.surfaceColor,
-            AppTheme.scaffoldBackgroundColor,
-          ],
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.2),
+          width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withValues(alpha: 0.05),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
       ),
       child: Stack(
         children: [
