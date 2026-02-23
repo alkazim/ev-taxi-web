@@ -181,7 +181,7 @@ class DriverRegistrationSection extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: Image.asset(
-                    'assets/images/cars/Driver_registration_image.png',
+                    'assets/images/cars/Driver_registration_image.webp',
                     fit: BoxFit.cover,
                     alignment: Alignment.center,
                     // Limit decode size for the 7MB asset

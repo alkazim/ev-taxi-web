@@ -35,7 +35,7 @@ class EVFleetSection extends StatelessWidget {
       'topSpeed': '130 km/h',
       'charge': '0-80% in 90 min',
       'category': 'MPV',
-      'image': 'assets/images/cars/BYD_e6.png',
+      'image': 'assets/images/cars/BYD_e6.webp',
     },
     {
       'name': 'Hyundai Ioniq 5',

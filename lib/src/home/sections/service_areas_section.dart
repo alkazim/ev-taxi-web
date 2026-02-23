@@ -60,7 +60,7 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
       name: 'Kerala',
       tagline: "God's Own Country",
       highlight: 'Kochi · Trivandrum · Kozhikode',
-      imageAsset: 'assets/images/places/Kerala.png',
+      imageAsset: 'assets/images/places/Kerala.webp',
       accentColor: Color(0xFF059669),
       description:
           'Experience the serene backwaters, lush greenery, and vibrant culture of Kerala. '
@@ -77,7 +77,7 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
       name: 'Karnataka',
       tagline: 'One State, Many Worlds',
       highlight: 'Bangalore · Mysore · Mangalore',
-      imageAsset: 'assets/images/places/Karnataka.png',
+      imageAsset: 'assets/images/places/Karnataka.webp',
       accentColor: Color(0xFF4338CA),
       description:
           'From the tech corridors of Bangalore to the royal heritage of Mysore, '
@@ -94,7 +94,7 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
       name: 'Tamil Nadu',
       tagline: 'Land of Temples',
       highlight: 'Chennai · Coimbatore · Madurai',
-      imageAsset: 'assets/images/places/Tamilnadu.png',
+      imageAsset: 'assets/images/places/Tamilnadu.webp',
       accentColor: Color(0xFFEA580C),
       description:
           'Discover the ancient temples, bustling cities, and coastal beauty of Tamil Nadu. '
@@ -111,7 +111,7 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
       name: 'Puducherry',
       tagline: 'The French Riviera of the East',
       highlight: 'Pondicherry · Karaikal · Yanam',
-      imageAsset: 'assets/images/places/Puducherry.png',
+      imageAsset: 'assets/images/places/Puducherry.webp',
       accentColor: Color(0xFF0284C7),
       description:
           'Stroll through French colonial streets, pristine beaches, and spiritual ashrams. '
