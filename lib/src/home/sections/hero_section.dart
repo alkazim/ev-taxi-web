@@ -1,15 +1,380 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
-import '../../widgets/fade_slide_in.dart';
 
-class HeroSection extends StatelessWidget {
+class HeroSection extends StatefulWidget {
   const HeroSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    bool isDesktop = ResponsiveWidget.isLargeScreen(context);
+  State<HeroSection> createState() => _HeroSectionState();
+}
 
+class _HeroSectionState extends State<HeroSection>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.12),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDesktop = ResponsiveWidget.isLargeScreen(context);
+    final isModern = context.isModernStyle;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // ── Classic theme: keep the original gradient look ──
+    if (!isModern) return _buildClassicHero(context, isDesktop);
+
+    // ── V2: Full-bleed image hero ──
+    // Clamp height: desktop 700–900, mobile uses screen height (580–720)
+    final heroHeight = isDesktop
+        ? screenHeight.clamp(700.0, 900.0)
+        : screenHeight.clamp(580.0, 720.0);
+
+    return SizedBox(
+      width: double.infinity,
+      height: heroHeight,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── Background: car image (cacheWidth limits GPU decode memory) ──
+          Image.asset(
+            'assets/images/cars/hero_section_image2.webp',
+            fit: BoxFit.cover,
+            alignment: Alignment.centerRight,
+            errorBuilder: (_, __, ___) =>
+                Container(color: const Color(0xFF0A1628)),
+          ),
+
+          // ── Gradient overlay: dark on left, transparent on right ──
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                stops: [0.0, 0.55, 0.85, 1.0],
+                colors: [
+                  Color(0xE8050F1A), // very dark left
+                  Color(0xCC0A1628), // dark mid-left
+                  Color(0x660A1628), // semi-transparent mid-right
+                  Color(0x220A1628), // almost transparent right
+                ],
+              ),
+            ),
+          ),
+
+          // ── Bottom fade to white ──
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 100,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.white],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Content ──
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 80 : 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: isDesktop ? 130 : 110),
+
+                  // Small label
+                  FadeTransition(
+                    opacity: _fadeAnim,
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: _buildLabel(isDesktop),
+                    ),
+                  ),
+                  SizedBox(height: isDesktop ? 20 : 14),
+
+                  // Main headline
+                  FadeTransition(
+                    opacity: _fadeAnim,
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: _buildHeadline(isDesktop),
+                    ),
+                  ),
+                  SizedBox(height: isDesktop ? 20 : 14),
+
+                  // Subtext
+                  FadeTransition(
+                    opacity: _fadeAnim,
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: _buildSubtext(isDesktop),
+                    ),
+                  ),
+                  SizedBox(height: isDesktop ? 36 : 28),
+
+                  // CTA Buttons
+                  FadeTransition(
+                    opacity: _fadeAnim,
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: _buildCTAButtons(isDesktop),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Stats row pinned to bottom
+                  FadeTransition(
+                    opacity: _fadeAnim,
+                    child: _buildStatsRow(isDesktop),
+                  ),
+                  SizedBox(height: isDesktop ? 40 : 30),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabel(bool isDesktop) {
+    final accentColor = context.isYellowTheme
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF4ADE80);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 28, height: 2, color: accentColor),
+        const SizedBox(width: 10),
+        Text(
+          "India's Premier EV Service",
+          style: GoogleFonts.poppins(
+            color: accentColor,
+            fontSize: isDesktop ? 14 : 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeadline(bool isDesktop) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'E-CABBZ',
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: isDesktop ? 64 : 38,
+            fontWeight: FontWeight.w800,
+            height: 1.05,
+            letterSpacing: -1,
+          ),
+        ),
+        RichText(
+          text: TextSpan(
+            style: GoogleFonts.poppins(
+              fontSize: isDesktop ? 64 : 38,
+              fontWeight: FontWeight.w800,
+              height: 1.05,
+              letterSpacing: -1,
+            ),
+            children: [
+              TextSpan(
+                text: 'Service ',
+                style: TextStyle(color: Colors.white),
+              ),
+              TextSpan(
+                text: 'in India',
+                style: TextStyle(
+                  color: context.isYellowTheme
+                      ? const Color(0xFFFBBF24)
+                      : const Color(0xFF4ADE80),
+                ), // light green / gold
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubtext(bool isDesktop) {
+    return SizedBox(
+      width: isDesktop ? 440 : double.infinity,
+      child: Text(
+        'Celebrating a new era of clean, comfortable, and affordable electric mobility across India.',
+        style: GoogleFonts.poppins(
+          color: Colors.white.withValues(alpha: 0.75),
+          fontSize: isDesktop ? 16 : 13,
+          height: 1.65,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCTAButtons(bool isDesktop) {
+    final primaryBg = context.isYellowTheme
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF16A34A);
+    final primaryFg = context.isYellowTheme ? Colors.black87 : Colors.white;
+    return Wrap(
+      spacing: 14,
+      runSpacing: 12,
+      children: [
+        // Primary pill — matches active theme
+        _HoverButton(
+          label: 'Book a Ride',
+          icon: Icons.arrow_forward_rounded,
+          bgColor: primaryBg,
+          textColor: primaryFg,
+          isDesktop: isDesktop,
+        ),
+        // Ghost — white outline (text centred)
+        _HoverButton(
+          label: 'Learn More',
+          icon: null,
+          bgColor: Colors.transparent,
+          textColor: Colors.white,
+          borderColor: Colors.white.withValues(alpha: 0.5),
+          isDesktop: isDesktop,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsRow(bool isDesktop) {
+    final stats = [
+      _StatItem(value: '1000+', label: 'Happy Riders'),
+      _StatItem(value: '50+', label: 'EV Cars'),
+      _StatItem(value: '4', label: 'States'),
+      _StatItem(value: '24/7', label: 'Service'),
+    ];
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 28 : 16,
+        vertical: isDesktop ? 20 : 14,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.15),
+          width: 1,
+        ),
+        // frosted glass feel
+      ),
+      child: isDesktop
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: stats
+                  .expand(
+                    (s) => [
+                      _buildStat(s, isDesktop),
+                      if (s != stats.last)
+                        Container(
+                          width: 1,
+                          height: 36,
+                          margin: const EdgeInsets.symmetric(horizontal: 24),
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                    ],
+                  )
+                  .toList(),
+            )
+          // Mobile: 2×2 grid using LayoutBuilder to fill available width
+          : LayoutBuilder(
+              builder: (ctx, box) {
+                final itemW = (box.maxWidth - 24) / 2;
+                return Wrap(
+                  spacing: 24,
+                  runSpacing: 12,
+                  children: stats
+                      .map(
+                        (s) => SizedBox(
+                          width: itemW,
+                          child: _buildStat(s, isDesktop),
+                        ),
+                      )
+                      .toList(),
+                );
+              },
+            ),
+    );
+  }
+
+  Widget _buildStat(_StatItem stat, bool isDesktop) {
+    final statColor = context.isYellowTheme
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF4ADE80);
+    return SizedBox(
+      width: isDesktop ? null : 80,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            stat.value,
+            style: GoogleFonts.poppins(
+              color: statColor,
+              fontSize: isDesktop ? 26 : 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Text(
+            stat.label,
+            style: GoogleFonts.poppins(
+              color: Colors.white.withValues(alpha: 0.65),
+              fontSize: isDesktop ? 12 : 10,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // CLASSIC HERO (unchanged visual language, just kept as fallback)
+  // ─────────────────────────────────────────────────────────────────
+  Widget _buildClassicHero(BuildContext context, bool isDesktop) {
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(minHeight: isDesktop ? 700 : 620),
@@ -26,23 +391,13 @@ class HeroSection extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Background decorative elements (positioned, drawn first = behind)
           Positioned.fill(
-            child: RepaintBoundary(
-              child: _buildBackgroundEffects(isDesktop),
-            ),
-          ),
-          // Subtle grid
-          Positioned.fill(
-            child: RepaintBoundary(
-              child: CustomPaint(
-                painter: _HeroGridPainter(
-                  color: AppTheme.textColor.withValues(alpha: 0.04),
-                ),
+            child: CustomPaint(
+              painter: _GridPainter(
+                color: AppTheme.textColor.withValues(alpha: 0.04),
               ),
             ),
           ),
-          // Bottom fade-out gradient for smooth transition to next section
           Positioned(
             left: 0,
             right: 0,
@@ -54,422 +409,210 @@ class HeroSection extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppTheme.scaffoldBackgroundColor.withValues(alpha: 0.0),
+                    Colors.transparent,
                     AppTheme.scaffoldBackgroundColor,
                   ],
                 ),
               ),
             ),
           ),
-          // Main content (non-positioned, determines Stack size, drawn on top)
           Padding(
             padding: EdgeInsets.only(top: isDesktop ? 100 : 90),
             child: isDesktop
-                ? _buildDesktopLayout(context)
-                : _buildMobileLayout(context),
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 80),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          flex: 5,
+                          child: _buildClassicContent(context, true),
+                        ),
+                        const SizedBox(width: 40),
+                        Expanded(
+                          flex: 5,
+                          child: _buildClassicShowcase(context, true),
+                        ),
+                      ],
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _buildClassicContent(context, false),
+                        const SizedBox(height: 30),
+                        _buildClassicShowcase(context, false),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBackgroundEffects(bool isDesktop) {
-    return Stack(
-      children: [
-        // Top-right glow
-        Positioned(
-          top: -120,
-          right: -80,
-          child: Container(
-            width: 400,
-            height: 400,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  AppTheme.primaryColor.withValues(alpha: 0.12),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-        // Bottom-left glow
-        Positioned(
-          bottom: -100,
-          left: -60,
-          child: Container(
-            width: 300,
-            height: 300,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  AppTheme.primaryColor.withValues(alpha: 0.08),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-        // Decorative dots
-        Positioned(top: 140, left: 60, child: _buildDot(6)),
-        Positioned(top: 220, right: 100, child: _buildDot(8)),
-        Positioned(bottom: 180, left: 180, child: _buildDot(5)),
-        Positioned(bottom: 120, right: 60, child: _buildDot(7)),
-        // Decorative rings
-        if (isDesktop) ...[
-          Positioned(
-            top: 100,
-            right: 300,
-            child: _buildRing(50, 1.2),
-          ),
-          Positioned(
-            bottom: 160,
-            left: 120,
-            child: _buildRing(35, 1),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildDesktopLayout(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 80),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Left: Text content
-          Expanded(
-            flex: 5,
-            child: _buildHeroContent(context, true),
-          ),
-          const SizedBox(width: 40),
-          // Right: EV Car showcase
-          Expanded(
-            flex: 5,
-            child: _buildCarShowcase(context, true),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMobileLayout(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          _buildHeroContent(context, false),
-          const SizedBox(height: 30),
-          _buildCarShowcase(context, false),
-          const SizedBox(height: 30),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeroContent(BuildContext context, bool isDesktop) {
+  Widget _buildClassicContent(BuildContext context, bool isDesktop) {
     return Column(
-      crossAxisAlignment:
-          isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      crossAxisAlignment: isDesktop
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // EV Badge
-        FadeSlideIn(
-          delay: const Duration(milliseconds: 200),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.5),
-                  width: 1.5),
-              color: AppTheme.cardFillColor,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppTheme.primaryColor.withValues(alpha: 0.5),
+              width: 1.5,
             ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.bolt, color: AppTheme.primaryColor, size: 16),
-                SizedBox(width: 6),
-                Text(
-                  '100% ELECTRIC FLEET',
-                  style: TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 2,
-                  ),
+            color: AppTheme.cardFillColor,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.bolt, color: AppTheme.primaryColor, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                '100% ELECTRIC FLEET',
+                style: TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 2,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 28),
-        // Title
-        FadeSlideIn(
-          delay: const Duration(milliseconds: 400),
-          child: Text(
-            'PREMIUM TAXI\nSERVICE IN INDIA',
-            textAlign: isDesktop ? TextAlign.left : TextAlign.center,
-            style: TextStyle(
-              color: AppTheme.textColor,
-              fontSize: isDesktop ? 52 : 32,
-              fontWeight: FontWeight.w800,
-              letterSpacing: isDesktop ? 3 : 1.5,
-              height: 1.15,
-            ),
+        Text(
+          'PREMIUM TAXI\nSERVICE IN INDIA',
+          textAlign: isDesktop ? TextAlign.left : TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.textColor,
+            fontSize: isDesktop ? 52 : 32,
+            fontWeight: FontWeight.w800,
+            letterSpacing: isDesktop ? 3 : 1.5,
+            height: 1.15,
           ),
         ),
         const SizedBox(height: 18),
-        // Subtitle
-        FadeSlideIn(
-          delay: const Duration(milliseconds: 600),
-          child: Text(
-            'Experience luxury and comfort with our elite\nelectric vehicle fleet across India.',
-            textAlign: isDesktop ? TextAlign.left : TextAlign.center,
-            style: TextStyle(
-              fontSize: isDesktop ? 17 : 14,
-              color: AppTheme.secondaryTextColor,
-              height: 1.6,
-            ),
+        Text(
+          'Experience luxury and comfort with our elite\nelectric vehicle fleet across India.',
+          textAlign: isDesktop ? TextAlign.left : TextAlign.center,
+          style: TextStyle(
+            fontSize: isDesktop ? 17 : 14,
+            color: AppTheme.secondaryTextColor,
+            height: 1.6,
           ),
         ),
         const SizedBox(height: 32),
-        // CTA Buttons
-        FadeSlideIn(
-          delay: const Duration(milliseconds: 800),
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 16,
-            runSpacing: 12,
-            children: [
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 36 : 28,
-                    vertical: isDesktop ? 18 : 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 16,
+          runSpacing: 12,
+          children: [
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 36 : 28,
+                  vertical: isDesktop ? 18 : 14,
                 ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('BOOK A RIDE', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_rounded, size: 18),
-                  ],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 0,
               ),
-              OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                  side: BorderSide(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.5),
-                    width: 1.5,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'BOOK A RIDE',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
                   ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 28 : 20,
-                    vertical: isDesktop ? 18 : 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.play_circle_outline, size: 20),
-                    SizedBox(width: 8),
-                    Text('Watch Demo', style: TextStyle(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 40),
-        // Stat badges
-        FadeSlideIn(
-          delay: const Duration(milliseconds: 1000),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24 : 12, vertical: isDesktop ? 16 : 10),
-            decoration: BoxDecoration(
-              color: AppTheme.cardFillColor.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                  SizedBox(width: 8),
+                  Icon(Icons.arrow_forward_rounded, size: 18),
+                ],
               ),
             ),
-            child: Row(
-              mainAxisSize: isDesktop ? MainAxisSize.min : MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildStatItem(context, '1000+', 'Happy Riders', Icons.people_alt_outlined, isDesktop),
-                _buildStatDivider(isDesktop),
-                _buildStatItem(context, '50+', 'EV Cars', Icons.electric_car_outlined, isDesktop),
-                _buildStatDivider(isDesktop),
-                _buildStatItem(context, '4', 'States', Icons.location_on_outlined, isDesktop),
-              ],
+            OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+                side: BorderSide(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                  width: 1.5,
+                ),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 28 : 20,
+                  vertical: isDesktop ? 18 : 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.play_circle_outline, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Watch Demo',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String value, String label, IconData icon, bool isDesktop) {
-    int target = 0;
-    String suffix = '';
-    final RegExp regex = RegExp(r'(\d+)(.*)');
-    final match = regex.firstMatch(value);
-    if (match != null) {
-      target = int.parse(match.group(1)!);
-      suffix = match.group(2) ?? '';
-    }
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 8 : 2),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: EdgeInsets.all(isDesktop ? 8 : 5),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(isDesktop ? 10 : 8),
-            ),
-            child: Icon(icon, color: AppTheme.primaryColor, size: isDesktop ? 18 : 14),
-          ),
-          SizedBox(width: isDesktop ? 10 : 6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CountUpText(
-                target: target,
-                suffix: suffix,
-                style: TextStyle(
-                  color: AppTheme.textColor,
-                  fontSize: isDesktop ? 20 : 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  color: AppTheme.greyTextColor,
-                  fontSize: isDesktop ? 11 : 9,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatDivider(bool isDesktop) {
-    return Container(
-      width: 1,
-      height: isDesktop ? 36 : 28,
-      color: AppTheme.primaryColor.withValues(alpha: 0.15),
-    );
-  }
-
-  Widget _buildCarShowcase(BuildContext context, bool isDesktop) {
-    final double showcaseSize = isDesktop ? 420 : 300;
-    return FadeSlideIn(
-      delay: const Duration(milliseconds: 500),
+  Widget _buildClassicShowcase(BuildContext context, bool isDesktop) {
+    final size = isDesktop ? 380.0 : 280.0;
+    return Center(
       child: SizedBox(
-        width: showcaseSize,
-        height: showcaseSize,
+        width: size,
+        height: size,
         child: Stack(
-          clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            // Soft ambient glow that blends with background
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppTheme.primaryColor.withValues(alpha: 0.12),
-                      AppTheme.primaryColor.withValues(alpha: 0.05),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppTheme.primaryColor.withValues(alpha: 0.1),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
-            // Outer ring
-            Center(
-              child: Container(
-                width: isDesktop ? 340 : 240,
-                height: isDesktop ? 340 : 240,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.12),
-                    width: 1,
-                  ),
+            Container(
+              width: isDesktop ? 260 : 185,
+              height: isDesktop ? 260 : 185,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                  width: 1,
                 ),
               ),
             ),
-            // Middle glowing circle
-            Center(
-              child: Container(
-                width: isDesktop ? 260 : 185,
-                height: isDesktop ? 260 : 185,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppTheme.primaryColor.withValues(alpha: 0.14),
-                      AppTheme.primaryColor.withValues(alpha: 0.04),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.7, 1.0],
-                  ),
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                    width: 1,
-                  ),
-                ),
-              ),
-            ),
-            // Inner bright circle with subtle glow
-            Center(
-              child: Container(
-                width: isDesktop ? 170 : 120,
-                height: isDesktop ? 170 : 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppTheme.primaryColor.withValues(alpha: 0.18),
-                      AppTheme.primaryColor.withValues(alpha: 0.06),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Central EV concept icon composition
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Main icon - EV car with glow
                   Container(
                     padding: EdgeInsets.all(isDesktop ? 22 : 14),
                     decoration: BoxDecoration(
@@ -490,21 +633,17 @@ class HeroSection extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: isDesktop ? 10 : 6),
-                  // "EV TAXI" pill badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryColor,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                        ),
-                      ],
                     ),
                     child: Text(
-                      'EV TAXI',
+                      'E-CABBZ TAXI',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -516,153 +655,111 @@ class HeroSection extends StatelessWidget {
                 ],
               ),
             ),
-            // Unified Feature Nodes (Icon + Text Badge)
-            Positioned(
-              top: isDesktop ? 20 : 10,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Transform.translate(
-                  offset: Offset(isDesktop ? -130 : -95, 0),
-                  child: _buildFeatureNode(Icons.eco, 'Eco Friendly', isDesktop),
-                ),
-              ),
-            ),
-            Positioned(
-              top: isDesktop ? 30 : 18,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Transform.translate(
-                  offset: Offset(isDesktop ? 140 : 100, 0),
-                  child: _buildFeatureNode(Icons.bolt, '0 Emission', isDesktop),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: isDesktop ? 50 : 35,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Transform.translate(
-                  offset: Offset(isDesktop ? -150 : -105, 0),
-                  child: _buildFeatureNode(Icons.access_time_filled, '24/7 Service', isDesktop),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: isDesktop ? 30 : 20,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Transform.translate(
-                  offset: Offset(isDesktop ? 135 : 95, 0),
-                  child: _buildFeatureNode(Icons.ev_station, '100% Electric', isDesktop),
-                ),
-              ),
-            ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureNode(IconData icon, String text, bool isDesktop) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Circular Icon
-        Container(
-          padding: EdgeInsets.all(isDesktop ? 12 : 8),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppTheme.cardFillColor,
-            border: Border.all(
-              color: AppTheme.primaryColor.withValues(alpha: 0.2),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                blurRadius: 12,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: Icon(
-            icon,
-            size: isDesktop ? 20 : 14,
-            color: AppTheme.primaryColor,
-          ),
-        ),
-        const SizedBox(height: 8),
-        // Text Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppTheme.cardFillColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppTheme.primaryColor.withValues(alpha: 0.15),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: AppTheme.textColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDot(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppTheme.primaryColor.withValues(alpha: 0.3),
-      ),
-    );
-  }
-
-  Widget _buildRing(double size, double borderWidth) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.12),
-          width: borderWidth,
         ),
       ),
     );
   }
 }
 
-// ───── Grid Painter ─────
-class _HeroGridPainter extends CustomPainter {
+// ─── Hover CTA Button ───
+class _HoverButton extends StatefulWidget {
+  final String label;
+  final IconData? icon;
+  final Color bgColor;
+  final Color textColor;
+  final Color? borderColor;
+  final bool isDesktop;
+
+  const _HoverButton({
+    required this.label,
+    this.icon,
+    required this.bgColor,
+    required this.textColor,
+    this.borderColor,
+    required this.isDesktop,
+  });
+
+  @override
+  State<_HoverButton> createState() => _HoverButtonState();
+}
+
+class _HoverButtonState extends State<_HoverButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () {},
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.isDesktop ? 32 : 24,
+            vertical: widget.isDesktop ? 16 : 13,
+          ),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? (widget.bgColor == Colors.transparent
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : widget.bgColor.withValues(alpha: 0.85))
+                : widget.bgColor,
+            borderRadius: BorderRadius.circular(50),
+            border: widget.borderColor != null
+                ? Border.all(color: widget.borderColor!, width: 1.5)
+                : null,
+            boxShadow: _hovered && widget.bgColor != Colors.transparent
+                ? [
+                    BoxShadow(
+                      color: widget.bgColor.withValues(alpha: 0.45),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.label,
+                style: GoogleFonts.poppins(
+                  color: widget.textColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: widget.isDesktop ? 15 : 13,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              if (widget.icon != null) ...[
+                const SizedBox(width: 8),
+                Icon(widget.icon, color: widget.textColor, size: 18),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatItem {
+  final String value;
+  final String label;
+  const _StatItem({required this.value, required this.label});
+}
+
+// ─── Grid Painter ───
+class _GridPainter extends CustomPainter {
   final Color? color;
-  _HeroGridPainter({this.color});
+  _GridPainter({this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color ?? Colors.white.withValues(alpha: 0.02)
       ..strokeWidth = 0.5;
-
     for (double y = 0; y < size.height; y += 60) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
@@ -673,58 +770,4 @@ class _HeroGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// ───── Count Up Animation ─────
-class CountUpText extends StatefulWidget {
-  final int target;
-  final String suffix;
-  final TextStyle? style;
-  final Duration duration;
-
-  const CountUpText({
-    super.key,
-    required this.target,
-    this.suffix = '',
-    this.style,
-    this.duration = const Duration(seconds: 2),
-  });
-
-  @override
-  State<CountUpText> createState() => _CountUpTextState();
-}
-
-class _CountUpTextState extends State<CountUpText>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<int> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration);
-    _animation = IntTween(begin: 0, end: widget.target).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Text(
-          '${_animation.value}${widget.suffix}',
-          style: widget.style,
-        );
-      },
-    );
-  }
 }

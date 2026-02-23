@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../theme/app_theme.dart';
 
 class DriverApplicationDialog extends StatefulWidget {
@@ -48,10 +49,24 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   final _spouseMobileController = TextEditingController();
 
   // Controllers - Qualification
-  final _sslcYearController = TextEditingController();
-  final _plusTwoYearController = TextEditingController();
-  final _degreeYearController = TextEditingController();
-  final _diplomaYearController = TextEditingController();
+  String? _sslcStatus,
+      _plusTwoStatus,
+      _degreeStatus,
+      _postGradStatus,
+      _diplomaStatus,
+      _techCourseStatus;
+  String? _sslcYear,
+      _plusTwoYear,
+      _degreeYear,
+      _postGradYear,
+      _diplomaYear,
+      _techCourseYear;
+
+  final List<String> _years = List.generate(
+    (DateTime.now().year - 1970) + 1,
+    (index) => (1970 + index).toString(),
+  ).reversed.toList();
+  final List<String> _passFail = ['Pass', 'Fail'];
 
   // Language Proficiency
   bool _engSpeak = false, _engRead = false, _engWrite = false;
@@ -67,8 +82,8 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   final _licenseIssueDateController = TextEditingController();
   final _licenseExpiryDateController = TextEditingController();
 
-  // Experience
-  final _exp1Controller = TextEditingController();
+  // Experience entries
+  final List<_ExperienceEntry> _experiences = [];
 
   // Insurance & Legal
   bool _hasInsurance = false;
@@ -84,26 +99,43 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     'Kerala',
     'Karnataka',
     'Tamil Nadu',
-    'Puducherry'
+    'Puducherry',
   ];
-  final List<String> _districts = [
-    'Thiruvananthapuram',
-    'Kochi',
-    'Kozhikode',
-    'Bangalore',
-    'Chennai',
-    'Other'
-  ];
+  final Map<String, List<String>> _stateDistricts = {
+    'Kerala': [
+      'Alappuzha',
+      'Ernakulam',
+      'Idukki',
+      'Kannur',
+      'Kasaragod',
+      'Kollam',
+      'Kottayam',
+      'Kozhikode',
+      'Malappuram',
+      'Palakkad',
+      'Pathanamthitta',
+      'Thiruvananthapuram',
+      'Thrissur',
+      'Wayanad',
+    ],
+    'Karnataka': ['Bangalore', 'Mysore', 'Hubli', 'Dharwad', 'Mangalore'],
+    'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Trichy', 'Salem'],
+    'Puducherry': ['Puducherry', 'Karaikal', 'Mahe', 'Yanam'],
+  };
   final List<String> _bloodGroups = [
-    'A+',
-    'A-',
-    'B+',
-    'B-',
     'O+',
-    'O-',
+    'B+',
+    'A+',
     'AB+',
-    'AB-',
-    'Oh'
+    'O−',
+    'B−',
+    'A−',
+    'AB−',
+    'hh',
+    'Oh',
+    'Rh',
+    'K−k−',
+    'Di-a−b−',
   ];
 
   @override
@@ -208,7 +240,11 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
               color: Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.close_rounded, size: 20, color: AppTheme.secondaryTextColor),
+            child: const Icon(
+              Icons.close_rounded,
+              size: 20,
+              color: AppTheme.secondaryTextColor,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -239,8 +275,8 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                 color: isCompleted
                     ? AppTheme.primaryColor
                     : isActive
-                        ? AppTheme.primaryColor.withValues(alpha: 0.4)
-                        : AppTheme.primaryColor.withValues(alpha: 0.08),
+                    ? AppTheme.primaryColor.withValues(alpha: 0.4)
+                    : AppTheme.primaryColor.withValues(alpha: 0.08),
               ),
             ),
           );
@@ -279,8 +315,11 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                 color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(stepIcons[_currentStep],
-                  color: AppTheme.primaryColor, size: 22),
+              child: Icon(
+                stepIcons[_currentStep],
+                color: AppTheme.primaryColor,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -325,34 +364,118 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   // ─── STEP 1: Personal Details ─────────────────────
   Widget _buildPersonalStep(bool isMobile) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildSectionLabel('Basic Details'),
         _responsiveRow(isMobile, [
-          _buildTextField(_firstNameController, 'First Name',
-              icon: Icons.person_outline),
-          _buildTextField(_middleNameController, 'Middle Name',
-              isRequired: false),
-          _buildTextField(_lastNameController, 'Last Name'),
+          _buildTextField(
+            _firstNameController,
+            'First Name',
+            icon: Icons.person_outline,
+          ),
+          _buildTextField(
+            _middleNameController,
+            'Middle Name',
+            isRequired: false,
+          ),
+          _buildTextField(_lastNameController, 'Last Name', isRequired: false),
         ]),
         _responsiveRow(isMobile, [
-          _buildDropdown('State', _selectedState, _states,
-              (v) => setState(() => _selectedState = v)),
-          _buildDropdown('District', _selectedDistrict, _districts,
-              (v) => setState(() => _selectedDistrict = v)),
+          _buildDropdown('State', _selectedState, _states, (v) {
+            setState(() {
+              _selectedState = v;
+              _selectedDistrict = null; // Reset district when state changes
+            });
+          }),
+          _buildDropdown(
+            'District',
+            _selectedDistrict,
+            _selectedState != null
+                ? (_stateDistricts[_selectedState] ?? [])
+                : [],
+            (v) => setState(() => _selectedDistrict = v),
+          ),
         ]),
-        _buildTextField(_villageController, 'Village',
-            icon: Icons.location_on_outlined),
-        _buildTextField(_addressController, 'Full Address',
-            maxLines: 2, icon: Icons.home_outlined),
+        _buildTextField(
+          _villageController,
+          'Village',
+          icon: Icons.location_on_outlined,
+        ),
+        _buildTextField(
+          _addressController,
+          'Full Address',
+          maxLines: 2,
+          icon: Icons.home_outlined,
+        ),
         _responsiveRow(isMobile, [
-          _buildTextField(_pinController, 'PIN Code',
-              keyboardType: TextInputType.number, icon: Icons.pin_drop_outlined),
-          _buildTextField(_landmarkController, 'Landmark'),
+          _buildTextField(
+            _pinController,
+            'PIN Code',
+            keyboardType: TextInputType.number,
+            icon: Icons.pin_drop_outlined,
+            maxLength: 6,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            exactLength: 6,
+          ),
+          _buildTextField(_landmarkController, 'Landmark', isRequired: false),
         ]),
         _responsiveRow(isMobile, [
-          _buildTextField(_dobController, 'Date of Birth',
-              icon: Icons.calendar_today_outlined),
-          _buildDropdown('Blood Group', _bloodGroup, _bloodGroups,
-              (v) => setState(() => _bloodGroup = v)),
+          _buildTextField(
+            _mobile1Controller,
+            'Mobile Number',
+            keyboardType: TextInputType.phone,
+            icon: Icons.phone_rounded,
+            maxLength: 10,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            exactLength: 10,
+          ),
+        ]),
+        _responsiveRow(isMobile, [
+          _buildTextField(
+            _dobController,
+            'Date of Birth',
+            icon: Icons.calendar_today_outlined,
+            readOnly: true,
+            onTap: () => _selectDate(context, _dobController),
+          ),
+          _buildDropdown(
+            'Blood Group',
+            _bloodGroup,
+            _bloodGroups,
+            (v) => setState(() => _bloodGroup = v),
+          ),
+        ]),
+        _buildTextField(
+          _emailController,
+          'Email Address',
+          keyboardType: TextInputType.emailAddress,
+          icon: Icons.email_outlined,
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Divider(),
+        ),
+        _buildSectionLabel('Driving License Details'),
+        _buildTextField(
+          _licenseNoController,
+          'License Number',
+          icon: Icons.drive_eta_rounded,
+        ),
+        _responsiveRow(isMobile, [
+          _buildTextField(
+            _licenseIssueDateController,
+            'Issue Date',
+            icon: Icons.calendar_today_outlined,
+            readOnly: true,
+            onTap: () => _selectDate(context, _licenseIssueDateController),
+          ),
+          _buildTextField(
+            _licenseExpiryDateController,
+            'Expiry Date',
+            icon: Icons.event_outlined,
+            readOnly: true,
+            onTap: () => _selectDate(context, _licenseExpiryDateController),
+          ),
         ]),
       ],
     );
@@ -365,23 +488,51 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
       children: [
         _buildSectionLabel('Identity Documents'),
         _responsiveRow(isMobile, [
-          _buildTextField(_aadhaarController, 'Aadhaar Number',
-              keyboardType: TextInputType.number,
-              icon: Icons.credit_card_rounded),
-          _buildTextField(_panController, 'PAN Number',
-              icon: Icons.badge_outlined),
+          _buildTextField(
+            _aadhaarController,
+            'Aadhaar Number',
+            keyboardType: TextInputType.number,
+            icon: Icons.credit_card_rounded,
+            maxLength: 14,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              _AadhaarNumberFormatter(),
+            ],
+          ),
+          _buildTextField(
+            _panController,
+            'PAN Number',
+            icon: Icons.badge_outlined,
+          ),
         ]),
         const SizedBox(height: 16),
         _buildSectionLabel('Contact Information'),
         _responsiveRow(isMobile, [
-          _buildTextField(_mobile1Controller, 'Primary Mobile',
-              keyboardType: TextInputType.phone, icon: Icons.phone_rounded),
-          _buildTextField(_mobile2Controller, 'Secondary Mobile',
-              keyboardType: TextInputType.phone, isRequired: false),
+          _buildTextField(
+            _mobile1Controller,
+            'Primary Mobile',
+            keyboardType: TextInputType.phone,
+            icon: Icons.phone_rounded,
+            maxLength: 10,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            exactLength: 10,
+          ),
+          _buildTextField(
+            _mobile2Controller,
+            'Secondary Mobile',
+            keyboardType: TextInputType.phone,
+            isRequired: false,
+            maxLength: 10,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            exactLength: 10,
+          ),
         ]),
-        _buildTextField(_emailController, 'Email Address',
-            keyboardType: TextInputType.emailAddress,
-            icon: Icons.email_outlined),
+        _buildTextField(
+          _emailController,
+          'Email Address',
+          keyboardType: TextInputType.emailAddress,
+          icon: Icons.email_outlined,
+        ),
       ],
     );
   }
@@ -392,22 +543,37 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionLabel('Primary Bank Account'),
-        _buildTextField(_bank1NameController, 'Bank Name',
-            icon: Icons.account_balance_outlined),
+        _buildTextField(
+          _bank1NameController,
+          'Bank Name',
+          icon: Icons.account_balance_outlined,
+        ),
         _responsiveRow(isMobile, [
-          _buildTextField(_bank1AccController, 'Account Number',
-              keyboardType: TextInputType.number),
+          _buildTextField(
+            _bank1AccController,
+            'Account Number',
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
           _buildTextField(_bank1IfscController, 'IFSC Code'),
         ]),
         const SizedBox(height: 12),
         _buildSectionLabel('Secondary Bank Account', isOptional: true),
-        _buildTextField(_bank2NameController, 'Bank Name',
-            isRequired: false, icon: Icons.account_balance_outlined),
+        _buildTextField(
+          _bank2NameController,
+          'Bank Name',
+          isRequired: false,
+          icon: Icons.account_balance_outlined,
+        ),
         _responsiveRow(isMobile, [
-          _buildTextField(_bank2AccController, 'Account Number',
-              isRequired: false, keyboardType: TextInputType.number),
-          _buildTextField(_bank2IfscController, 'IFSC Code',
-              isRequired: false),
+          _buildTextField(
+            _bank2AccController,
+            'Account Number',
+            isRequired: false,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          _buildTextField(_bank2IfscController, 'IFSC Code', isRequired: false),
         ]),
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 16),
@@ -415,22 +581,48 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         ),
         _buildSectionLabel('Family Details'),
         _responsiveRow(isMobile, [
-          _buildTextField(_fatherNameController, "Father's Name",
-              icon: Icons.person_outline),
-          _buildTextField(_fatherMobileController, "Father's Mobile",
-              keyboardType: TextInputType.phone),
+          _buildTextField(
+            _fatherNameController,
+            "Father's Name",
+            icon: Icons.person_outline,
+          ),
+          _buildTextField(
+            _fatherMobileController,
+            "Father's Mobile",
+            keyboardType: TextInputType.phone,
+            maxLength: 10,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
         ]),
         _responsiveRow(isMobile, [
-          _buildTextField(_motherNameController, "Mother's Name",
-              icon: Icons.person_outline),
-          _buildTextField(_motherMobileController, "Mother's Mobile",
-              keyboardType: TextInputType.phone),
+          _buildTextField(
+            _motherNameController,
+            "Mother's Name",
+            icon: Icons.person_outline,
+          ),
+          _buildTextField(
+            _motherMobileController,
+            "Mother's Mobile",
+            keyboardType: TextInputType.phone,
+            maxLength: 10,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
         ]),
         _responsiveRow(isMobile, [
-          _buildTextField(_spouseNameController, "Spouse's Name",
-              isRequired: false, icon: Icons.favorite_outline),
-          _buildTextField(_spouseMobileController, "Spouse's Mobile",
-              isRequired: false, keyboardType: TextInputType.phone),
+          _buildTextField(
+            _spouseNameController,
+            "Spouse's Name",
+            isRequired: false,
+            icon: Icons.favorite_outline,
+          ),
+          _buildTextField(
+            _spouseMobileController,
+            "Spouse's Mobile",
+            isRequired: false,
+            keyboardType: TextInputType.phone,
+            maxLength: 10,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
         ]),
       ],
     );
@@ -442,18 +634,64 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionLabel('Education'),
-        _responsiveRow(isMobile, [
-          _buildTextField(_sslcYearController, 'SSLC Year',
-              keyboardType: TextInputType.number),
-          _buildTextField(_plusTwoYearController, '+2 Year',
-              keyboardType: TextInputType.number),
-        ]),
-        _responsiveRow(isMobile, [
-          _buildTextField(_degreeYearController, 'Degree Year',
-              isRequired: false),
-          _buildTextField(_diplomaYearController, 'Diploma/Cert Year',
-              isRequired: false),
-        ]),
+        _buildEducationLevel(
+          'SSLC',
+          _sslcStatus,
+          _sslcYear,
+          (s) => setState(() {
+            _sslcStatus = s;
+            if (s == 'Fail') {
+              _plusTwoStatus = _degreeStatus = _postGradStatus =
+                  _diplomaStatus = _techCourseStatus = null;
+              _plusTwoYear = _degreeYear = _postGradYear = _diplomaYear =
+                  _techCourseYear = null;
+            }
+          }),
+          (y) => setState(() => _sslcYear = y),
+          isMobile,
+        ),
+        if (_sslcStatus == 'Pass') ...[
+          _buildEducationLevel(
+            '+2',
+            _plusTwoStatus,
+            _plusTwoYear,
+            (s) => setState(() => _plusTwoStatus = s),
+            (y) => setState(() => _plusTwoYear = y),
+            isMobile,
+          ),
+          _buildEducationLevel(
+            'Graduation',
+            _degreeStatus,
+            _degreeYear,
+            (s) => setState(() => _degreeStatus = s),
+            (y) => setState(() => _degreeYear = y),
+            isMobile,
+          ),
+          _buildEducationLevel(
+            'Post Graduation',
+            _postGradStatus,
+            _postGradYear,
+            (s) => setState(() => _postGradStatus = s),
+            (y) => setState(() => _postGradYear = y),
+            isMobile,
+          ),
+          _buildEducationLevel(
+            'Diploma',
+            _diplomaStatus,
+            _diplomaYear,
+            (s) => setState(() => _diplomaStatus = s),
+            (y) => setState(() => _diplomaYear = y),
+            isMobile,
+          ),
+          _buildEducationLevel(
+            'Technical Course',
+            _techCourseStatus,
+            _techCourseYear,
+            (s) => setState(() => _techCourseStatus = s),
+            (y) => setState(() => _techCourseYear = y),
+            isMobile,
+          ),
+        ],
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 16),
           child: Divider(),
@@ -463,61 +701,116 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         // Language header
         _buildLanguageHeader(isMobile),
         const SizedBox(height: 4),
-        _buildLanguageRow('English', _engSpeak, _engRead, _engWrite,
-            (s, r, w) => setState(() {
-                  _engSpeak = s;
-                  _engRead = r;
-                  _engWrite = w;
-                }), isMobile),
-        _buildLanguageRow('Hindi', _hinSpeak, _hinRead, _hinWrite,
-            (s, r, w) => setState(() {
-                  _hinSpeak = s;
-                  _hinRead = r;
-                  _hinWrite = w;
-                }), isMobile),
-        _buildLanguageRow('Malayalam', _malSpeak, _malRead, _malWrite,
-            (s, r, w) => setState(() {
-                  _malSpeak = s;
-                  _malRead = r;
-                  _malWrite = w;
-                }), isMobile),
-        _buildLanguageRow('Kannada', _kanSpeak, _kanRead, _kanWrite,
-            (s, r, w) => setState(() {
-                  _kanSpeak = s;
-                  _kanRead = r;
-                  _kanWrite = w;
-                }), isMobile),
-        _buildLanguageRow('Tamil', _tamSpeak, _tamRead, _tamWrite,
-            (s, r, w) => setState(() {
-                  _tamSpeak = s;
-                  _tamRead = r;
-                  _tamWrite = w;
-                }), isMobile),
+        _buildLanguageRow(
+          'English',
+          _engSpeak,
+          _engRead,
+          _engWrite,
+          (s, r, w) => setState(() {
+            _engSpeak = s;
+            _engRead = r;
+            _engWrite = w;
+          }),
+          isMobile,
+        ),
+        _buildLanguageRow(
+          'Hindi',
+          _hinSpeak,
+          _hinRead,
+          _hinWrite,
+          (s, r, w) => setState(() {
+            _hinSpeak = s;
+            _hinRead = r;
+            _hinWrite = w;
+          }),
+          isMobile,
+        ),
+        _buildLanguageRow(
+          'Malayalam',
+          _malSpeak,
+          _malRead,
+          _malWrite,
+          (s, r, w) => setState(() {
+            _malSpeak = s;
+            _malRead = r;
+            _malWrite = w;
+          }),
+          isMobile,
+        ),
+        _buildLanguageRow(
+          'Kannada',
+          _kanSpeak,
+          _kanRead,
+          _kanWrite,
+          (s, r, w) => setState(() {
+            _kanSpeak = s;
+            _kanRead = r;
+            _kanWrite = w;
+          }),
+          isMobile,
+        ),
+        _buildLanguageRow(
+          'Tamil',
+          _tamSpeak,
+          _tamRead,
+          _tamWrite,
+          (s, r, w) => setState(() {
+            _tamSpeak = s;
+            _tamRead = r;
+            _tamWrite = w;
+          }),
+          isMobile,
+        ),
       ],
     );
   }
 
-  // ─── STEP 5: Professional Info ─────────────────────
+  // ─── STEP 5: Previous Experience ─────────────────────
   Widget _buildProfessionalStep(bool isMobile) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionLabel('Driving License'),
-        _buildTextField(_licenseNoController, 'License Number',
-            icon: Icons.drive_eta_rounded),
-        _responsiveRow(isMobile, [
-          _buildTextField(_licenseIssueDateController, 'Issue Date',
-              icon: Icons.calendar_today_outlined),
-          _buildTextField(_licenseExpiryDateController, 'Expiry Date',
-              icon: Icons.event_outlined),
-        ]),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
-          child: Divider(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionLabel('Previous Experience', isOptional: true),
+            TextButton.icon(
+              onPressed: () =>
+                  setState(() => _experiences.add(_ExperienceEntry())),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add Experience'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+                textStyle: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
         ),
-        _buildSectionLabel('Previous Experience', isOptional: true),
-        _buildTextField(_exp1Controller, 'Last Company Name',
-            icon: Icons.business_outlined),
+        if (_experiences.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.work_history_outlined,
+                    size: 48,
+                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No experience added yet',
+                    style: TextStyle(
+                      color: AppTheme.secondaryTextColor.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          _buildExperienceTable(isMobile),
       ],
     );
   }
@@ -536,14 +829,25 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         ),
         if (_hasInsurance) ...[
           const SizedBox(height: 8),
-          _buildTextField(_insuranceCompanyController, 'Insurance Company',
-              icon: Icons.business_outlined),
+          _buildTextField(
+            _insuranceCompanyController,
+            'Insurance Company',
+            icon: Icons.business_outlined,
+          ),
           _buildTextField(_policyNoController, 'Policy Number'),
           _responsiveRow(isMobile, [
-            _buildTextField(_sumInsuredController, 'Sum Insured (₹)',
-                keyboardType: TextInputType.number),
-            _buildTextField(_policyEndDateController, 'Policy End Date',
-                icon: Icons.event_outlined),
+            _buildTextField(
+              _sumInsuredController,
+              'Sum Insured (₹)',
+              keyboardType: TextInputType.number,
+            ),
+            _buildTextField(
+              _policyEndDateController,
+              'Policy End Date',
+              icon: Icons.event_outlined,
+              readOnly: true,
+              onTap: () => _selectDate(context, _policyEndDateController),
+            ),
           ]),
         ],
         const Padding(
@@ -559,8 +863,12 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         ),
         if (_hasPoliceCase) ...[
           const SizedBox(height: 8),
-          _buildTextField(_caseDetailsController, 'Case Details',
-              maxLines: 3, icon: Icons.description_outlined),
+          _buildTextField(
+            _caseDetailsController,
+            'Case Details',
+            maxLines: 3,
+            icon: Icons.description_outlined,
+          ),
         ],
       ],
     );
@@ -576,9 +884,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
       decoration: BoxDecoration(
         color: AppTheme.cardFillColor,
         border: Border(
-          top: BorderSide(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
-          ),
+          top: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.1)),
         ),
       ),
       child: Row(
@@ -591,9 +897,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                 label: Text(isMobile ? 'Back' : 'Previous Step'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.secondaryTextColor,
-                  padding: EdgeInsets.symmetric(
-                    vertical: isMobile ? 14 : 16,
-                  ),
+                  padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
                   side: BorderSide(
                     color: AppTheme.primaryColor.withValues(alpha: 0.2),
                   ),
@@ -608,26 +912,28 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             flex: isFirstStep ? 1 : 1,
             child: ElevatedButton.icon(
               onPressed: () {
-                if (_currentStep < 5) {
-                  setState(() => _currentStep++);
-                } else {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Row(
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.white),
-                          SizedBox(width: 12),
-                          Text('Application Submitted Successfully!'),
-                        ],
+                if (_formKey.currentState!.validate()) {
+                  if (_currentStep < 5) {
+                    setState(() => _currentStep++);
+                  } else {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 12),
+                            Text('Application Submitted Successfully!'),
+                          ],
+                        ),
+                        backgroundColor: AppTheme.primaryColor,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      backgroundColor: AppTheme.primaryColor,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  );
+                    );
+                  }
                 }
               },
               icon: Icon(
@@ -642,9 +948,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                     ? AppTheme.primaryDark
                     : AppTheme.primaryColor,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(
-                  vertical: isMobile ? 14 : 16,
-                ),
+                padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -658,6 +962,43 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   }
 
   // ─── REUSABLE WIDGETS ─────────────────────
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+      useRootNavigator: true,
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              onSurface: AppTheme.textColor,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        final d = picked.day.toString().padLeft(2, '0');
+        final m = picked.month.toString().padLeft(2, '0');
+        controller.text = '$d/$m/${picked.year}';
+      });
+    }
+  }
 
   /// Lays children out in a Row on desktop, stacked Column on mobile
   Widget _responsiveRow(bool isMobile, List<Widget> children) {
@@ -666,13 +1007,13 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: children
-          .expand((child) => [
-                Expanded(child: child),
-                const SizedBox(width: 12),
-              ])
-          .toList()
-        ..removeLast(), // remove trailing SizedBox
+      children:
+          children
+              .expand(
+                (child) => [Expanded(child: child), const SizedBox(width: 12)],
+              )
+              .toList()
+            ..removeLast(), // remove trailing SizedBox
     );
   }
 
@@ -683,20 +1024,34 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     TextInputType? keyboardType,
     int maxLines = 1,
     IconData? icon,
+    int? maxLength,
+    int? exactLength, // enforce exact digit count
+    List<TextInputFormatter>? inputFormatters,
+    bool readOnly = false,
+    VoidCallback? onTap,
   }) {
+    // Append * to label for mandatory fields
+    final displayLabel = isRequired ? '$label *' : label;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: controller,
+        inputFormatters: inputFormatters,
+        maxLength: maxLength,
+        readOnly: readOnly,
+        onTap: onTap,
         decoration: InputDecoration(
-          labelText: label,
+          counterText: '', // Hide character counter
+          labelText: displayLabel,
           prefixIcon: icon != null
               ? Icon(icon, size: 20, color: AppTheme.secondaryTextColor)
               : null,
           filled: true,
           fillColor: AppTheme.surfaceColor,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
@@ -711,21 +1066,37 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+            borderSide: const BorderSide(
+              color: AppTheme.primaryColor,
+              width: 1.5,
+            ),
           ),
         ),
         keyboardType: keyboardType,
         maxLines: maxLines,
-        validator: isRequired
-            ? (v) => (v == null || v.isEmpty) ? 'Required' : null
-            : null,
+        validator: (v) {
+          if (isRequired && (v == null || v.trim().isEmpty)) {
+            return 'Required';
+          }
+          if (exactLength != null && v != null && v.isNotEmpty) {
+            // Strip spaces (e.g. Aadhaar formatted) before checking length
+            final stripped = v.replaceAll(' ', '');
+            if (stripped.length < exactLength) {
+              return 'Must be exactly $exactLength digits';
+            }
+          }
+          return null;
+        },
       ),
     );
   }
 
-  Widget _buildDropdown(String label, String? value, List<String> items,
-      ValueChanged<String?> onChanged) {
+  Widget _buildDropdown(
+    String label,
+    String? value,
+    List<String> items,
+    ValueChanged<String?> onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
@@ -738,8 +1109,10 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           labelText: label,
           filled: true,
           fillColor: AppTheme.surfaceColor,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
@@ -754,8 +1127,10 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+            borderSide: const BorderSide(
+              color: AppTheme.primaryColor,
+              width: 1.5,
+            ),
           ),
         ),
       ),
@@ -807,8 +1182,119 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     );
   }
 
+  Widget _buildEducationLevel(
+    String label,
+    String? status,
+    String? year,
+    ValueChanged<String?> onStatusChanged,
+    ValueChanged<String?> onYearChanged,
+    bool isMobile,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 3,
+            child: _buildDropdown(label, status, _passFail, onStatusChanged),
+          ),
+          if (status == 'Pass') ...[
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: _buildDropdown('Year', year, _years, onYearChanged),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExperienceTable(bool isMobile) {
+    return Column(
+      children: List.generate(_experiences.length, (index) {
+        final entry = _experiences[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Experience ${index + 1}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() {
+                      entry.dispose();
+                      _experiences.removeAt(index);
+                    }),
+                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                    color: Colors.red.withValues(alpha: 0.7),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                entry.companyController,
+                'Taxi Car Company Name',
+                isRequired: false,
+                icon: Icons.business_outlined,
+              ),
+              _responsiveRow(isMobile, [
+                _buildTextField(
+                  entry.joinDateController,
+                  'Joining Date',
+                  isRequired: false,
+                  icon: Icons.calendar_today_outlined,
+                  readOnly: true,
+                  onTap: () => _selectDate(context, entry.joinDateController),
+                ),
+                _buildTextField(
+                  entry.leaveDateController,
+                  'Leaving Date',
+                  isRequired: false,
+                  icon: Icons.event_outlined,
+                  readOnly: true,
+                  onTap: () => _selectDate(context, entry.leaveDateController),
+                ),
+              ]),
+              _buildTextField(
+                entry.reasonController,
+                'Reasons',
+                isRequired: false,
+                icon: Icons.description_outlined,
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _buildSwitchCard(
-      String title, bool value, IconData icon, ValueChanged<bool> onChanged) {
+    String title,
+    bool value,
+    IconData icon,
+    ValueChanged<bool> onChanged,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -853,36 +1339,51 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         children: [
           SizedBox(width: isMobile ? 80 : 100),
           const Expanded(
-            child: Text('Speak',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.secondaryTextColor)),
+            child: Text(
+              'Speak',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.secondaryTextColor,
+              ),
+            ),
           ),
           const Expanded(
-            child: Text('Read',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.secondaryTextColor)),
+            child: Text(
+              'Read',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.secondaryTextColor,
+              ),
+            ),
           ),
           const Expanded(
-            child: Text('Write',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.secondaryTextColor)),
+            child: Text(
+              'Write',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.secondaryTextColor,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLanguageRow(String lang, bool s, bool r, bool w,
-      Function(bool, bool, bool) onChanged, bool isMobile) {
+  Widget _buildLanguageRow(
+    String lang,
+    bool s,
+    bool r,
+    bool w,
+    Function(bool, bool, bool) onChanged,
+    bool isMobile,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -934,6 +1435,47 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ExperienceEntry {
+  final companyController = TextEditingController();
+  final joinDateController = TextEditingController();
+  final leaveDateController = TextEditingController();
+  final reasonController = TextEditingController();
+
+  void dispose() {
+    companyController.dispose();
+    joinDateController.dispose();
+    leaveDateController.dispose();
+    reasonController.dispose();
+  }
+}
+
+class _AadhaarNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // Strip all non-digit characters to get raw digits only
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+
+    // Limit to 12 digits max
+    final limitedDigits = digits.length > 12 ? digits.substring(0, 12) : digits;
+
+    // Re-build with spaces after every 4 digits: XXXX XXXX XXXX
+    final buffer = StringBuffer();
+    for (int i = 0; i < limitedDigits.length; i++) {
+      if (i > 0 && i % 4 == 0) buffer.write(' ');
+      buffer.write(limitedDigits[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

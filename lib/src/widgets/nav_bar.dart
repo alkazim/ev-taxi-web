@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import '../widgets/responsive_widget.dart';
 
 class NavBar extends StatelessWidget {
   final VoidCallback? onHomeTap;
   final VoidCallback? onDriversTap;
+  final VoidCallback? onFleetsTap;
   final VoidCallback? onFranchiseTap;
   final VoidCallback? onEvStationsTap;
+  final VoidCallback? onContactTap;
 
   const NavBar({
     super.key,
     this.onHomeTap,
     this.onDriversTap,
+    this.onFleetsTap,
     this.onFranchiseTap,
     this.onEvStationsTap,
+    this.onContactTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = ResponsiveWidget.isLargeScreen(context);
+    final isDesktop = MediaQuery.of(context).size.width >= 1200;
+    final isV2 = context.isV2Theme;
 
     return SafeArea(
       child: Padding(
@@ -29,127 +33,130 @@ class NavBar extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(50),
           child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isDesktop ? 28 : 16,
-                vertical: isDesktop ? 14 : 10,
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 28 : 16,
+              vertical: isDesktop ? 14 : 10,
+            ),
+            decoration: BoxDecoration(
+              color: isV2
+                  ? Colors.white.withValues(alpha: 0.97)
+                  : AppTheme.cardFillColor.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(50),
+              border: Border.all(
+                color: isV2
+                    ? const Color(0xFFE5E7EB)
+                    : AppTheme.primaryColor.withValues(alpha: 0.2),
+                width: 1.5,
               ),
-              decoration: BoxDecoration(
-                color: AppTheme.cardFillColor.withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(50),
-                border: Border.all(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                  width: 1.5,
+              boxShadow: [
+                BoxShadow(
+                  color: isV2
+                      ? Colors.black.withValues(alpha: 0.08)
+                      : AppTheme.primaryColor.withValues(alpha: 0.08),
+                  blurRadius: 30,
+                  offset: const Offset(0, 8),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                    blurRadius: 30,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Nav Links (left side on desktop)
-                  if (isDesktop)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _NavLink(title: 'Home', onTap: onHomeTap),
-                        const SizedBox(width: 8),
-                        _NavLink(title: 'Drivers', onTap: onDriversTap),
-                        const SizedBox(width: 8),
-                        _NavLink(title: 'Franchise', onTap: onFranchiseTap),
-                        const SizedBox(width: 8),
-                        _NavLink(title: 'EV Stations', onTap: onEvStationsTap),
-                      ],
-                    ),
-
-                  // Logo (center)
-                  GestureDetector(
-                    onTap: onHomeTap,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.bolt,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'EV TAXI',
-                          style: TextStyle(
-                            color: AppTheme.textColor,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Right side: CTA button (desktop) or menu icon (mobile)
-                  if (isDesktop)
-                    ElevatedButton(
-                      onPressed: onHomeTap,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Book Now',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    )
-                  else
-                    GestureDetector(
-                      onTap: () => _showMobileMenu(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Logo (left)
+                GestureDetector(
+                  onTap: onHomeTap,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                          ),
+                          color: context.isYellowTheme
+                              ? const Color(0xFFF59E0B)
+                              : (isV2
+                                    ? const Color(0xFF16A34A)
+                                    : AppTheme.primaryColor),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
-                          Icons.menu_rounded,
-                          color: AppTheme.primaryColor,
-                          size: 24,
+                          Icons.bolt,
+                          color: Colors.white,
+                          size: 18,
                         ),
                       ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'E-CABBZ',
+                        style: TextStyle(
+                          color: isV2
+                              ? const Color(0xFF111827)
+                              : AppTheme.textColor,
+                          fontSize: isDesktop ? 20 : 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (isDesktop) const Spacer(),
+
+                // Right side: Nav Links + CTA (desktop) or Menu Icon (mobile)
+                if (isDesktop)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _NavLink(title: 'Home', onTap: onHomeTap),
+                      const SizedBox(width: 4),
+                      _NavLink(title: 'Drivers', onTap: onDriversTap),
+                      const SizedBox(width: 4),
+                      _NavLink(title: 'Fleets', onTap: onFleetsTap),
+                      const SizedBox(width: 4),
+                      _NavLink(title: 'Franchise', onTap: onFranchiseTap),
+                      const SizedBox(width: 4),
+                      _NavLink(title: 'EV Stations', onTap: onEvStationsTap),
+                      const SizedBox(width: 4),
+                      _NavLink(title: 'Contact Us', onTap: onContactTap),
+                      const SizedBox(width: 20),
+                      _BookNowButton(isV2: isV2, onTap: onHomeTap),
+                    ],
+                  )
+                else ...[
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => _showMobileMenu(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: context.isYellowTheme
+                            ? const Color(0xFFF59E0B).withValues(alpha: 0.12)
+                            : const Color(0xFF16A34A).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: context.isYellowTheme
+                              ? const Color(0xFFF59E0B).withValues(alpha: 0.3)
+                              : const Color(0xFF16A34A).withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.menu_rounded,
+                        color: context.isYellowTheme
+                            ? const Color(0xFFF59E0B)
+                            : const Color(0xFF16A34A),
+                        size: 24,
+                      ),
                     ),
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         ),
+      ),
     );
   }
 
   void _showMobileMenu(BuildContext context) {
+    final isV2 = context.isV2Theme;
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -163,17 +170,17 @@ class NavBar extends StatelessWidget {
             color: Colors.transparent,
             child: Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
-                    offset: Offset(0, 10),
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
@@ -182,11 +189,14 @@ class NavBar extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Header with Logo and Close Button (No stagger, just fade)
+                    // Header with Logo and Close Button
                     FadeTransition(
                       opacity: animation,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 20,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -196,10 +206,18 @@ class NavBar extends StatelessWidget {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryColor,
+                                    color: context.isYellowTheme
+                                        ? const Color(0xFFF59E0B)
+                                        : (isV2
+                                              ? const Color(0xFF16A34A)
+                                              : AppTheme.primaryColor),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: const Icon(Icons.bolt, color: Colors.white, size: 24),
+                                  child: const Icon(
+                                    Icons.bolt,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 const Text(
@@ -208,6 +226,7 @@ class NavBar extends StatelessWidget {
                                     fontSize: 22,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1,
+                                    color: Color(0xFF111827),
                                   ),
                                 ),
                               ],
@@ -215,7 +234,11 @@ class NavBar extends StatelessWidget {
                             // Close Button
                             IconButton(
                               onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.close, color: AppTheme.textColor, size: 28),
+                              icon: const Icon(
+                                Icons.close,
+                                color: Color(0xFF111827),
+                                size: 28,
+                              ),
                             ),
                           ],
                         ),
@@ -233,6 +256,7 @@ class NavBar extends StatelessWidget {
                             index: 0,
                             child: _MobileMenuItem(
                               title: 'Home',
+                              isV2: isV2,
                               onTap: () {
                                 Navigator.pop(context);
                                 onHomeTap?.call();
@@ -246,6 +270,7 @@ class NavBar extends StatelessWidget {
                             index: 1,
                             child: _MobileMenuItem(
                               title: 'Drivers',
+                              isV2: isV2,
                               onTap: () {
                                 Navigator.pop(context);
                                 onDriversTap?.call();
@@ -258,7 +283,22 @@ class NavBar extends StatelessWidget {
                             animation: animation,
                             index: 2,
                             child: _MobileMenuItem(
+                              title: 'Fleets',
+                              isV2: isV2,
+                              onTap: () {
+                                Navigator.pop(context);
+                                onFleetsTap?.call();
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildAnimatedMenuItem(
+                            context: context,
+                            animation: animation,
+                            index: 3,
+                            child: _MobileMenuItem(
                               title: 'Franchise',
+                              isV2: isV2,
                               onTap: () {
                                 Navigator.pop(context);
                                 onFranchiseTap?.call();
@@ -269,16 +309,31 @@ class NavBar extends StatelessWidget {
                           _buildAnimatedMenuItem(
                             context: context,
                             animation: animation,
-                            index: 3,
+                            index: 4,
                             child: _MobileMenuItem(
                               title: 'EV Stations',
+                              isV2: isV2,
                               onTap: () {
                                 Navigator.pop(context);
                                 onEvStationsTap?.call();
                               },
                             ),
                           ),
-                          const SizedBox(height: 30), // Bottom padding
+                          const SizedBox(height: 12),
+                          _buildAnimatedMenuItem(
+                            context: context,
+                            animation: animation,
+                            index: 5,
+                            child: _MobileMenuItem(
+                              title: 'Contact Us',
+                              isV2: isV2,
+                              onTap: () {
+                                Navigator.pop(context);
+                                onContactTap?.call();
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 30),
                         ],
                       ),
                     ),
@@ -291,13 +346,10 @@ class NavBar extends StatelessWidget {
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, -1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          )),
+          position: Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
+              .animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
           child: child,
         );
       },
@@ -310,10 +362,7 @@ class NavBar extends StatelessWidget {
     required int index,
     required Widget child,
   }) {
-    // Alternating direction: Even -> Left (-1), Odd -> Right (1)
     final double beginX = index.isEven ? -0.5 : 0.5;
-
-    // Staggered interval
     final double startTime = 0.2 + (index * 0.1);
     final double endTime = startTime + 0.4;
 
@@ -331,9 +380,66 @@ class NavBar extends StatelessWidget {
         begin: Offset(beginX, 0),
         end: Offset.zero,
       ).animate(curvedAnimation),
-      child: FadeTransition(
-        opacity: curvedAnimation,
-        child: child,
+      child: FadeTransition(opacity: curvedAnimation, child: child),
+    );
+  }
+}
+
+// ── Book Now Button (V2 = yellow, Classic = green) ──
+class _BookNowButton extends StatefulWidget {
+  final bool isV2;
+  final VoidCallback? onTap;
+  const _BookNowButton({required this.isV2, this.onTap});
+
+  @override
+  State<_BookNowButton> createState() => _BookNowButtonState();
+}
+
+class _BookNowButtonState extends State<_BookNowButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isYellow = context.isYellowTheme;
+    final accentColor = isYellow
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF16A34A);
+    final hoverAccent = isYellow
+        ? const Color(0xFFB45309)
+        : const Color(0xFF15803D);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: BoxDecoration(
+            color: widget.isV2
+                ? (_hovered ? hoverAccent : accentColor)
+                : (isYellow ? const Color(0xFFF59E0B) : AppTheme.primaryColor),
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: _hovered
+                ? [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Text(
+            'Book Now',
+            style: TextStyle(
+              color: isYellow ? Colors.black87 : Colors.white,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+              fontSize: 14,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -341,10 +447,12 @@ class NavBar extends StatelessWidget {
 
 class _MobileMenuItem extends StatelessWidget {
   final String title;
+  final bool isV2;
   final VoidCallback onTap;
 
   const _MobileMenuItem({
     required this.title,
+    required this.isV2,
     required this.onTap,
   });
 
@@ -356,8 +464,13 @@ class _MobileMenuItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FA), // Very light grey
+          color: isV2 ? const Color(0xFFF9FAFB) : const Color(0xFFF8F9FA),
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isV2
+                ? const Color(0xFFE5E7EB)
+                : AppTheme.primaryColor.withValues(alpha: 0.1),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -367,13 +480,15 @@ class _MobileMenuItem extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textColor,
+                color: Color(0xFF111827),
               ),
             ),
             Icon(
               Icons.chevron_right_rounded,
               size: 24,
-              color: AppTheme.primaryColor,
+              color: context.isYellowTheme
+                  ? const Color(0xFFF59E0B)
+                  : (isV2 ? const Color(0xFF16A34A) : AppTheme.primaryColor),
             ),
           ],
         ),
@@ -396,6 +511,11 @@ class _NavLinkState extends State<_NavLink> {
 
   @override
   Widget build(BuildContext context) {
+    final isV2 = context.isV2Theme;
+    final isYellow = context.isYellowTheme;
+    final accentColor = isYellow
+        ? const Color(0xFFF59E0B)
+        : (isV2 ? const Color(0xFF16A34A) : AppTheme.primaryColor);
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -406,7 +526,7 @@ class _NavLinkState extends State<_NavLink> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: _isHovered
-                ? AppTheme.primaryColor.withValues(alpha: 0.08)
+                ? accentColor.withValues(alpha: 0.10)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
           ),
@@ -414,8 +534,10 @@ class _NavLinkState extends State<_NavLink> {
             widget.title,
             style: TextStyle(
               color: _isHovered
-                  ? AppTheme.primaryColor
-                  : AppTheme.textColor.withValues(alpha: 0.7),
+                  ? accentColor
+                  : (isV2 || isYellow
+                        ? const Color(0xFF374151)
+                        : AppTheme.textColor.withValues(alpha: 0.7)),
               fontSize: 14,
               fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
               letterSpacing: 0.5,

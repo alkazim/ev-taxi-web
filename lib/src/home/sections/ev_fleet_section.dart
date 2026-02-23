@@ -72,37 +72,42 @@ class EVFleetSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveWidget.isLargeScreen(context);
+    final isModern = context.isModernStyle;
+    final green = isModern ? const Color(0xFF16A34A) : AppTheme.primaryColor;
+    final yellow = const Color(0xFFF59E0B);
 
     return Container(
       width: double.infinity,
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: isModern
+          ? const Color(0xFFF9FAFB)
+          : Theme.of(context).scaffoldBackgroundColor,
       padding: EdgeInsets.symmetric(
         vertical: 80,
         horizontal: isDesktop ? 60 : 20,
       ),
       child: Column(
         children: [
-          // Section header with stagger
+          // Section header
           FadeSlideIn(
             delay: const Duration(milliseconds: 200),
             child: Container(
               width: 50,
               height: 4,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: context.isYellowTheme ? yellow : green,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           const SizedBox(height: 20),
-          const FadeSlideIn(
-            delay: Duration(milliseconds: 300),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 300),
             child: Text(
               'OUR EV FLEET',
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.primaryColor,
+                color: context.isYellowTheme ? yellow : green,
                 letterSpacing: 3,
               ),
               textAlign: TextAlign.center,
@@ -114,14 +119,18 @@ class EVFleetSection extends StatelessWidget {
             child: Text(
               'Premium electric vehicles powering your journey',
               style: TextStyle(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                color: isModern
+                    ? const Color(0xFF6B7280)
+                    : Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                 fontSize: 16,
               ),
               textAlign: TextAlign.center,
             ),
           ),
           const SizedBox(height: 60),
-          // Car grid with staggered cards
+          // Car grid
           LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
@@ -130,13 +139,19 @@ class EVFleetSection extends StatelessWidget {
 
               if (isDesktop) {
                 crossAxisCount = 3;
-                aspectRatio = 0.78;
-              } else if (width > 500) {
+                aspectRatio = 0.72;
+              } else if (width > 700) {
+                // Tablet: 2 columns, slightly taller cards
+                crossAxisCount = 2;
+                aspectRatio = 0.76;
+              } else if (width > 480) {
+                // Large phone: 2 columns
                 crossAxisCount = 2;
                 aspectRatio = 0.72;
               } else {
+                // Small phone: 1 column
                 crossAxisCount = 1;
-                aspectRatio = 0.75; // Taller card for mobile
+                aspectRatio = 1.0;
               }
 
               return GridView.builder(
@@ -145,12 +160,15 @@ class EVFleetSection extends StatelessWidget {
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: crossAxisCount,
                   childAspectRatio: aspectRatio,
-                  crossAxisSpacing: 24,
-                  mainAxisSpacing: 24,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
                 ),
                 itemCount: _cars.length,
                 itemBuilder: (context, index) => FadeSlideIn(
-                  delay: Duration(milliseconds: 500 + (index * 150)),
+                  // Cap delay at 800ms so last card doesn't wait 1.4s
+                  delay: Duration(
+                    milliseconds: (500 + (index * 100)).clamp(0, 800),
+                  ),
                   child: _EVCarCard(car: _cars[index]),
                 ),
               );
@@ -175,6 +193,14 @@ class _EVCarCardState extends State<_EVCarCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isModern = context.isModernStyle;
+    final isYellow = context.isYellowTheme;
+
+    // Single source of truth: amber in Yellow Theme, green in Green Theme
+    final activeColor = isYellow
+        ? const Color(0xFFF59E0B)
+        : (isModern ? const Color(0xFF16A34A) : AppTheme.primaryColor);
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -185,18 +211,20 @@ class _EVCarCardState extends State<_EVCarCard> {
             ? (Matrix4.identity()..translate(0.0, -6.0))
             : Matrix4.identity(),
         decoration: BoxDecoration(
-          color: AppTheme.cardFillColor,
+          color: isModern ? Colors.white : AppTheme.cardFillColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: _isHovered
-                ? AppTheme.primaryColor.withValues(alpha: 0.4)
-                : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                ? activeColor.withValues(alpha: 0.5)
+                : (isModern
+                      ? const Color(0xFFE5E7EB)
+                      : Theme.of(context).dividerColor.withValues(alpha: 0.1)),
             width: _isHovered ? 1.5 : 1,
           ),
           boxShadow: _isHovered
               ? [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    color: activeColor.withValues(alpha: 0.12),
                     blurRadius: 30,
                     offset: const Offset(0, 10),
                   ),
@@ -214,15 +242,13 @@ class _EVCarCardState extends State<_EVCarCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Car visual area
               Expanded(
                 flex: 5,
-                child: _buildCarVisual(),
+                child: _buildCarVisual(isModern, activeColor, isYellow),
               ),
-              // Details area
               Expanded(
                 flex: 5,
-                child: _buildDetails(),
+                child: _buildDetails(isModern, activeColor, isYellow),
               ),
             ],
           ),
@@ -231,22 +257,29 @@ class _EVCarCardState extends State<_EVCarCard> {
     );
   }
 
-  Widget _buildCarVisual() {
+  // activeColor = amber in Yellow Theme, green in Green Theme
+  // isYellow = whether Yellow Theme is currently active
+  Widget _buildCarVisual(bool isV2, Color activeColor, bool isYellow) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).cardColor,
-            Theme.of(context).scaffoldBackgroundColor,
-          ],
+          colors: isV2
+              ? [
+                  Colors.white,
+                  isYellow ? const Color(0xFFFFFBEB) : const Color(0xFFF0FDF4),
+                ]
+              : [
+                  Theme.of(context).cardColor,
+                  Theme.of(context).scaffoldBackgroundColor,
+                ],
         ),
       ),
       child: Stack(
         children: [
-          // Background glow
+          // Background glow — matches active theme color
           Positioned(
             top: -20,
             right: -20,
@@ -257,7 +290,7 @@ class _EVCarCardState extends State<_EVCarCard> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppTheme.primaryColor.withValues(alpha: 0.1),
+                    activeColor.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
                 ),
@@ -271,16 +304,24 @@ class _EVCarCardState extends State<_EVCarCard> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                color: isV2
+                    ? (isYellow
+                          ? const Color(0xFFFFFBEB)
+                          : const Color(0xFFF0FDF4))
+                    : activeColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                  color: isV2
+                      ? (isYellow
+                            ? const Color(0xFFFDE68A)
+                            : const Color(0xFF86EFAC))
+                      : activeColor.withValues(alpha: 0.3),
                 ),
               ),
               child: Text(
                 widget.car['category']!,
-                style: const TextStyle(
-                  color: AppTheme.primaryColor,
+                style: TextStyle(
+                  color: activeColor,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,
@@ -297,40 +338,45 @@ class _EVCarCardState extends State<_EVCarCard> {
                   : Matrix4.identity(),
               transformAlignment: Alignment.center,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4), // Reduced padding for larger image
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Image.asset(
                   widget.car['image']!,
                   fit: BoxFit.contain,
+                  cacheWidth: 400,
                   errorBuilder: (context, error, stackTrace) {
                     return Icon(
                       Icons.electric_car,
                       size: 80,
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                      color: activeColor.withValues(alpha: 0.3),
                     );
                   },
                 ),
               ),
             ),
           ),
-          // Range badge bottom-right
+          // Range badge — themed color
           Positioned(
             bottom: 12,
             right: 12,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: activeColor,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.bolt, size: 14, color: Colors.white),
+                  Icon(
+                    Icons.bolt,
+                    size: 14,
+                    color: isYellow ? Colors.black87 : Colors.white,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     widget.car['range']!,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isYellow ? Colors.black87 : Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -344,7 +390,7 @@ class _EVCarCardState extends State<_EVCarCard> {
     );
   }
 
-  Widget _buildDetails() {
+  Widget _buildDetails(bool isV2, Color activeColor, bool isYellow) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       child: Column(
@@ -358,7 +404,7 @@ class _EVCarCardState extends State<_EVCarCard> {
                 width: 3,
                 height: 20,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
+                  color: activeColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -367,7 +413,9 @@ class _EVCarCardState extends State<_EVCarCard> {
                 child: Text(
                   widget.car['name']!,
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    color: isV2
+                        ? const Color(0xFF111827)
+                        : Theme.of(context).textTheme.bodyLarge?.color,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -378,7 +426,7 @@ class _EVCarCardState extends State<_EVCarCard> {
             ],
           ),
           const SizedBox(height: 10),
-          // 2x2 Spec Grid — intrinsic sizing, no Expanded
+          // Spec grid
           Row(
             children: [
               Expanded(
@@ -386,6 +434,9 @@ class _EVCarCardState extends State<_EVCarCard> {
                   Icons.flash_on,
                   'Power',
                   widget.car['power']!,
+                  isV2,
+                  activeColor,
+                  isYellow,
                 ),
               ),
               const SizedBox(width: 6),
@@ -394,6 +445,9 @@ class _EVCarCardState extends State<_EVCarCard> {
                   Icons.battery_charging_full,
                   'Battery',
                   widget.car['battery']!,
+                  isV2,
+                  activeColor,
+                  isYellow,
                 ),
               ),
             ],
@@ -406,6 +460,9 @@ class _EVCarCardState extends State<_EVCarCard> {
                   Icons.speed,
                   'Top Speed',
                   widget.car['topSpeed']!,
+                  isV2,
+                  activeColor,
+                  isYellow,
                 ),
               ),
               const SizedBox(width: 6),
@@ -414,6 +471,9 @@ class _EVCarCardState extends State<_EVCarCard> {
                   Icons.ev_station,
                   'Charge',
                   widget.car['charge']!,
+                  isV2,
+                  activeColor,
+                  isYellow,
                 ),
               ),
             ],
@@ -423,14 +483,25 @@ class _EVCarCardState extends State<_EVCarCard> {
     );
   }
 
-  Widget _buildSpecTile(IconData icon, String label, String value) {
+  Widget _buildSpecTile(
+    IconData icon,
+    String label,
+    String value,
+    bool isV2,
+    Color activeColor,
+    bool isYellow,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.6),
+        color: isV2
+            ? const Color(0xFFF9FAFB)
+            : Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.08),
+          color: isV2
+              ? const Color(0xFFE5E7EB)
+              : activeColor.withValues(alpha: 0.08),
         ),
       ),
       child: Row(
@@ -438,10 +509,14 @@ class _EVCarCardState extends State<_EVCarCard> {
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.12),
+              color: isV2
+                  ? (isYellow
+                        ? const Color(0xFFFFFBEB)
+                        : const Color(0xFFF0FDF4))
+                  : activeColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icon, size: 16, color: AppTheme.primaryColor),
+            child: Icon(icon, size: 16, color: activeColor),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -452,7 +527,10 @@ class _EVCarCardState extends State<_EVCarCard> {
                 Text(
                   label,
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.45),
+                    color: isV2
+                        ? const Color(0xFF9CA3AF)
+                        : Theme.of(context).textTheme.bodyMedium?.color
+                              ?.withValues(alpha: 0.45),
                     fontSize: 10,
                     letterSpacing: 0.3,
                   ),
@@ -460,7 +538,9 @@ class _EVCarCardState extends State<_EVCarCard> {
                 Text(
                   value,
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    color: isV2
+                        ? const Color(0xFF111827)
+                        : Theme.of(context).textTheme.bodyLarge?.color,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),

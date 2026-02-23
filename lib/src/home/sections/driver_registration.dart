@@ -1,513 +1,438 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
-import '../../widgets/fade_slide_in.dart';
 import '../forms/driver_application_dialog.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DriverRegistrationSection extends StatelessWidget {
   const DriverRegistrationSection({super.key});
 
+  static const _green = Color(0xFF16A34A);
+  static const _darkGreen = Color(0xFF14532D);
+  static const _amber = Color(0xFFF59E0B);
+  static const _darkBg = Color(0xFF0D1F12);
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveWidget.isLargeScreen(context);
+    final isModern = context.isModernStyle;
+    if (!isModern) return _buildClassic(context, isDesktop);
+    return _buildV2(context, isDesktop);
+  }
 
+  // ─────────────────────────────────────────────────────────────────
+  // V2 — Premium redesign
+  // ─────────────────────────────────────────────────────────────────
+  Widget _buildV2(BuildContext context, bool isDesktop) {
     return Container(
-      color: AppTheme.scaffoldBackgroundColor,
+      color: const Color(0xFFF8FAFC),
       width: double.infinity,
-      child: isDesktop
-          ? _buildDesktopLayout(context)
-          : _buildMobileLayout(context),
-    );
-  }
-
-  Widget _buildDesktopLayout(BuildContext context) {
-    return SizedBox(
-      height: 700,
-      child: Row(
-        children: [
-          // Left: Visual panel with car + road + stats
-          Expanded(
-            flex: 5,
-            child: _buildVisualPanel(context, true),
-          ),
-          // Right: Content
-          Expanded(
-            flex: 5,
-            child: _buildContent(context, true),
-          ),
-        ],
+      padding: EdgeInsets.symmetric(
+        vertical: isDesktop ? 80 : 48,
+        horizontal: isDesktop ? 80 : 20,
       ),
+      child: isDesktop ? _buildDesktopV2(context) : _buildMobileV2(context),
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 50),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 400,
-            child: _buildVisualPanel(context, false),
-          ),
-          _buildContent(context, false),
-        ],
-      ),
+  Widget _buildDesktopV2(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // LEFT — dark card with car image
+        Expanded(flex: 5, child: _buildImageCard(context, true)),
+        const SizedBox(width: 60),
+        // RIGHT — content
+        Expanded(flex: 5, child: _buildContentSide(context, true)),
+      ],
     );
   }
 
-  Widget _buildVisualPanel(BuildContext context, bool isDesktop) {
+  Widget _buildMobileV2(BuildContext context) {
+    return Column(
+      children: [
+        _buildImageCard(context, false),
+        const SizedBox(height: 40),
+        _buildContentSide(context, false),
+      ],
+    );
+  }
+
+  // ── Dark card with car image + overlay stats ──
+  Widget _buildImageCard(BuildContext context, bool isDesktop) {
     return Container(
-      margin: isDesktop ? const EdgeInsets.all(80) : const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-      clipBehavior: Clip.antiAlias,
+      height: isDesktop ? 560 : 380,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.2),
-          width: 1.5,
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: context.isYellowTheme
+              ? [
+                  const Color(0xFF1F1B0D),
+                  const Color(0xFF451A03),
+                  const Color(0xFF78350F),
+                ]
+              : [_darkBg, const Color(0xFF0F2D1A), _darkGreen],
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.05),
-            blurRadius: 20,
-            spreadRadius: 5,
+            color: (context.isYellowTheme ? _amber : _darkGreen).withValues(
+              alpha: 0.35,
+            ),
+            blurRadius: 40,
+            offset: const Offset(0, 16),
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          // Grid pattern
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _GridPainter(
-                color: AppTheme.textColor.withValues(alpha: 0.04),
-              ),
-            ),
-          ),
-          // Top-right glow
-          Positioned(
-            top: -80,
-            right: -60,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppTheme.primaryColor.withValues(alpha: 0.1),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Bottom glow
-          Positioned(
-            bottom: -60,
-            left: -40,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppTheme.primaryColor.withValues(alpha: 0.06),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Central: Road + Car illustration
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Car in a gradient circle
-                Stack(
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.none,
-                  children: [
-                    // Outer glow ring
-                    Container(
-                      width: isDesktop ? 240 : 180,
-                      height: isDesktop ? 240 : 180,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            AppTheme.primaryColor.withValues(alpha: 0.08),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                    // Circle border
-                    Container(
-                      width: isDesktop ? 200 : 150,
-                      height: isDesktop ? 200 : 150,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppTheme.cardFillColor,
-                        border: Border.all(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.25),
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.12),
-                            blurRadius: 30,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Padding(
-                          padding: EdgeInsets.all(isDesktop ? 10 : 5),
-                          child: Image.asset(
-                            'assets/images/cars/driver_partner.png',
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.electric_car,
-                                size: isDesktop ? 60 : 42,
-                                color: AppTheme.primaryColor,
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Charging bolt badge
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: isDesktop ? 72 : 54,
-                        height: isDesktop ? 72 : 54,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF00C853), // Vivid Green
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF00C853).withValues(alpha: 0.4),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.bolt,
-                          color: Colors.white,
-                          size: isDesktop ? 40 : 28,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: isDesktop ? 30 : 20),
-                // Stats row
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 400),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildStatCard(context, '500+', 'Drivers', Icons.person_outline),
-                      SizedBox(width: isDesktop ? 16 : 10),
-                      _buildStatCard(context, '4', 'States', Icons.map_outlined),
-                      SizedBox(width: isDesktop ? 16 : 10),
-                      _buildStatCard(context, '24/7', 'Support', Icons.headset_mic_outlined),
-                    ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
+          children: [
+            // Decorative green circle top-right
+            Positioned(
+              top: -80,
+              right: -80,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: (context.isYellowTheme ? _amber : _green).withValues(
+                    alpha: 0.12,
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-          // Floating dots
-          Positioned(top: 40, left: 40, child: _buildDot(7)),
-          Positioned(top: 80, right: 80, child: _buildDot(5)),
-          Positioned(bottom: 60, right: 50, child: _buildDot(6)),
-          Positioned(bottom: 40, left: 100, child: _buildDot(4)),
-        ],
-      ),
-    );
-  }
+            Positioned(
+              bottom: -60,
+              left: -60,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _amber.withValues(alpha: 0.06),
+                ),
+              ),
+            ),
 
-  Widget _buildStatCard(BuildContext context, String value, String label, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppTheme.cardFillColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.12),
+            // Top badge
+            Positioned(
+              top: 28,
+              left: 28,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: (context.isYellowTheme ? _amber : _green).withValues(
+                    alpha: 0.2,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: (context.isYellowTheme ? _amber : _green).withValues(
+                      alpha: 0.4,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: context.isYellowTheme
+                            ? _amber
+                            : const Color(0xFF4ADE80),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'NOW HIRING',
+                      style: GoogleFonts.poppins(
+                        color: context.isYellowTheme
+                            ? const Color(0xFFFBBF24)
+                            : const Color(0xFF4ADE80),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Car image — centred, large
+            Positioned.fill(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: isDesktop ? 80 : 60,
+                  bottom: isDesktop ? 120 : 90,
+                  left: 20,
+                  right: 20,
+                ),
+                // Using the new local asset for Driver Registration
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/images/cars/Driver_registration_image.png',
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    // Limit decode size for the 7MB asset
+                    cacheWidth: isDesktop ? 900 : 600,
+                    errorBuilder: (_, __, ___) => const Center(
+                      child: Icon(
+                        Icons.person_pin_circle_rounded,
+                        color: Colors.white24,
+                        size: 80,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Bottom frosted stats bar
+            Positioned(
+              left: isDesktop ? 20 : 12,
+              right: isDesktop ? 20 : 12,
+              bottom: isDesktop ? 24 : 16,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 20 : 12,
+                  vertical: isDesktop ? 16 : 12,
+                ),
+                decoration: BoxDecoration(
+                  color: context.isYellowTheme
+                      ? _amber.withValues(alpha: 0.12)
+                      : Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(isDesktop ? 18 : 14),
+                  border: Border.all(
+                    color: context.isYellowTheme
+                        ? _amber.withValues(alpha: 0.2)
+                        : Colors.white.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildStatItem('₹40K+', 'Monthly Avg', context, isDesktop),
+                    _buildDivider(isDesktop),
+                    _buildStatItem(
+                      '500+',
+                      'Active Drivers',
+                      context,
+                      isDesktop,
+                    ),
+                    _buildDivider(isDesktop),
+                    _buildStatItem('4.8★', 'Avg Rating', context, isDesktop),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: AppTheme.primaryColor, size: 18),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppTheme.primaryColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppTheme.greyTextColor,
-              fontSize: 10,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, bool isDesktop) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 60 : 24,
-        vertical: isDesktop ? 60 : 30,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment:
-            isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-        children: [
-          // Accent line
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 200),
-            child: Container(
-              width: 50,
-              height: 4,
+  Widget _buildStatItem(
+    String value,
+    String label,
+    BuildContext context,
+    bool isDesktop,
+  ) {
+    final isSmall = ResponsiveWidget.isSmallScreen(context);
+    final statColor = context.isYellowTheme ? _amber : _green;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            color: statColor,
+            fontSize: isDesktop ? 20 : (isSmall ? 15 : 17),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            color: Colors.white.withValues(alpha: 0.55),
+            fontSize: isDesktop ? 11 : (isSmall ? 8 : 10),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDivider(bool isDesktop) {
+    return Container(
+      width: 1,
+      height: isDesktop ? 32 : 24,
+      color: Colors.white.withValues(alpha: 0.12),
+    );
+  }
+
+  // ── Right content side ──
+  Widget _buildContentSide(BuildContext context, bool isDesktop) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Section label
+        Row(
+          children: [
+            Container(
+              width: 32,
+              height: 3,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: context.isYellowTheme ? _amber : _green,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 300),
-            child: Text(
-              'JOIN AS A DRIVER',
-              textAlign: isDesktop ? TextAlign.left : TextAlign.center,
-              style: TextStyle(
-                fontSize: isDesktop ? 38 : 28,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.primaryColor,
+            const SizedBox(width: 10),
+            Text(
+              'DRIVER PARTNER PROGRAM',
+              style: GoogleFonts.poppins(
+                color: context.isYellowTheme ? const Color(0xFFF59E0B) : _green,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 2,
               ),
             ),
-          ),
-          const SizedBox(height: 14),
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 400),
-            child: Text(
-              'We are hiring professional drivers across Kerala, Karnataka, Tamil Nadu, and Puducherry.',
-              textAlign: isDesktop ? TextAlign.left : TextAlign.center,
-              style: TextStyle(
-                color: AppTheme.secondaryTextColor,
-                fontSize: isDesktop ? 15 : 14,
-                height: 1.6,
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
-          // Feature items in a 2x2 grid
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 500),
-            child: isDesktop
-                ? Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildFeatureCard(
-                              context,
-                              Icons.electric_car,
-                              'Premium EVs',
-                              'Drive top electric vehicles',
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildFeatureCard(
-                              context,
-                              Icons.attach_money,
-                              'Great Earnings',
-                              'Competitive pay & incentives',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildFeatureCard(
-                              context,
-                              Icons.schedule,
-                              'Flexible Hours',
-                              'Work on your own schedule',
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildFeatureCard(
-                              context,
-                              Icons.health_and_safety,
-                              'Health Benefits',
-                              'Insurance & medical cover',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      _buildFeatureItem(
-                          context, Icons.electric_car, 'Drive premium electric vehicles'),
-                      const SizedBox(height: 12),
-                      _buildFeatureItem(
-                          context, Icons.attach_money, 'Competitive earnings & incentives'),
-                      const SizedBox(height: 12),
-                      _buildFeatureItem(
-                          context, Icons.schedule, 'Flexible working hours'),
-                      const SizedBox(height: 12),
-                      _buildFeatureItem(
-                          context, Icons.health_and_safety, 'Insurance & health benefits'),
-                    ],
-                  ),
-          ),
-          const SizedBox(height: 32),
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 700),
-            child: ElevatedButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const DriverApplicationDialog(),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 18),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('FILL APPLICATION FORM'),
-                  SizedBox(width: 10),
-                  Icon(Icons.arrow_forward_rounded, size: 18),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Desktop: Card-style feature with title + subtitle
-  Widget _buildFeatureCard(
-      BuildContext context, IconData icon, String title, String subtitle) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardFillColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+          ],
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+        SizedBox(height: isDesktop ? 20 : 14),
+
+        // Headline
+        RichText(
+          text: TextSpan(
+            style: GoogleFonts.poppins(
+              fontSize: isDesktop ? 44 : 30,
+              fontWeight: FontWeight.w800,
+              height: 1.15,
+              letterSpacing: -0.5,
+              color: const Color(0xFF111827),
             ),
-            child: Icon(icon, color: AppTheme.primaryColor, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppTheme.textColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+            children: [
+              const TextSpan(text: 'Drive. Earn.\n'),
+              TextSpan(
+                text: 'Grow with us.',
+                style: TextStyle(
+                  color: context.isYellowTheme
+                      ? const Color(0xFFFBBF24)
+                      : _green,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppTheme.greyTextColor,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        SizedBox(height: isDesktop ? 16 : 12),
+
+        Text(
+          'Join E-CABBZ\'s fastest-growing taxi network. Flexible hours, guaranteed income, and full support from day one.',
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF6B7280),
+            fontSize: isDesktop ? 15 : 13,
+            height: 1.65,
+          ),
+        ),
+        SizedBox(height: isDesktop ? 36 : 24),
+
+        // Benefits grid
+        _buildBenefitsGrid(isDesktop),
+        SizedBox(height: isDesktop ? 40 : 28),
+
+        // CTA row
+        _buildCTARow(context, isDesktop),
+      ],
     );
   }
 
-  // Mobile: Simple row feature item
-  Widget _buildFeatureItem(BuildContext context, IconData icon, String text) {
-    return Row(
+  Widget _buildBenefitsGrid(bool isDesktop) {
+    final benefits = [
+      _Benefit(
+        FontAwesomeIcons.wallet,
+        'Weekly Payouts',
+        'Get paid every week directly to your bank.',
+      ),
+      _Benefit(
+        FontAwesomeIcons.clock,
+        'Flexible Hours',
+        'Work on your own schedule, any time.',
+      ),
+      _Benefit(
+        FontAwesomeIcons.headset,
+        '24/7 Support',
+        'Dedicated driver support team always on call.',
+      ),
+      _Benefit(
+        FontAwesomeIcons.chargingStation,
+        'EV Provided',
+        'Drive a company EV or bring your own.',
+      ),
+    ];
+
+    // Use LayoutBuilder so we can switch to 1-col on very narrow phones
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cols = constraints.maxWidth < 380 ? 1 : 2;
+        return GridView.count(
+          crossAxisCount: cols,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: isDesktop ? 2.1 : (cols == 1 ? 2.7 : 1.5),
+          children: benefits
+              .map((b) => _BenefitCard(benefit: b, isDesktop: isDesktop))
+              .toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildCTARow(BuildContext context, bool isDesktop) {
+    return Wrap(
+      spacing: 14,
+      runSpacing: 12,
       children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: AppTheme.primaryColor, size: 20),
-        ),
-        const SizedBox(width: 14),
-        Flexible(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: AppTheme.textColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+        _DriverApplyButton(isDesktop: isDesktop),
+        // Ghost link (Pill style button text centered)
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () {}, // Action
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 32 : 24,
+                vertical: 17, // Match Apply button height
+              ),
+              decoration: BoxDecoration(
+                color:
+                    (context.isYellowTheme ? _amber : const Color(0xFF16A34A))
+                        .withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Text(
+                'Learn more',
+                style: GoogleFonts.poppins(
+                  color: context.isYellowTheme
+                      ? const Color(0xFFF59E0B)
+                      : const Color(0xFF374151),
+                  fontWeight: FontWeight.w600,
+                  fontSize: isDesktop ? 15 : 14,
+                ),
+              ),
             ),
           ),
         ),
@@ -515,37 +440,350 @@ class DriverRegistrationSection extends StatelessWidget {
     );
   }
 
-  Widget _buildDot(double size) {
+  // ─────────────────────────────────────────────────────────────────
+  // CLASSIC (unchanged)
+  // ─────────────────────────────────────────────────────────────────
+  Widget _buildClassic(BuildContext context, bool isDesktop) {
     return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppTheme.primaryColor.withValues(alpha: 0.3),
+      color: AppTheme.scaffoldBackgroundColor,
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        vertical: 80,
+        horizontal: isDesktop ? 80 : 20,
+      ),
+      child: isDesktop
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(flex: 5, child: _buildClassicVisual(context, true)),
+                const SizedBox(width: 60),
+                Expanded(flex: 5, child: _buildClassicContent(context, true)),
+              ],
+            )
+          : Column(
+              children: [
+                _buildClassicVisual(context, false),
+                const SizedBox(height: 40),
+                _buildClassicContent(context, false),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildClassicVisual(BuildContext context, bool isDesktop) {
+    return Center(
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: isDesktop ? 320 : 240,
+            height: isDesktop ? 320 : 240,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  AppTheme.primaryColor.withValues(alpha: 0.15),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          Container(
+            width: isDesktop ? 240 : 180,
+            height: isDesktop ? 240 : 180,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.cardFillColor,
+              border: Border.all(
+                color: AppTheme.primaryColor.withValues(alpha: 0.25),
+                width: 2,
+              ),
+            ),
+            child: ClipOval(
+              child: Padding(
+                padding: EdgeInsets.all(isDesktop ? 10 : 5),
+                child: Image.asset(
+                  'assets/images/cars/driver_partner.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: isDesktop ? 10 : 5,
+            right: isDesktop ? 10 : 5,
+            child: Container(
+              width: isDesktop ? 64 : 48,
+              height: isDesktop ? 64 : 48,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 3),
+              ),
+              child: Icon(
+                Icons.bolt,
+                color: Colors.white,
+                size: isDesktop ? 36 : 26,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClassicContent(BuildContext context, bool isDesktop) {
+    return Column(
+      crossAxisAlignment: isDesktop
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
+      children: [
+        Text(
+          'JOIN AS A DRIVER',
+          style: TextStyle(
+            color: AppTheme.primaryColor,
+            fontSize: isDesktop ? 36 : 26,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2,
+          ),
+          textAlign: isDesktop ? TextAlign.left : TextAlign.center,
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'Drive with E-CABBZ TAXI and earn more with flexible hours and guaranteed income.',
+          style: TextStyle(
+            color: AppTheme.secondaryTextColor,
+            fontSize: isDesktop ? 16 : 14,
+            height: 1.6,
+          ),
+          textAlign: isDesktop ? TextAlign.left : TextAlign.center,
+        ),
+        const SizedBox(height: 32),
+        ElevatedButton(
+          onPressed: () => showDialog(
+            context: context,
+            builder: (_) => const DriverApplicationDialog(),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 36 : 28,
+              vertical: 16,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 0,
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'APPLY NOW',
+                style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+              ),
+              SizedBox(width: 8),
+              Icon(Icons.arrow_forward_rounded, size: 18),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Benefit Card ───
+class _Benefit {
+  final IconData icon;
+  final String title;
+  final String desc;
+  const _Benefit(this.icon, this.title, this.desc);
+}
+
+class _BenefitCard extends StatefulWidget {
+  final _Benefit benefit;
+  final bool isDesktop;
+  const _BenefitCard({required this.benefit, required this.isDesktop});
+
+  @override
+  State<_BenefitCard> createState() => _BenefitCardState();
+}
+
+class _BenefitCardState extends State<_BenefitCard> {
+  bool _hovered = false;
+
+  static const _amber = Color(0xFFF59E0B);
+  static const _green = Color(0xFF16A34A);
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: _hovered
+              ? (context.isYellowTheme
+                    ? const Color(0xFFFFFBEB)
+                    : const Color(0xFFF0FDF4))
+              : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _hovered
+                ? (context.isYellowTheme ? _amber : _green).withValues(
+                    alpha: 0.35,
+                  )
+                : const Color(0xFFE5E7EB),
+            width: 1.5,
+          ),
+          boxShadow: _hovered
+              ? [
+                  BoxShadow(
+                    color:
+                        (context.isYellowTheme
+                                ? _amber
+                                : const Color(0xFF16A34A))
+                            .withValues(alpha: 0.1),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 44, // Reduced size
+              height: 44, // Reduced size
+              alignment: Alignment.center, // Explicitly centered
+              decoration: BoxDecoration(
+                color: _hovered
+                    ? (context.isYellowTheme ? _amber : const Color(0xFF16A34A))
+                          .withValues(alpha: 0.15)
+                    : (context.isYellowTheme ? _amber : const Color(0xFF16A34A))
+                          .withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: FaIcon(
+                widget.benefit.icon,
+                color: context.isYellowTheme
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF16A34A),
+                size: 20, // Slightly smaller for FA icons
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    widget.benefit.title,
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF111827),
+                      fontSize: widget.isDesktop ? 13 : 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.benefit.desc,
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF6B7280),
+                      fontSize: widget.isDesktop ? 11 : 10,
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// Subtle grid background
-class _GridPainter extends CustomPainter {
-  final Color? color;
-  _GridPainter({this.color});
+// ─── Apply Button ───
+class _DriverApplyButton extends StatefulWidget {
+  final bool isDesktop;
+  const _DriverApplyButton({required this.isDesktop});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color ?? Colors.white.withValues(alpha: 0.03)
-      ..strokeWidth = 0.5;
+  State<_DriverApplyButton> createState() => _DriverApplyButtonState();
+}
 
-    for (double y = 0; y < size.height; y += 45) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-    for (double x = 0; x < size.width; x += 45) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
+class _DriverApplyButtonState extends State<_DriverApplyButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isYellow = context.isYellowTheme;
+    final normalColor = isYellow
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF16A34A);
+    final hoverColor = isYellow
+        ? const Color(0xFFD97706)
+        : const Color(0xFF15803D);
+    final fgColor = isYellow ? Colors.black87 : Colors.white;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () => showDialog(
+          context: context,
+          builder: (_) => const DriverApplicationDialog(),
+        ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.isDesktop ? 36 : 28,
+            vertical: 17,
+          ),
+          decoration: BoxDecoration(
+            color: _hovered ? hoverColor : normalColor,
+            borderRadius: BorderRadius.circular(50),
+            boxShadow: [
+              BoxShadow(
+                color: normalColor.withValues(alpha: _hovered ? 0.45 : 0.2),
+                blurRadius: _hovered ? 24 : 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Apply as Driver',
+                style: GoogleFonts.poppins(
+                  color: fgColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: widget.isDesktop ? 15 : 14,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Icon(Icons.arrow_forward_rounded, color: fgColor, size: 19),
+            ],
+          ),
+        ),
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
