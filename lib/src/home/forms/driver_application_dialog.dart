@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/app_theme.dart';
+import '../../services/supabase_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DriverApplicationDialog extends StatefulWidget {
-  const DriverApplicationDialog({super.key});
+  final String? continuationId; // Pass this if opening specifically to continue
+  const DriverApplicationDialog({super.key, this.continuationId});
 
   @override
   State<DriverApplicationDialog> createState() =>
@@ -12,7 +15,58 @@ class DriverApplicationDialog extends StatefulWidget {
 
 class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   int _currentStep = 0;
+  bool _isLoading = false;
+  String? _driverId;
+  bool _isContinuation = false;
   final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkExistingApplication();
+  }
+
+  Future<void> _checkExistingApplication() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedId = widget.continuationId ?? prefs.getString('driver_id');
+
+    if (savedId != null) {
+      setState(() => _isLoading = true);
+      try {
+        final data = await SupabaseService().getDriverById(savedId);
+        if (data != null) {
+          setState(() {
+            _driverId = savedId;
+            _isContinuation = true;
+            _currentStep = 1; // Start from Step 2 (Index 1)
+
+            // Populate basic info
+            _firstNameController.text = data['first_name'] ?? '';
+            _middleNameController.text = data['middle_name'] ?? '';
+            _lastNameController.text = data['last_name'] ?? '';
+            _selectedState = data['state'];
+            _selectedDistrict = data['district'];
+            _villageController.text = data['village'] ?? '';
+            _addressController.text = data['address'] ?? '';
+            _pinController.text = data['pin'] ?? '';
+            _landmarkController.text = data['landmark'] ?? '';
+            _mobile1Controller.text = data['mobile1'] ?? '';
+            _dobController.text = data['dob'] ?? '';
+            _bloodGroup = data['blood_group'];
+            _emailController.text = data['email'] ?? '';
+            _licenseNoController.text = data['license_no'] ?? '';
+            _licenseIssueDateController.text = data['license_issue_date'] ?? '';
+            _licenseExpiryDateController.text =
+                data['license_expiry_date'] ?? '';
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading existing application: $e');
+      } finally {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   // Controllers - Personal
   final _firstNameController = TextEditingController();
@@ -505,18 +559,12 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             icon: Icons.badge_outlined,
           ),
         ]),
-        const SizedBox(height: 16),
-        _buildSectionLabel('Contact Information'),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Divider(),
+        ),
+        _buildSectionLabel('Additional Contact'),
         _responsiveRow(isMobile, [
-          _buildTextField(
-            _mobile1Controller,
-            'Primary Mobile',
-            keyboardType: TextInputType.phone,
-            icon: Icons.phone_rounded,
-            maxLength: 10,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            exactLength: 10,
-          ),
           _buildTextField(
             _mobile2Controller,
             'Secondary Mobile',
@@ -527,12 +575,6 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             exactLength: 10,
           ),
         ]),
-        _buildTextField(
-          _emailController,
-          'Email Address',
-          keyboardType: TextInputType.emailAddress,
-          icon: Icons.email_outlined,
-        ),
       ],
     );
   }
@@ -879,86 +921,340 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     final isLastStep = _currentStep == 5;
     final isFirstStep = _currentStep == 0;
 
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : 24),
-      decoration: BoxDecoration(
-        color: AppTheme.cardFillColor,
-        border: Border(
-          top: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.1)),
-        ),
-      ),
-      child: Row(
-        children: [
-          if (!isFirstStep)
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => setState(() => _currentStep--),
-                icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: Text(isMobile ? 'Back' : 'Previous Step'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.secondaryTextColor,
-                  padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
-                  side: BorderSide(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          if (!isFirstStep) const SizedBox(width: 12),
-          Expanded(
-            flex: isFirstStep ? 1 : 1,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  if (_currentStep < 5) {
-                    setState(() => _currentStep++);
-                  } else {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Row(
-                          children: [
-                            Icon(Icons.check_circle, color: Colors.white),
-                            SizedBox(width: 12),
-                            Text('Application Submitted Successfully!'),
-                          ],
-                        ),
-                        backgroundColor: AppTheme.primaryColor,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
-                  }
-                }
-              },
-              icon: Icon(
-                isLastStep
-                    ? Icons.check_circle_rounded
-                    : Icons.arrow_forward_rounded,
-                size: 18,
-              ),
-              label: Text(isLastStep ? 'Submit' : 'Continue'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isLastStep
-                    ? AppTheme.primaryDark
-                    : AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
+    return Stack(
+      children: [
+        Container(
+          padding: EdgeInsets.all(isMobile ? 16 : 24),
+          decoration: BoxDecoration(
+            color: AppTheme.cardFillColor,
+            border: Border(
+              top: BorderSide(
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
               ),
             ),
           ),
+          child: Row(
+            children: [
+              if (!isFirstStep)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => setState(() => _currentStep--),
+                    icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                    label: Text(isMobile ? 'Back' : 'Previous Step'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.secondaryTextColor,
+                      padding: EdgeInsets.symmetric(
+                        vertical: isMobile ? 14 : 16,
+                      ),
+                      side: BorderSide(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              if (!isFirstStep) const SizedBox(width: 12),
+              Expanded(
+                flex: isFirstStep ? 1 : 1,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      if (_currentStep < 5) {
+                        if (_currentStep == 0 && !_isContinuation) {
+                          _submitInitialApplication();
+                        } else {
+                          setState(() => _currentStep++);
+                        }
+                      } else {
+                        _submitApplication();
+                      }
+                    }
+                  },
+                  icon: Icon(
+                    isLastStep
+                        ? Icons.check_circle_rounded
+                        : (_currentStep == 0 && !_isContinuation
+                              ? Icons.save_rounded
+                              : Icons.arrow_forward_rounded),
+                    size: 18,
+                  ),
+                  label: Text(
+                    isLastStep
+                        ? 'Submit'
+                        : (_currentStep == 0 && !_isContinuation
+                              ? 'Submit & Continue'
+                              : 'Continue'),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isLastStep
+                        ? AppTheme.primaryDark
+                        : AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_isLoading)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(color: AppTheme.primaryColor),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _submitInitialApplication() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final Map<String, dynamic> driverData = {
+        'first_name': _firstNameController.text.trim(),
+        'middle_name': _middleNameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
+        'state': _selectedState,
+        'district': _selectedDistrict,
+        'village': _villageController.text.trim(),
+        'address': _addressController.text.trim(),
+        'pin': _pinController.text.trim(),
+        'landmark': _landmarkController.text.trim(),
+        'dob': _dobController.text.trim(),
+        'blood_group': _bloodGroup,
+        'mobile1': _mobile1Controller.text.trim(),
+        'email': _emailController.text.trim(),
+        // Driving License — mandatory in Phase 1
+        'license_no': _licenseNoController.text.trim().toUpperCase(),
+        'license_issue_date': _licenseIssueDateController.text.trim(),
+        'license_expiry_date': _licenseExpiryDateController.text.trim(),
+      };
+
+      final id = await SupabaseService().registerDriver(driverData);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('driver_id', id);
+
+      setState(() {
+        _driverId = id;
+        _isContinuation = true;
+      });
+
+      if (!mounted) return;
+      _showPhase1SuccessDialog(id);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Initial submission failed: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showPhase1SuccessDialog(String id) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 28),
+            SizedBox(width: 12),
+            Text('Step 1 Completed!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your basic information has been saved successfully. Your unique Driver ID is:',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SelectableText(
+                      id,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 20),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: id));
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(content: Text('ID copied to clipboard')),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Please save this ID. You can use it to complete your application at any time.',
+              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Continue to Next Step'),
+          ),
         ],
       ),
-    );
+    ).then((_) {
+      if (mounted) setState(() => _currentStep = 1);
+    });
+  }
+
+  Future<void> _submitApplication() async {
+    if (_driverId == null) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final Map<String, dynamic> driverData = {
+        // Driving License
+        'license_no': _licenseNoController.text.trim().toUpperCase(),
+        'license_issue_date': _licenseIssueDateController.text.trim(),
+        'license_expiry_date': _licenseExpiryDateController.text.trim(),
+
+        // Identity Documents
+        'aadhaar': _aadhaarController.text.replaceAll(' ', ''),
+        'pan': _panController.text.trim().toUpperCase(),
+
+        // Contact
+        'mobile2': _mobile2Controller.text.trim(),
+
+        // Bank Details
+        'bank1_name': _bank1NameController.text.trim(),
+        'bank1_acc': _bank1AccController.text.trim(),
+        'bank1_ifsc': _bank1IfscController.text.trim().toUpperCase(),
+        'bank2_name': _bank2NameController.text.trim(),
+        'bank2_acc': _bank2AccController.text.trim(),
+        'bank2_ifsc': _bank2IfscController.text.trim().toUpperCase(),
+
+        // Family Details
+        'father_name': _fatherNameController.text.trim(),
+        'father_mobile': _fatherMobileController.text.trim(),
+        'mother_name': _motherNameController.text.trim(),
+        'mother_mobile': _motherMobileController.text.trim(),
+        'spouse_name': _spouseNameController.text.trim(),
+        'spouse_mobile': _spouseMobileController.text.trim(),
+
+        // JSON Data
+        'education_json': {
+          'sslc': {'status': _sslcStatus, 'year': _sslcYear},
+          'plus_two': {'status': _plusTwoStatus, 'year': _plusTwoYear},
+          'degree': {'status': _degreeStatus, 'year': _degreeYear},
+          'post_grad': {'status': _postGradStatus, 'year': _postGradYear},
+          'diploma': {'status': _diplomaStatus, 'year': _diplomaYear},
+          'tech_course': {'status': _techCourseStatus, 'year': _techCourseYear},
+        },
+        'languages_json': {
+          'english': {'speak': _engSpeak, 'read': _engRead, 'write': _engWrite},
+          'hindi': {'speak': _hinSpeak, 'read': _hinRead, 'write': _hinWrite},
+          'malayalam': {
+            'speak': _malSpeak,
+            'read': _malRead,
+            'write': _malWrite,
+          },
+          'kannada': {'speak': _kanSpeak, 'read': _kanRead, 'write': _kanWrite},
+          'tamil': {'speak': _tamSpeak, 'read': _tamRead, 'write': _tamWrite},
+        },
+        'experience_json': _experiences
+            .map(
+              (e) => {
+                'company': e.companyController.text.trim(),
+                'join_date': e.joinDateController.text.trim(),
+                'leave_date': e.leaveDateController.text.trim(),
+                'reason': e.reasonController.text.trim(),
+              },
+            )
+            .toList(),
+
+        // Legal & Insurance
+        'has_insurance': _hasInsurance,
+        'insurance_company': _insuranceCompanyController.text.trim(),
+        'policy_no': _policyNoController.text.trim(),
+        'sum_insured': _sumInsuredController.text.trim(),
+        'policy_end_date': _policyEndDateController.text.trim(),
+        'has_police_case': _hasPoliceCase,
+        'case_details': _caseDetailsController.text.trim(),
+      };
+
+      await SupabaseService().updateDriver(_driverId!, driverData);
+
+      if (!mounted) return;
+
+      // Clear local storage on final completion
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('driver_id');
+
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Full Application Submitted Successfully!'),
+            ],
+          ),
+          backgroundColor: AppTheme.primaryColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Final submission failed: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   // ─── REUSABLE WIDGETS ─────────────────────

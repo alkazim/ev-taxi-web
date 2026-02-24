@@ -4,14 +4,39 @@ import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
 import '../forms/driver_application_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class DriverRegistrationSection extends StatelessWidget {
+class DriverRegistrationSection extends StatefulWidget {
   const DriverRegistrationSection({super.key});
 
+  @override
+  State<DriverRegistrationSection> createState() =>
+      _DriverRegistrationSectionState();
+}
+
+class _DriverRegistrationSectionState extends State<DriverRegistrationSection> {
   static const _green = Color(0xFF16A34A);
   static const _darkGreen = Color(0xFF14532D);
   static const _amber = Color(0xFFF59E0B);
   static const _darkBg = Color(0xFF0D1F12);
+
+  bool _hasExistingApplication = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkApplicationStatus();
+  }
+
+  Future<void> _checkApplicationStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final driverId = prefs.getString('driver_id');
+    if (mounted) {
+      setState(() {
+        _hasExistingApplication = driverId != null;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -406,36 +431,16 @@ class DriverRegistrationSection extends StatelessWidget {
       spacing: 14,
       runSpacing: 12,
       children: [
-        _DriverApplyButton(isDesktop: isDesktop),
-        // Ghost link (Pill style button text centered)
-        MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: () {}, // Action
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isDesktop ? 32 : 24,
-                vertical: 17, // Match Apply button height
-              ),
-              decoration: BoxDecoration(
-                color:
-                    (context.isYellowTheme ? _amber : const Color(0xFF16A34A))
-                        .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: Text(
-                'Learn more',
-                style: GoogleFonts.poppins(
-                  color: context.isYellowTheme
-                      ? const Color(0xFFF59E0B)
-                      : const Color(0xFF374151),
-                  fontWeight: FontWeight.w600,
-                  fontSize: isDesktop ? 15 : 14,
-                ),
-              ),
-            ),
+        if (!_hasExistingApplication)
+          _DriverApplyButton(
+            isDesktop: isDesktop,
+            onDialogClosed: _checkApplicationStatus,
+          )
+        else
+          _DriverContinueButton(
+            isDesktop: isDesktop,
+            onDialogClosed: _checkApplicationStatus,
           ),
-        ),
       ],
     );
   }
@@ -723,7 +728,11 @@ class _BenefitCardState extends State<_BenefitCard> {
 // ─── Apply Button ───
 class _DriverApplyButton extends StatefulWidget {
   final bool isDesktop;
-  const _DriverApplyButton({required this.isDesktop});
+  final VoidCallback onDialogClosed;
+  const _DriverApplyButton({
+    required this.isDesktop,
+    required this.onDialogClosed,
+  });
 
   @override
   State<_DriverApplyButton> createState() => _DriverApplyButtonState();
@@ -749,7 +758,7 @@ class _DriverApplyButtonState extends State<_DriverApplyButton> {
         onTap: () => showDialog(
           context: context,
           builder: (_) => const DriverApplicationDialog(),
-        ),
+        ).then((_) => widget.onDialogClosed()),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: EdgeInsets.symmetric(
@@ -781,6 +790,68 @@ class _DriverApplyButtonState extends State<_DriverApplyButton> {
               const SizedBox(width: 10),
               Icon(Icons.arrow_forward_rounded, color: fgColor, size: 19),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Continue Button ───
+class _DriverContinueButton extends StatefulWidget {
+  final bool isDesktop;
+  final VoidCallback onDialogClosed;
+  const _DriverContinueButton({
+    required this.isDesktop,
+    required this.onDialogClosed,
+  });
+
+  @override
+  State<_DriverContinueButton> createState() => _DriverContinueButtonState();
+}
+
+class _DriverContinueButtonState extends State<_DriverContinueButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const amber = Color(0xFFF59E0B);
+    const green = Color(0xFF16A34A);
+    final isYellow = context.isYellowTheme;
+    final themeColor = isYellow ? amber : green;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () => showDialog(
+          context: context,
+          builder: (_) => const DriverApplicationDialog(),
+        ).then((_) => widget.onDialogClosed()),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.isDesktop ? 32 : 24,
+            vertical: 17,
+          ),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? themeColor.withValues(alpha: 0.15)
+                : themeColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(50),
+            border: Border.all(
+              color: themeColor.withValues(alpha: _hovered ? 0.35 : 0.2),
+            ),
+          ),
+          child: Text(
+            'Continue Application',
+            style: GoogleFonts.poppins(
+              color: isYellow
+                  ? const Color(0xFFF59E0B)
+                  : const Color(0xFF374151),
+              fontWeight: FontWeight.w600,
+              fontSize: widget.isDesktop ? 15 : 14,
+            ),
           ),
         ),
       ),
