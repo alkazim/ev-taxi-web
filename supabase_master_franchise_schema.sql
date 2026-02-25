@@ -47,7 +47,17 @@ CREATE TABLE IF NOT EXISTS master_franchises (
   airport                   TEXT,   -- name + distance
   seaport                   TEXT,   -- name + distance
   metro_station             TEXT,   -- name + distance
-  nearest_highway           TEXT,   -- expressway / NH / SH / main road
+  -- Nearest highways — 5 types, each stored as name + distance in km
+  expressway_name           TEXT,   -- Expressway: name/route
+  expressway_km             TEXT,   -- Expressway: distance in km
+  national_hwy_name         TEXT,   -- National Highway: name/route
+  national_hwy_km           TEXT,   -- National Highway: distance in km
+  state_hwy_name            TEXT,   -- State Highway: name/route
+  state_hwy_km              TEXT,   -- State Highway: distance in km
+  main_road_name            TEXT,   -- Main Central Road: name/route
+  main_road_km              TEXT,   -- Main Central Road: distance in km
+  town_road_name            TEXT,   -- Town Roads: name/route
+  town_road_km              TEXT,   -- Town Roads: distance in km
 
   -- ── Business Profile ─────────────────────────────────────
   has_taxi_driver_database  BOOLEAN DEFAULT FALSE,
