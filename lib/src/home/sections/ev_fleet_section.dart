@@ -15,7 +15,7 @@ class EVFleetSection extends StatelessWidget {
       'topSpeed': '150 km/h',
       'charge': '0-80% in 56 min',
       'category': 'COMPACT SUV',
-      'image': 'assets/images/cars/Nexon_ev.png',
+      'image': 'assets/images/cars/Nexon_ev.webp',
     },
     {
       'name': 'MG ZS EV',
@@ -25,7 +25,7 @@ class EVFleetSection extends StatelessWidget {
       'topSpeed': '175 km/h',
       'charge': '0-80% in 42 min',
       'category': 'MID-SIZE SUV',
-      'image': 'assets/images/cars/MG_ZS_ev.png',
+      'image': 'assets/images/cars/MG_ZS_ev.webp',
     },
     {
       'name': 'BYD e6',
@@ -45,7 +45,7 @@ class EVFleetSection extends StatelessWidget {
       'topSpeed': '185 km/h',
       'charge': '10-80% in 18 min',
       'category': 'PREMIUM CROSSOVER',
-      'image': 'assets/images/cars/Hyundai_IONIQ5.png',
+      'image': 'assets/images/cars/Hyundai_IONIQ5.webp',
     },
     {
       'name': 'Tata Tiago EV',
@@ -55,7 +55,7 @@ class EVFleetSection extends StatelessWidget {
       'topSpeed': '120 km/h',
       'charge': '0-80% in 57 min',
       'category': 'HATCHBACK',
-      'image': 'assets/images/cars/TATA_Tiago_ev.png',
+      'image': 'assets/images/cars/TATA_Tiago_ev.webp',
     },
     {
       'name': 'Mahindra XUV400',
@@ -65,7 +65,7 @@ class EVFleetSection extends StatelessWidget {
       'topSpeed': '150 km/h',
       'charge': '0-80% in 50 min',
       'category': 'COMPACT SUV',
-      'image': 'assets/images/cars/XUV400_ev.png',
+      'image': 'assets/images/cars/XUV400_ev.webp',
     },
   ];
 
@@ -164,12 +164,14 @@ class EVFleetSection extends StatelessWidget {
                   mainAxisSpacing: 16,
                 ),
                 itemCount: _cars.length,
-                itemBuilder: (context, index) => FadeSlideIn(
-                  // Cap delay at 800ms so last card doesn't wait 1.4s
-                  delay: Duration(
-                    milliseconds: (500 + (index * 100)).clamp(0, 800),
+                itemBuilder: (context, index) => RepaintBoundary(
+                  child: FadeSlideIn(
+                    // Cap delay at 800ms so last card doesn't wait 1.4s
+                    delay: Duration(
+                      milliseconds: (500 + (index * 100)).clamp(0, 800),
+                    ),
+                    child: _EVCarCard(car: _cars[index]),
                   ),
-                  child: _EVCarCard(car: _cars[index]),
                 ),
               );
             },

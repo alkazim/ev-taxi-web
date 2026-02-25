@@ -509,8 +509,9 @@ class _DriverRegistrationSectionState extends State<DriverRegistrationSection> {
               child: Padding(
                 padding: EdgeInsets.all(isDesktop ? 10 : 5),
                 child: Image.asset(
-                  'assets/images/cars/driver_partner.png',
+                  'assets/images/cars/driver_partner.webp',
                   fit: BoxFit.contain,
+                  cacheWidth: 400,
                 ),
               ),
             ),

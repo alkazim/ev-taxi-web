@@ -64,9 +64,28 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
+  # Explicitly listing only the optimised WebP files so unused large PNGs
+  # (hero_section_image.png 8MB, Driver_registration_image.png 7.8MB, etc.)
+  # are NOT included in the web build bundle.
   assets:
-    - assets/images/cars/
-    - assets/images/places/
+    # Hero / background
+    - assets/images/cars/hero_section_image2.webp
+    # Driver registration
+    - assets/images/cars/Driver_registration_image.webp
+    # EV Fleet cards
+    - assets/images/cars/Nexon_ev.webp
+    - assets/images/cars/MG_ZS_ev.webp
+    - assets/images/cars/BYD_e6.webp
+    - assets/images/cars/Hyundai_IONIQ5.webp
+    - assets/images/cars/TATA_Tiago_ev.webp
+    - assets/images/cars/XUV400_ev.webp
+    # Classic driver visual
+    - assets/images/cars/driver_partner.webp
+    # Service areas
+    - assets/images/places/Kerala.webp
+    - assets/images/places/Karnataka.webp
+    - assets/images/places/Tamilnadu.webp
+    - assets/images/places/Puducherry.webp
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

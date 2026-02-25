@@ -1044,8 +1044,10 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
       };
 
       final id = await SupabaseService().registerDriver(driverData);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('driver_id', id);
+      // Persist driver ID locally in parallel — no need to await before showing dialog.
+      SharedPreferences.getInstance().then(
+        (prefs) => prefs.setString('driver_id', id),
+      );
 
       setState(() {
         _driverId = id;
@@ -1218,13 +1220,15 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         'case_details': _caseDetailsController.text.trim(),
       };
 
-      await SupabaseService().updateDriver(_driverId!, driverData);
+      // Run DB update and local prefs removal in parallel for speed.
+      await Future.wait([
+        SupabaseService().updateDriver(_driverId!, driverData),
+        SharedPreferences.getInstance().then(
+          (prefs) => prefs.remove('driver_id'),
+        ),
+      ]);
 
       if (!mounted) return;
-
-      // Clear local storage on final completion
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('driver_id');
 
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
