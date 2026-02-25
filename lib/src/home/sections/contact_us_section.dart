@@ -748,26 +748,11 @@ class _ContactUsSectionState extends State<ContactUsSection> {
       isFontAwesome: true,
     ),
     _ContactChip(
-      icon: Icons.chat,
+      icon: FontAwesomeIcons.whatsapp,
       label: 'WhatsApp',
       value: '+91 98765 43210',
       isDesktop: isDesktop,
-      iconWidget: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: context.isYellowTheme ? _amber : _green,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Center(
-          child: CustomPaint(
-            size: const Size(20, 20),
-            painter: _WhatsAppIconPainter(
-              context.isYellowTheme ? _amber : _green,
-            ),
-          ),
-        ),
-      ),
+      isFontAwesome: true,
     ),
     _ContactChip(
       icon: FontAwesomeIcons.headset,
@@ -1040,72 +1025,4 @@ class _ContactChip extends StatelessWidget {
       ],
     );
   }
-}
-
-// ─── WhatsApp Icon Painter ────────────────────────────────────────────────────
-class _WhatsAppIconPainter extends CustomPainter {
-  final Color themeColor;
-  _WhatsAppIconPainter(this.themeColor);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final r = size.width * 0.45;
-
-    final whitePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    final bubblePath = Path();
-    bubblePath.addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
-
-    final tailPath = Path()
-      ..moveTo(cx - r * 0.52, cy + r * 0.72)
-      ..lineTo(cx - r * 0.88, cy + r * 0.98)
-      ..lineTo(cx - r * 0.28, cy + r * 0.88)
-      ..close();
-    bubblePath.addPath(tailPath, Offset.zero);
-    canvas.drawPath(bubblePath, whitePaint);
-
-    final phonePaint = Paint()
-      ..color = themeColor
-      ..style = PaintingStyle.fill;
-
-    canvas.save();
-    canvas.translate(cx, cy);
-    canvas.rotate(-0.06);
-    canvas.scale(r * 0.08);
-    canvas.translate(-12, -12);
-
-    final handsetPath = Path()
-      ..moveTo(17.47, 14.38)
-      ..cubicTo(17.17, 14.23, 15.7, 13.51, 15.43, 13.41)
-      ..cubicTo(15.16, 13.31, 14.96, 13.26, 14.76, 13.56)
-      ..cubicTo(14.56, 13.86, 13.99, 14.53, 13.82, 14.73)
-      ..cubicTo(13.65, 14.93, 13.47, 14.96, 13.17, 14.81)
-      ..cubicTo(12.87, 14.66, 11.9, 14.34, 10.75, 13.31)
-      ..cubicTo(9.85, 12.51, 9.25, 11.53, 9.07, 11.23)
-      ..cubicTo(8.9, 10.93, 9.05, 10.77, 9.2, 10.62)
-      ..cubicTo(9.34, 10.48, 9.5, 10.26, 9.65, 10.09)
-      ..cubicTo(9.8, 9.91, 9.85, 9.79, 9.95, 9.59)
-      ..cubicTo(10.05, 9.39, 10.0, 9.21, 9.93, 9.06)
-      ..cubicTo(9.85, 8.91, 9.26, 7.45, 9.01, 6.86)
-      ..cubicTo(8.77, 6.28, 8.52, 6.36, 8.34, 6.35)
-      ..cubicTo(8.16, 6.34, 8.02, 6.35, 7.84, 6.37)
-      ..cubicTo(7.66, 6.4, 7.28, 6.55, 7.03, 6.81)
-      ..cubicTo(6.78, 7.07, 6.07, 7.73, 6.07, 9.08)
-      ..cubicTo(6.07, 10.43, 7.05, 11.73, 7.2, 11.91)
-      ..cubicTo(7.33, 12.09, 9.17, 14.91, 12.0, 16.13)
-      ..cubicTo(12.67, 16.42, 13.18, 16.59, 13.59, 16.71)
-      ..cubicTo(14.28, 16.94, 14.89, 16.9, 15.39, 16.83)
-      ..cubicTo(15.93, 16.74, 17.07, 16.13, 17.3, 15.48)
-      ..cubicTo(17.53, 14.83, 17.53, 14.28, 17.47, 14.38)
-      ..close();
-    canvas.drawPath(handsetPath, phonePaint);
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
