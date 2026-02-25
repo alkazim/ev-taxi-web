@@ -101,7 +101,17 @@ class _FranchiseApplicationDialogState
   final _airportCtrl = TextEditingController();
   final _seaportCtrl = TextEditingController();
   final _metroStationCtrl = TextEditingController();
-  final _highwayCtrl = TextEditingController();
+  // Highway — 5 types, each with a name + km controller
+  final _expresswayNameCtrl = TextEditingController();
+  final _expresswayKmCtrl = TextEditingController();
+  final _nationalHwyNameCtrl = TextEditingController();
+  final _nationalHwyKmCtrl = TextEditingController();
+  final _stateHwyNameCtrl = TextEditingController();
+  final _stateHwyKmCtrl = TextEditingController();
+  final _mainRoadNameCtrl = TextEditingController();
+  final _mainRoadKmCtrl = TextEditingController();
+  final _townRoadNameCtrl = TextEditingController();
+  final _townRoadKmCtrl = TextEditingController();
 
   // ── Business Profile ──────────────────────────────────────────────────────
   bool _hasTaxiDatabase = false;
@@ -148,7 +158,16 @@ class _FranchiseApplicationDialogState
       _airportCtrl,
       _seaportCtrl,
       _metroStationCtrl,
-      _highwayCtrl,
+      _expresswayNameCtrl,
+      _expresswayKmCtrl,
+      _nationalHwyNameCtrl,
+      _nationalHwyKmCtrl,
+      _stateHwyNameCtrl,
+      _stateHwyKmCtrl,
+      _mainRoadNameCtrl,
+      _mainRoadKmCtrl,
+      _townRoadNameCtrl,
+      _townRoadKmCtrl,
       _taxiDriverCountCtrl,
       _evChargerDetailsCtrl,
       _locationOverviewCtrl,
@@ -209,7 +228,16 @@ class _FranchiseApplicationDialogState
         'airport': _airportCtrl.text.trim(),
         'seaport': _seaportCtrl.text.trim(),
         'metro_station': _metroStationCtrl.text.trim(),
-        'nearest_highway': _highwayCtrl.text.trim(),
+        'expressway_name': _expresswayNameCtrl.text.trim(),
+        'expressway_km': _expresswayKmCtrl.text.trim(),
+        'national_hwy_name': _nationalHwyNameCtrl.text.trim(),
+        'national_hwy_km': _nationalHwyKmCtrl.text.trim(),
+        'state_hwy_name': _stateHwyNameCtrl.text.trim(),
+        'state_hwy_km': _stateHwyKmCtrl.text.trim(),
+        'main_road_name': _mainRoadNameCtrl.text.trim(),
+        'main_road_km': _mainRoadKmCtrl.text.trim(),
+        'town_road_name': _townRoadNameCtrl.text.trim(),
+        'town_road_km': _townRoadKmCtrl.text.trim(),
         'has_taxi_driver_database': _hasTaxiDatabase,
         'taxi_driver_count': _taxiDriverCountCtrl.text.trim(),
         'has_ev_charging_station': _hasEvCharger,
@@ -420,6 +448,92 @@ class _FranchiseApplicationDialogState
               fontSize: 12,
               color: value ? _green : Colors.black38,
               fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// A highway row: label on the left, then [Name field | KM field] side by side.
+  Widget _highwayRow(
+    String label,
+    TextEditingController nameCtrl,
+    TextEditingController kmCtrl,
+  ) {
+    final inputDecoration = InputDecoration(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      filled: true,
+      fillColor: const Color(0xFFF9FAFB),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: _green, width: 1.5),
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Label
+          SizedBox(
+            width: 130,
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Name field
+          Expanded(
+            flex: 5,
+            child: TextFormField(
+              controller: nameCtrl,
+              style: GoogleFonts.poppins(fontSize: 13),
+              decoration: inputDecoration.copyWith(
+                hintText: 'Name / Route',
+                hintStyle: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Colors.black26,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // KM field
+          SizedBox(
+            width: 80,
+            child: TextFormField(
+              controller: kmCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              style: GoogleFonts.poppins(fontSize: 13),
+              decoration: inputDecoration.copyWith(
+                hintText: 'km',
+                hintStyle: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Colors.black26,
+                ),
+                suffixText: 'km',
+                suffixStyle: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Colors.black38,
+                ),
+              ),
             ),
           ),
         ],
@@ -739,12 +853,35 @@ class _FranchiseApplicationDialogState
                       hint: 'e.g. N/A or Chennai Metro — 200 km',
                       required: false,
                     ),
-                    _field(
-                      'Nearest Highway (Express/NH/SH/Main Road)',
-                      _highwayCtrl,
-                      hint: 'e.g. NH-44, 2 km from town centre',
-                      required: false,
+                    // Highway rows — name + km side by side
+                    _label('Nearest Highways', required: false),
+                    const SizedBox(height: 10),
+                    _highwayRow(
+                      'Expressway',
+                      _expresswayNameCtrl,
+                      _expresswayKmCtrl,
                     ),
+                    _highwayRow(
+                      'National Highway',
+                      _nationalHwyNameCtrl,
+                      _nationalHwyKmCtrl,
+                    ),
+                    _highwayRow(
+                      'State Highway',
+                      _stateHwyNameCtrl,
+                      _stateHwyKmCtrl,
+                    ),
+                    _highwayRow(
+                      'Main Central Road',
+                      _mainRoadNameCtrl,
+                      _mainRoadKmCtrl,
+                    ),
+                    _highwayRow(
+                      'Town Roads',
+                      _townRoadNameCtrl,
+                      _townRoadKmCtrl,
+                    ),
+                    const SizedBox(height: 8),
 
                     // ╔═══════════════════════════════════════════╗
                     // ║  SECTION 6 — BUSINESS PROFILE             ║
