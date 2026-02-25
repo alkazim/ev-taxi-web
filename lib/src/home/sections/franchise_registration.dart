@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../widgets/responsive_widget.dart';
@@ -18,7 +18,6 @@ class _FranchiseRegistrationSectionState
     extends State<FranchiseRegistrationSection>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  Timer? _autoSwipeTimer;
   int _currentIndex = 0;
   bool _contentVisible = false;
 
@@ -29,17 +28,6 @@ class _FranchiseRegistrationSectionState
     _tabController.addListener(_onTabChanged);
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) setState(() => _contentVisible = true);
-    });
-    _startAutoSwipe();
-  }
-
-  void _startAutoSwipe() {
-    _autoSwipeTimer?.cancel();
-    _autoSwipeTimer = Timer.periodic(const Duration(seconds: 6), (_) {
-      if (mounted) {
-        final nextIndex = (_tabController.index + 1) % 3;
-        _tabController.animateTo(nextIndex);
-      }
     });
   }
 
@@ -52,12 +40,10 @@ class _FranchiseRegistrationSectionState
     Future.delayed(const Duration(milliseconds: 150), () {
       if (mounted) setState(() => _contentVisible = true);
     });
-    _startAutoSwipe();
   }
 
   @override
   void dispose() {
-    _autoSwipeTimer?.cancel();
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
