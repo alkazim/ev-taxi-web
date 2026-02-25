@@ -8,6 +8,7 @@ import 'sections/franchise_registration.dart';
 import 'sections/ev_stations_section.dart';
 import 'sections/service_areas_section.dart';
 import 'sections/contact_us_section.dart';
+import 'sections/contact_us_v2_section.dart';
 import 'sections/footer_section.dart';
 
 class HomePage extends StatefulWidget {
@@ -27,6 +28,7 @@ class _HomePageState extends State<HomePage> {
   final GlobalKey _franchiseKey = GlobalKey();
   final GlobalKey _evStationsKey = GlobalKey();
   final GlobalKey _contactKey = GlobalKey();
+  final GlobalKey _contactV2Key = GlobalKey();
 
   @override
   void dispose() {
@@ -39,18 +41,18 @@ class _HomePageState extends State<HomePage> {
     super.didChangeDependencies();
     const imagesToPrecache = [
       'assets/images/cars/hero_section_image2.webp',
-      'assets/images/cars/Driver_registration_image.png',
-      'assets/images/cars/driver_partner.png',
-      'assets/images/cars/Nexon_ev.png',
-      'assets/images/cars/MG_ZS_ev.png',
-      'assets/images/cars/BYD_e6.png',
-      'assets/images/cars/Hyundai_IONIQ5.png',
-      'assets/images/cars/TATA_Tiago_ev.png',
-      'assets/images/cars/XUV400_ev.png',
-      'assets/images/places/Kerala.png',
-      'assets/images/places/Karnataka.png',
-      'assets/images/places/Tamilnadu.png',
-      'assets/images/places/Puducherry.png',
+      'assets/images/cars/Driver_registration_image.webp',
+      'assets/images/cars/driver_partner.webp',
+      'assets/images/cars/Nexon_ev.webp',
+      'assets/images/cars/MG_ZS_ev.webp',
+      'assets/images/cars/BYD_e6.webp',
+      'assets/images/cars/Hyundai_IONIQ5.webp',
+      'assets/images/cars/TATA_Tiago_ev.webp',
+      'assets/images/cars/XUV400_ev.webp',
+      'assets/images/places/Kerala.webp',
+      'assets/images/places/Karnataka.webp',
+      'assets/images/places/Tamilnadu.webp',
+      'assets/images/places/Puducherry.webp',
     ];
     for (final path in imagesToPrecache) {
       precacheImage(AssetImage(path), context);
@@ -108,6 +110,7 @@ class _HomePageState extends State<HomePage> {
                   child: FranchiseRegistrationSection(key: _franchiseKey),
                 ),
                 RepaintBoundary(child: EVStationsSection(key: _evStationsKey)),
+                RepaintBoundary(child: ContactUsV2Section(key: _contactV2Key)),
                 RepaintBoundary(child: ContactUsSection(key: _contactKey)),
                 const RepaintBoundary(child: FooterSection()),
               ],
@@ -125,7 +128,7 @@ class _HomePageState extends State<HomePage> {
               onFleetsTap: () => _scrollToSection(_fleetsKey),
               onFranchiseTap: () => _scrollToSection(_franchiseKey),
               onEvStationsTap: () => _scrollToSection(_evStationsKey),
-              onContactTap: () => _scrollToSection(_contactKey),
+              onContactTap: () => _scrollToSection(_contactV2Key),
             ),
           ),
         ],
