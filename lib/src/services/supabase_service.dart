@@ -20,10 +20,10 @@ class SupabaseService {
 
   SupabaseClient get client => Supabase.instance.client;
 
-  /// Generates a meaningful, sortable driver ID.
+  /// Generates a meaningful, sortable driver code.
   /// Format: ECABBZ-DRV-YYYYMMDD-XXXX
   /// Example: ECABBZ-DRV-20260224-A3F7
-  String _generateDriverId() {
+  String _generateDriverCode() {
     final now = DateTime.now();
     final date =
         '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
@@ -37,29 +37,39 @@ class SupabaseService {
     return 'ECABBZ-DRV-$date-$suffix';
   }
 
-  /// Registers a new driver in the database and returns the generated ID.
-  /// The ID is generated client-side so we never need a SELECT round-trip.
+  /// Registers a new driver in the database and returns the generated human-readable driver code.
+  /// This method first signs in anonymously to get a real UUID (used as `id` FK to auth.users),
+  /// then generates a human-readable `driver_code`, and inserts both into the 'drivers' table.
   Future<String> registerDriver(Map<String, dynamic> driverData) async {
-    final id = _generateDriverId();
     try {
-      // Insert only — no .select() needed since we already know the ID.
+      // 1. Sign in anonymously to get a user ID (UUID)
+      final AuthResponse res = await client.auth.signInAnonymously();
+      if (res.user == null) {
+        throw Exception('Failed to sign in anonymously.');
+      }
+      final String userId = res.user!.id; // This is the UUID from auth.users
+
+      // 2. Generate the human-readable driver code
+      final String driverCode = _generateDriverCode();
+
+      // 3. Insert the driver record with both the auth ID and the driver code
       await client
           .from('drivers')
-          .insert({...driverData, 'id': id})
+          .insert({...driverData, 'id': userId, 'driver_code': driverCode})
           .timeout(const Duration(seconds: 30));
-      return id;
+      return driverCode;
     } catch (e) {
       throw Exception('Failed to register driver: $e');
     }
   }
 
-  /// Fetches an existing driver record by ID.
-  Future<Map<String, dynamic>?> getDriverById(String id) async {
+  /// Fetches an existing driver record by its human-readable driver code.
+  Future<Map<String, dynamic>?> getDriverByCode(String driverCode) async {
     try {
       final response = await client
           .from('drivers')
           .select()
-          .eq('id', id)
+          .eq('driver_code', driverCode)
           .maybeSingle()
           .timeout(const Duration(seconds: 30));
       return response;
@@ -68,13 +78,16 @@ class SupabaseService {
     }
   }
 
-  /// Updates an existing driver record.
-  Future<void> updateDriver(String id, Map<String, dynamic> driverData) async {
+  /// Updates an existing driver record using its human-readable driver code.
+  Future<void> updateDriverByCode(
+    String driverCode,
+    Map<String, dynamic> driverData,
+  ) async {
     try {
       await client
           .from('drivers')
           .update(driverData)
-          .eq('id', id)
+          .eq('driver_code', driverCode)
           .timeout(const Duration(seconds: 30));
     } catch (e) {
       throw Exception('Failed to update driver: $e');

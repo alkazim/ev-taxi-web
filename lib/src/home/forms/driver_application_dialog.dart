@@ -33,7 +33,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     if (savedId != null) {
       setState(() => _isLoading = true);
       try {
-        final data = await SupabaseService().getDriverById(savedId);
+        final data = await SupabaseService().getDriverByCode(savedId);
         if (data != null) {
           setState(() {
             _driverId = savedId;
@@ -427,18 +427,21 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             'First Name',
             icon: Icons.person_outline,
             capitalization: TextCapitalization.words,
+            inputFormatters: [_CapitalizeWordsFormatter()],
           ),
           _buildTextField(
             _middleNameController,
             'Middle Name',
             isRequired: false,
             capitalization: TextCapitalization.words,
+            inputFormatters: [_CapitalizeWordsFormatter()],
           ),
           _buildTextField(
             _lastNameController,
             'Last Name',
             isRequired: false,
             capitalization: TextCapitalization.words,
+            inputFormatters: [_CapitalizeWordsFormatter()],
           ),
         ]),
         _responsiveRow(isMobile, [
@@ -462,6 +465,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           'Village',
           icon: Icons.location_on_outlined,
           capitalization: TextCapitalization.words,
+          inputFormatters: [_CapitalizeWordsFormatter()],
         ),
         _buildTextField(
           _addressController,
@@ -484,6 +488,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             'Landmark',
             isRequired: false,
             capitalization: TextCapitalization.words,
+            inputFormatters: [_CapitalizeWordsFormatter()],
           ),
         ]),
         _responsiveRow(isMobile, [
@@ -533,6 +538,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           'License Number',
           icon: Icons.drive_eta_rounded,
           capitalization: TextCapitalization.characters,
+          inputFormatters: [_LicenseNumberFormatter()],
         ),
         _responsiveRow(isMobile, [
           _buildTextField(
@@ -1241,7 +1247,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
 
       // Run DB update and local prefs removal in parallel for speed.
       await Future.wait([
-        SupabaseService().updateDriver(_driverId!, driverData),
+        SupabaseService().updateDriverByCode(_driverId!, driverData),
         SharedPreferences.getInstance().then(
           (prefs) => prefs.remove('driver_id'),
         ),
@@ -1804,6 +1810,59 @@ class _AadhaarNumberFormatter extends TextInputFormatter {
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
+/// Capitalizes the first letter of each word as the user types.
+/// All other letters remain as typed.
+class _CapitalizeWordsFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if (text.isEmpty) return newValue;
+
+    final buffer = StringBuffer();
+    bool capitalizeNext = true;
+    for (int i = 0; i < text.length; i++) {
+      final char = text[i];
+      if (char == ' ') {
+        capitalizeNext = true;
+        buffer.write(char);
+      } else if (capitalizeNext) {
+        buffer.write(char.toUpperCase());
+        capitalizeNext = false;
+      } else {
+        buffer.write(char);
+      }
+    }
+
+    final newText = buffer.toString();
+    // Preserve cursor position
+    final selectionOffset = newValue.selection.end.clamp(0, newText.length);
+    return TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: selectionOffset),
+    );
+  }
+}
+
+/// Uppercases only the alphabetic characters in the license number.
+/// Digits, hyphens, and spaces are passed through unchanged.
+class _LicenseNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final uppercased = newValue.text.toUpperCase();
+    final selectionOffset = newValue.selection.end.clamp(0, uppercased.length);
+    return TextEditingValue(
+      text: uppercased,
+      selection: TextSelection.collapsed(offset: selectionOffset),
     );
   }
 }
