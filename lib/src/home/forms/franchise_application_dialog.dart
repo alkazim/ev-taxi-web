@@ -135,6 +135,14 @@ class _FranchiseApplicationDialogState
   final _verifiedDateCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _verifiedDateCtrl.text =
+        '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+  }
+
+  @override
   void dispose() {
     for (final c in [
       _fullNameCtrl,
@@ -391,6 +399,7 @@ class _FranchiseApplicationDialogState
         const SizedBox(height: 6),
         TextFormField(
           controller: ctrl,
+          readOnly: label == 'Date',
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           maxLines: maxLines,
@@ -919,7 +928,8 @@ class _FranchiseApplicationDialogState
                       _field(
                         'EV Charging Station Details',
                         _evChargerDetailsCtrl,
-                        hint: 'Type, location, number of points...',
+                        hint:
+                            'Company name, location, power in kw, no of points',
                         maxLines: 3,
                         required: false,
                       ),
