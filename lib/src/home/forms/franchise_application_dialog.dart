@@ -856,7 +856,14 @@ class _FranchiseApplicationDialogState
                       required: false,
                     ),
                     // Highway rows — name + km side by side
-                    _label('Nearest Highways', required: false),
+                    Text(
+                      'Nearest Highways',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     _highwayRow(
                       'Expressway',
@@ -879,7 +886,7 @@ class _FranchiseApplicationDialogState
                       _mainRoadKmCtrl,
                     ),
                     _highwayRow(
-                      'Town Roads',
+                      'Nearest Town',
                       _townRoadNameCtrl,
                       _townRoadKmCtrl,
                     ),
