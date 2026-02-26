@@ -62,7 +62,9 @@ class _HeroSectionState extends State<HeroSection>
         children: [
           // ── Background: car image (cacheWidth limits GPU decode memory) ──
           Image.asset(
-            'assets/images/cars/hero_section_image2.webp',
+            context.isYellowTheme
+                ? 'assets/images/cars/yellow_taxi_homescreen.webp'
+                : 'assets/images/cars/green_taxi_homescreen.webp',
             fit: BoxFit.cover,
             alignment: Alignment.centerRight,
             errorBuilder: (_, __, ___) =>

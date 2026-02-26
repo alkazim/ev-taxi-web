@@ -69,7 +69,8 @@ flutter:
   # are NOT included in the web build bundle.
   assets:
     # Hero / background
-    - assets/images/cars/hero_section_image2.webp
+    - assets/images/cars/green_taxi_homescreen.webp
+    - assets/images/cars/yellow_taxi_homescreen.webp
     # Driver registration
     - assets/images/cars/Driver_registration_image.webp
     # EV Fleet cards

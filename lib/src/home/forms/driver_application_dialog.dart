@@ -426,13 +426,20 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             _firstNameController,
             'First Name',
             icon: Icons.person_outline,
+            capitalization: TextCapitalization.words,
           ),
           _buildTextField(
             _middleNameController,
             'Middle Name',
             isRequired: false,
+            capitalization: TextCapitalization.words,
           ),
-          _buildTextField(_lastNameController, 'Last Name', isRequired: false),
+          _buildTextField(
+            _lastNameController,
+            'Last Name',
+            isRequired: false,
+            capitalization: TextCapitalization.words,
+          ),
         ]),
         _responsiveRow(isMobile, [
           _buildDropdown('State', _selectedState, _states, (v) {
@@ -454,6 +461,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           _villageController,
           'Village',
           icon: Icons.location_on_outlined,
+          capitalization: TextCapitalization.words,
         ),
         _buildTextField(
           _addressController,
@@ -471,7 +479,12 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             exactLength: 6,
           ),
-          _buildTextField(_landmarkController, 'Landmark', isRequired: false),
+          _buildTextField(
+            _landmarkController,
+            'Landmark',
+            isRequired: false,
+            capitalization: TextCapitalization.words,
+          ),
         ]),
         _responsiveRow(isMobile, [
           _buildTextField(
@@ -490,7 +503,12 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             'Date of Birth',
             icon: Icons.calendar_today_outlined,
             readOnly: true,
-            onTap: () => _selectDate(context, _dobController),
+            onTap: () => _selectDate(
+              context,
+              _dobController,
+              firstDate: DateTime(1970),
+              lastDate: DateTime.now(),
+            ),
           ),
           _buildDropdown(
             'Blood Group',
@@ -514,6 +532,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           _licenseNoController,
           'License Number',
           icon: Icons.drive_eta_rounded,
+          capitalization: TextCapitalization.characters,
         ),
         _responsiveRow(isMobile, [
           _buildTextField(
@@ -1264,13 +1283,20 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   // ─── REUSABLE WIDGETS ─────────────────────
   Future<void> _selectDate(
     BuildContext context,
-    TextEditingController controller,
-  ) async {
+    TextEditingController controller, {
+    DateTime? firstDate,
+    DateTime? lastDate,
+  }) async {
+    final DateTime now = DateTime.now();
+    final DateTime initial = (lastDate != null && now.isAfter(lastDate))
+        ? lastDate
+        : now;
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime(2100),
+      initialDate: initial,
+      firstDate: firstDate ?? DateTime(1900),
+      lastDate: lastDate ?? DateTime(2100),
       useRootNavigator: true,
       initialEntryMode: DatePickerEntryMode.calendarOnly,
       builder: (context, child) {
@@ -1329,6 +1355,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     List<TextInputFormatter>? inputFormatters,
     bool readOnly = false,
     VoidCallback? onTap,
+    TextCapitalization capitalization = TextCapitalization.none,
   }) {
     // Append * to label for mandatory fields
     final displayLabel = isRequired ? '$label *' : label;
@@ -1340,6 +1367,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         maxLength: maxLength,
         readOnly: readOnly,
         onTap: onTap,
+        textCapitalization: capitalization,
         decoration: InputDecoration(
           counterText: '', // Hide character counter
           labelText: displayLabel,

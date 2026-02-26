@@ -46,7 +46,7 @@ class SupabaseService {
       await client
           .from('drivers')
           .insert({...driverData, 'id': id})
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
       return id;
     } catch (e) {
       throw Exception('Failed to register driver: $e');
@@ -61,7 +61,7 @@ class SupabaseService {
           .select()
           .eq('id', id)
           .maybeSingle()
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
       return response;
     } catch (e) {
       throw Exception('Failed to fetch driver: $e');
@@ -75,7 +75,7 @@ class SupabaseService {
           .from('drivers')
           .update(driverData)
           .eq('id', id)
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
     } catch (e) {
       throw Exception('Failed to update driver: $e');
     }
@@ -87,7 +87,7 @@ class SupabaseService {
       await client
           .from('master_franchises')
           .insert(data)
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
     } catch (e) {
       throw Exception('Failed to submit franchise application: $e');
     }
