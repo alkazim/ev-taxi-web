@@ -27,6 +27,27 @@ void main() async {
     debugPrint('Supabase init skipped/failed: $e');
   }
 
+  // Precache the hero images into Flutter's image cache before the first frame.
+  // This ensures the full-bleed background renders instantly without any flicker.
+  final binding = WidgetsBinding.instance;
+  // We need a temporary BuildContext-like environment — use a PictureRecorder approach
+  // by scheduling precache after the first frame.
+  binding.addPostFrameCallback((_) async {
+    final context = binding.rootElement;
+    if (context != null) {
+      await Future.wait([
+        precacheImage(
+          const AssetImage('assets/images/cars/green_taxi_homescreen.webp'),
+          context,
+        ),
+        precacheImage(
+          const AssetImage('assets/images/cars/yellow_taxi_homescreen.webp'),
+          context,
+        ),
+      ]);
+    }
+  });
+
   runApp(const MyApp());
 }
 

@@ -2,46 +2,116 @@
 <html>
 
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Premium EV Taxi Service in India">
+  <meta name="description" content="Premium EV Taxi Service in India - E-CABBZ Electric Fleet">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="taxi_demo">
+  <meta name="apple-mobile-web-app-title" content="E-CABBZ">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png" />
 
-  <!-- Performance: preconnect to Supabase and Google Fonts before they're needed -->
+  <!-- Performance: preconnect to external origins before they're needed -->
   <link rel="preconnect" href="https://bnnzcpgltzjmbxydzbbq.supabase.co" crossorigin>
   <link rel="dns-prefetch" href="https://bnnzcpgltzjmbxydzbbq.supabase.co">
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
+  <!-- Critical: preload hero images so they are ready the moment Flutter renders -->
+  <link rel="preload" as="image" href="assets/assets/images/cars/green_taxi_homescreen.webp" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/assets/images/cars/yellow_taxi_homescreen.webp">
+
   <title>E-CABBZ TAXI - Premium Electric Fleet</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Dark background shown instantly — eliminates white flash while Flutter loads */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #050F1A;
+      height: 100%;
+    }
+
+    /* Loading screen displayed until Flutter signals first-frame */
+    #loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    #loading-logo {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: #4ADE80;
+      letter-spacing: 5px;
+    }
+
+    #loading-bar-track {
+      width: 150px;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    #loading-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4ADE80, #16A34A);
+      border-radius: 2px;
+      animation: loadprogress 2s ease-in-out forwards;
+    }
+
+    @keyframes loadprogress {
+      0% {
+        width: 0%;
+      }
+
+      50% {
+        width: 65%;
+      }
+
+      100% {
+        width: 88%;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <!-- Branded loading screen — smoothly fades out when Flutter is ready -->
+  <div id="loading">
+    <div id="loading-logo">E-CABBZ</div>
+    <div id="loading-bar-track">
+      <div id="loading-bar"></div>
+    </div>
+  </div>
+
+  <script>
+    // Fade out the loading screen on Flutter's first-frame signal
+    window.addEventListener('flutter-first-frame', function () {
+      var el = document.getElementById('loading');
+      if (el) {
+        el.style.transition = 'opacity 0.35s ease';
+        el.style.opacity = '0';
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+      }
+    });
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 

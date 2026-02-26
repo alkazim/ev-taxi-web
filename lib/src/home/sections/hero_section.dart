@@ -60,13 +60,14 @@ class _HeroSectionState extends State<HeroSection>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Background: car image (cacheWidth limits GPU decode memory) ──
           Image.asset(
             context.isYellowTheme
                 ? 'assets/images/cars/yellow_taxi_homescreen.webp'
                 : 'assets/images/cars/green_taxi_homescreen.webp',
             fit: BoxFit.cover,
             alignment: Alignment.centerRight,
+            // Limit GPU decode resolution — no screen needs more than 1600px wide
+            cacheWidth: 1600,
             errorBuilder: (_, __, ___) =>
                 Container(color: const Color(0xFF0A1628)),
           ),
