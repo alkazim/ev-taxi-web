@@ -8,55 +8,7 @@ import '../../widgets/responsive_widget.dart';
 // DATA MODEL
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum OfficeTypeV2 { regional, state, district, zonal }
-
-extension OfficeTypeV2Ext on OfficeTypeV2 {
-  String get label {
-    switch (this) {
-      case OfficeTypeV2.regional:
-        return 'Regional Office';
-      case OfficeTypeV2.state:
-        return 'State Office';
-      case OfficeTypeV2.district:
-        return 'District Office';
-      case OfficeTypeV2.zonal:
-        return 'Zonal Office';
-    }
-  }
-
-  IconData get icon {
-    switch (this) {
-      case OfficeTypeV2.regional:
-        return Icons.account_balance_rounded;
-      case OfficeTypeV2.state:
-        return Icons.location_city_rounded;
-      case OfficeTypeV2.district:
-        return Icons.maps_home_work_rounded;
-      case OfficeTypeV2.zonal:
-        return Icons.store_rounded;
-    }
-  }
-
-  /// Whether this type needs a district sub-selection step.
-  bool get needsDistrict =>
-      this == OfficeTypeV2.district || this == OfficeTypeV2.zonal;
-
-  String get description {
-    switch (this) {
-      case OfficeTypeV2.regional:
-        return 'State-level headquarters overseeing all operations';
-      case OfficeTypeV2.state:
-        return 'Central office for each state\'s operations';
-      case OfficeTypeV2.district:
-        return 'Local offices serving individual districts';
-      case OfficeTypeV2.zonal:
-        return 'Sub-district zones within a district area';
-    }
-  }
-}
-
 class OfficeRecordV2 {
-  final OfficeTypeV2 type;
   final String state;
   final String? district;
   final String name;
@@ -66,7 +18,6 @@ class OfficeRecordV2 {
   final String? whatsapp;
 
   const OfficeRecordV2({
-    required this.type,
     required this.state,
     this.district,
     required this.name,
@@ -76,6 +27,65 @@ class OfficeRecordV2 {
     this.whatsapp,
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE OFFICE DATA — 4 always-visible state offices
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StateOfficeInfo {
+  final String state;
+  final String displayName;
+  final String company;
+  final String address;
+  final String email;
+  final String stateCode;
+
+  const _StateOfficeInfo({
+    required this.state,
+    required this.displayName,
+    required this.company,
+    required this.address,
+    required this.email,
+    required this.stateCode,
+  });
+}
+
+const List<_StateOfficeInfo> kStateOffices = [
+  _StateOfficeInfo(
+    state: 'Kerala',
+    displayName: 'KERALA STATE ADMINISTRATIVE OFFICE',
+    company: 'ECABBZ TAXI PVT LTD',
+    address: '40/5635, Banarjee Road,\nErnakulam – 682035.',
+    email: 'KL@ECABBZ.IN',
+    stateCode: 'KL',
+  ),
+  _StateOfficeInfo(
+    state: 'Karnataka',
+    displayName: 'KARNATAKA STATE ADMINISTRATIVE OFFICE',
+    company: 'ECABBZ TAXI PVT LTD',
+    address:
+        'Arunodayam, 3rd A Cross, Mariyappa Street,\nHRBR, 2nd Stage, Kalyan Nagar,\nBENGALURU, KARNATAKA 560043',
+    email: 'KA@ECABBZ.IN',
+    stateCode: 'KA',
+  ),
+  _StateOfficeInfo(
+    state: 'Tamil Nadu',
+    displayName: 'TAMIL NADU STATE ADMINISTRATIVE OFFICE',
+    company: 'ECABBZ TAXI PVT LTD',
+    address: '2/7 W/C, Udayampalayam,\nCoimbatore – 641028.',
+    email: 'TN@ECABBZ.IN',
+    stateCode: 'TN',
+  ),
+  _StateOfficeInfo(
+    state: 'Pondicherry',
+    displayName: 'PONDICHERRY STATE ADMINISTRATIVE OFFICE',
+    company: 'ECABBZ TAXI PVT LTD',
+    address:
+        'No. 12, Romain Rolland Street,\nWhite Town, Pondicherry – 605 001.',
+    email: 'PY@ECABBZ.IN',
+    stateCode: 'PY',
+  ),
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DISTRICT DATA — All official districts, alphabetical per state
@@ -179,85 +189,12 @@ const List<String> kStates = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OFFICE DATA — Real records. Everything else shows "Coming Soon".
+// DISTRICT OFFICE DATA
 // ─────────────────────────────────────────────────────────────────────────────
 
 const List<OfficeRecordV2> kOfficeData = [
-  // ── REGIONAL ──
-  OfficeRecordV2(
-    type: OfficeTypeV2.regional,
-    state: 'Kerala',
-    name: 'Kerala Regional Office',
-    address: '8th Floor, Kaloor Tower,\nMG Road, Kochi – 682 016',
-    phone: '+91 484 2345 6789',
-    email: 'kerala.regional@ecabbz.in',
-    whatsapp: '+919400000001',
-  ),
-  OfficeRecordV2(
-    type: OfficeTypeV2.regional,
-    state: 'Karnataka',
-    name: 'Karnataka Regional Office',
-    address: 'Unit 502, Prestige Tech Park,\nWhitefield, Bangalore – 560 066',
-    phone: '+91 80 7654 3210',
-    email: 'karnataka.regional@ecabbz.in',
-    whatsapp: '+919400000002',
-  ),
-  OfficeRecordV2(
-    type: OfficeTypeV2.regional,
-    state: 'Tamil Nadu',
-    name: 'Tamil Nadu Regional Office',
-    address: '14/2, Anna Salai, 3rd Floor,\nNungambakkam, Chennai – 600 006',
-    phone: '+91 44 4567 8900',
-    email: 'tamilnadu.regional@ecabbz.in',
-    whatsapp: '+919400000003',
-  ),
-  OfficeRecordV2(
-    type: OfficeTypeV2.regional,
-    state: 'Puducherry',
-    name: 'Puducherry Regional Office',
-    address: '3A, Mission Street,\nWhite Town, Pondicherry – 605 001',
-    phone: '+91 413 2345 678',
-    email: 'puducherry.regional@ecabbz.in',
-    whatsapp: '+919400000004',
-  ),
-
-  // ── STATE ──
-  OfficeRecordV2(
-    type: OfficeTypeV2.state,
-    state: 'Kerala',
-    name: 'Kerala State Office',
-    address: '8th Floor, Kaloor Tower,\nMG Road, Kochi – 682 016',
-    phone: '+91 484 2345 6789',
-    email: 'kerala@ecabbz.in',
-  ),
-  OfficeRecordV2(
-    type: OfficeTypeV2.state,
-    state: 'Tamil Nadu',
-    name: 'Tamil Nadu State Office',
-    address: 'No. 5, Mount Road,\nChennai – 600 002',
-    phone: '+91 44 5678 9012',
-    email: 'tamilnadu@ecabbz.in',
-  ),
-  OfficeRecordV2(
-    type: OfficeTypeV2.state,
-    state: 'Karnataka',
-    name: 'Karnataka State Office',
-    address: '12th Cross, Indiranagar,\nBangalore – 560 038',
-    phone: '+91 80 3456 7890',
-    email: 'karnataka@ecabbz.in',
-  ),
-  OfficeRecordV2(
-    type: OfficeTypeV2.state,
-    state: 'Puducherry',
-    name: 'Puducherry State Office',
-    address: '3A, Mission Street,\nWhite Town, Pondicherry – 605 001',
-    phone: '+91 413 2345 678',
-    email: 'pondicherry@ecabbz.in',
-  ),
-
   // ── DISTRICT (Kerala) ──
   OfficeRecordV2(
-    type: OfficeTypeV2.district,
     state: 'Kerala',
     district: 'Ernakulam',
     name: 'Ernakulam District Office',
@@ -267,7 +204,6 @@ const List<OfficeRecordV2> kOfficeData = [
     whatsapp: '+919400001001',
   ),
   OfficeRecordV2(
-    type: OfficeTypeV2.district,
     state: 'Kerala',
     district: 'Thiruvananthapuram',
     name: 'Thiruvananthapuram District Office',
@@ -277,7 +213,6 @@ const List<OfficeRecordV2> kOfficeData = [
     whatsapp: '+919400001002',
   ),
   OfficeRecordV2(
-    type: OfficeTypeV2.district,
     state: 'Kerala',
     district: 'Thrissur',
     name: 'Thrissur District Office',
@@ -287,7 +222,6 @@ const List<OfficeRecordV2> kOfficeData = [
     whatsapp: '+919400001003',
   ),
   OfficeRecordV2(
-    type: OfficeTypeV2.district,
     state: 'Kerala',
     district: 'Kozhikode',
     name: 'Kozhikode District Office',
@@ -299,7 +233,6 @@ const List<OfficeRecordV2> kOfficeData = [
 
   // ── DISTRICT (Karnataka) ──
   OfficeRecordV2(
-    type: OfficeTypeV2.district,
     state: 'Karnataka',
     district: 'Bengaluru Urban',
     name: 'Bengaluru Urban District Office',
@@ -309,7 +242,6 @@ const List<OfficeRecordV2> kOfficeData = [
     whatsapp: '+919400002001',
   ),
   OfficeRecordV2(
-    type: OfficeTypeV2.district,
     state: 'Karnataka',
     district: 'Mysuru',
     name: 'Mysuru District Office',
@@ -321,7 +253,6 @@ const List<OfficeRecordV2> kOfficeData = [
 
   // ── DISTRICT (Tamil Nadu) ──
   OfficeRecordV2(
-    type: OfficeTypeV2.district,
     state: 'Tamil Nadu',
     district: 'Chennai',
     name: 'Chennai District Office',
@@ -331,7 +262,6 @@ const List<OfficeRecordV2> kOfficeData = [
     whatsapp: '+919400003001',
   ),
   OfficeRecordV2(
-    type: OfficeTypeV2.district,
     state: 'Tamil Nadu',
     district: 'Coimbatore',
     name: 'Coimbatore District Office',
@@ -341,7 +271,6 @@ const List<OfficeRecordV2> kOfficeData = [
     whatsapp: '+919400003002',
   ),
   OfficeRecordV2(
-    type: OfficeTypeV2.district,
     state: 'Tamil Nadu',
     district: 'Madurai',
     name: 'Madurai District Office',
@@ -353,7 +282,6 @@ const List<OfficeRecordV2> kOfficeData = [
 
   // ── DISTRICT (Puducherry) ──
   OfficeRecordV2(
-    type: OfficeTypeV2.district,
     state: 'Puducherry',
     district: 'Puducherry',
     name: 'Puducherry District Office',
@@ -361,40 +289,6 @@ const List<OfficeRecordV2> kOfficeData = [
     phone: '+91 413 2345 678',
     email: 'pondicherry.dist@ecabbz.in',
     whatsapp: '+919400004001',
-  ),
-
-  // ── ZONAL (Kerala) ──
-  OfficeRecordV2(
-    type: OfficeTypeV2.zonal,
-    state: 'Kerala',
-    district: 'Thrissur',
-    name: 'Kochi North Zonal Office',
-    address: 'M.G Road, Round South,\nThrissur – 680 001',
-    phone: '+91 487 2345 678',
-    email: 'kochi.north@ecabbz.in',
-    whatsapp: '+919400005001',
-  ),
-  OfficeRecordV2(
-    type: OfficeTypeV2.zonal,
-    state: 'Kerala',
-    district: 'Ernakulam',
-    name: 'Kochi South Zonal Office',
-    address: 'Near Kaloor Stadium,\nErnakulam – 682 017',
-    phone: '+91 484 3467 8901',
-    email: 'kochi.south@ecabbz.in',
-    whatsapp: '+919400005002',
-  ),
-
-  // ── ZONAL (Tamil Nadu) ──
-  OfficeRecordV2(
-    type: OfficeTypeV2.zonal,
-    state: 'Tamil Nadu',
-    district: 'Chennai',
-    name: 'Chennai South Zonal Office',
-    address: 'GST Road, Near Tambaram,\nChennai – 600 045',
-    phone: '+91 44 2234 5678',
-    email: 'chennai.south@ecabbz.in',
-    whatsapp: '+919400005003',
   ),
 ];
 
@@ -411,7 +305,6 @@ class ContactUsV2Section extends StatefulWidget {
 
 class _ContactUsV2SectionState extends State<ContactUsV2Section> {
   // ── Selection state ──
-  OfficeTypeV2? _selectedType;
   String? _selectedState;
   String? _selectedDistrict;
 
@@ -422,64 +315,21 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
   static const _lightGreen = Color(0xFF4ADE80);
 
   // ── Derived data ──
-
-  /// Current resolved office record (null if not found = show Coming Soon).
   OfficeRecordV2? get _resolvedOffice {
-    if (_selectedType == null) return null;
-    final type = _selectedType!;
-    if (type == OfficeTypeV2.state) {
-      if (_selectedState == null) return null;
-      return kOfficeData
-          .where((o) => o.type == type && o.state == _selectedState)
-          .firstOrNull;
-    }
-    if (type == OfficeTypeV2.regional) {
-      if (_selectedState == null) return null;
-      return kOfficeData
-          .where((o) => o.type == type && o.state == _selectedState)
-          .firstOrNull;
-    }
-    // district / zonal — needs district too
     if (_selectedState == null || _selectedDistrict == null) return null;
     return kOfficeData
         .where(
-          (o) =>
-              o.type == type &&
-              o.state == _selectedState &&
-              o.district == _selectedDistrict,
+          (o) => o.state == _selectedState && o.district == _selectedDistrict,
         )
         .firstOrNull;
   }
 
-  bool get _showResult =>
-      _selectedType != null &&
-      _selectedState != null &&
-      (_selectedType!.needsDistrict ? _selectedDistrict != null : true);
+  bool get _showResult => _selectedState != null && _selectedDistrict != null;
 
-  bool get _showDistrictStep =>
-      _selectedType != null &&
-      _selectedType!.needsDistrict &&
-      _selectedState != null;
+  bool get _showDistrictStep => _selectedState != null;
 
   List<String> get _availableDistricts =>
       _selectedState != null ? (kDistrictsByState[_selectedState!] ?? []) : [];
-
-  void _resetFrom(int step) {
-    setState(() {
-      if (step <= 1) {
-        _selectedType = null;
-        _selectedState = null;
-        _selectedDistrict = null;
-      }
-      if (step <= 2) {
-        _selectedState = null;
-        _selectedDistrict = null;
-      }
-      if (step <= 3) {
-        _selectedDistrict = null;
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -507,11 +357,15 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
           _buildHeader(isDesktop, accent),
           SizedBox(height: isDesktop ? 52 : 36),
 
-          // HQ Card — same as original
+          // HQ Card — original design, real address
           _buildHQCard(isDesktop, isTablet, accent),
           SizedBox(height: isDesktop ? 40 : 28),
 
-          // ── Office Finder ──
+          // ── State Offices (4 always-visible cards) ──
+          _buildStateOfficesSection(isDesktop, isTablet, isMobile, accent),
+          SizedBox(height: isDesktop ? 40 : 28),
+
+          // ── Regional Office Finder ──
           _buildFinderCard(isMobile, isDesktop, accent),
           SizedBox(height: isDesktop ? 48 : 32),
 
@@ -674,7 +528,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
               ),
               const SizedBox(height: 4),
               Text(
-                'No. 21, GST Road, 5th Floor, Chromepet,\nChennai – 600 044, Tamil Nadu, India',
+                'Arunodayam, 3rd A Cross, Mariyappa Street,\nHRBR, 2nd Stage, Kalyan Nagar, BENGALURU, KARNATAKA 560043',
                 style: GoogleFonts.poppins(
                   color: Colors.white.withValues(alpha: 0.65),
                   fontSize: 13.5,
@@ -757,7 +611,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
         ),
         const SizedBox(height: 14),
         Text(
-          'No. 21, GST Road, 5th Floor, Chromepet,\nChennai – 600 044, Tamil Nadu, India',
+          'Arunodayam, 3rd A Cross, Mariyappa Street,\nHRBR, 2nd Stage, Kalyan Nagar,\nBENGALURU, KARNATAKA 560043',
           style: GoogleFonts.poppins(
             color: Colors.white.withValues(alpha: 0.65),
             fontSize: 13,
@@ -816,7 +670,254 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
     );
   }
 
-  // ── Office Finder Card ────────────────────────────────────────────────────
+  // ── State Offices (4 static cards) ────────────────────────────────────────
+  Widget _buildStateOfficesSection(
+    bool isDesktop,
+    bool isTablet,
+    bool isMobile,
+    Color accent,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.location_city_rounded, color: accent, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'State Offices',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111827),
+                  ),
+                ),
+                Text(
+                  'Administrative offices across our operating states',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Cards grid
+        if (isDesktop || isTablet)
+          // 2-column layout for desktop/tablet
+          _buildStateOfficesGrid(isDesktop, accent)
+        else
+          // Single column for mobile
+          Column(
+            children: kStateOffices
+                .map(
+                  (info) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _buildStateOfficeCard(info, accent, false),
+                  ),
+                )
+                .toList(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildStateOfficesGrid(bool isDesktop, Color accent) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth =
+            (constraints.maxWidth - (isDesktop ? 24.0 : 16.0)) / 2;
+        return Wrap(
+          spacing: isDesktop ? 24 : 16,
+          runSpacing: isDesktop ? 24 : 16,
+          children: kStateOffices
+              .map(
+                (info) => SizedBox(
+                  width: cardWidth,
+                  child: _buildStateOfficeCard(info, accent, isDesktop),
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildStateOfficeCard(
+    _StateOfficeInfo info,
+    Color accent,
+    bool isDesktop,
+  ) {
+    // State color accent
+    final Color stateAccent = _stateAccentColor(info.stateCode, accent);
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(isDesktop ? 24 : 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: stateAccent.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: stateAccent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.location_city_rounded,
+                  color: stateAccent,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: stateAccent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        info.stateCode,
+                        style: GoogleFonts.poppins(
+                          color: stateAccent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      info.state,
+                      style: GoogleFonts.poppins(
+                        color: const Color(0xFF111827),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Divider(color: const Color(0xFFE5E7EB), height: 1),
+          const SizedBox(height: 14),
+
+          // Office title
+          Text(
+            info.displayName,
+            style: GoogleFonts.poppins(
+              color: stateAccent,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            info.company,
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF374151),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Address
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.location_on_rounded, size: 15, color: stateAccent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  info.address,
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF6B7280),
+                    fontSize: 12.5,
+                    height: 1.6,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Email
+          Row(
+            children: [
+              Icon(Icons.email_rounded, size: 15, color: stateAccent),
+              const SizedBox(width: 8),
+              Text(
+                info.email,
+                style: GoogleFonts.poppins(
+                  color: stateAccent,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _stateAccentColor(String stateCode, Color defaultAccent) {
+    if (context.isYellowTheme) return _amber;
+    switch (stateCode) {
+      case 'KL':
+        return const Color(0xFF16A34A); // green
+      case 'KA':
+        return const Color(0xFF1D4ED8); // blue
+      case 'TN':
+        return const Color(0xFFDC2626); // red
+      case 'PY':
+        return const Color(0xFF7C3AED); // purple
+      default:
+        return defaultAccent;
+    }
+  }
+
+  // ── Regional Office Finder ─────────────────────────────────────────────────
   Widget _buildFinderCard(bool isMobile, bool isDesktop, Color accent) {
     return Container(
       width: double.infinity,
@@ -852,7 +953,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Find an Office',
+                    'Find a Regional Office',
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -860,7 +961,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
                     ),
                   ),
                   Text(
-                    'Select office type, state, and district to find contact details',
+                    'Select your state and district to find the nearest office',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: const Color(0xFF6B7280),
@@ -872,23 +973,20 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
           ),
           const SizedBox(height: 32),
 
-          // Step 1 — Office Type
-          _buildStepLabel('1', 'Select Office Type', true, accent),
+          // Step 1 — State
+          _buildStepLabel('1', 'Select State', true, accent),
           const SizedBox(height: 14),
-          _buildTypeSelector(isMobile, accent),
+          _buildStateSelector(isMobile, accent),
 
-          // Step 2 — State
-          if (_selectedType != null) ...[
-            const SizedBox(height: 28),
-            _buildStepLabel('2', 'Select State', true, accent),
-            const SizedBox(height: 14),
-            _buildStateSelector(isMobile, accent),
-          ],
-
-          // Step 3 — District (only for district/zonal types)
+          // Step 2 — District
           if (_showDistrictStep) ...[
             const SizedBox(height: 28),
-            _buildStepLabel('3', 'Select District', true, accent),
+            _buildStepLabel(
+              '2',
+              'Select District (for ${_selectedState ?? ''})',
+              true,
+              accent,
+            ),
             const SizedBox(height: 14),
             _buildDistrictSelector(accent),
           ],
@@ -937,88 +1035,6 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
     );
   }
 
-  Widget _buildTypeSelector(bool isMobile, Color accent) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: OfficeTypeV2.values.map((type) {
-        final isSelected = _selectedType == type;
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedType = type;
-              _selectedState = null;
-              _selectedDistrict = null;
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected ? accent : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? accent : const Color(0xFFE5E7EB),
-                width: 1.5,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: accent.withValues(alpha: 0.25),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  type.icon,
-                  size: 16,
-                  color: isSelected ? Colors.white : const Color(0xFF6B7280),
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      type.label,
-                      style: GoogleFonts.poppins(
-                        color: isSelected
-                            ? Colors.white
-                            : const Color(0xFF374151),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (!isMobile)
-                      Text(
-                        type.description,
-                        style: GoogleFonts.poppins(
-                          color: isSelected
-                              ? Colors.white.withValues(alpha: 0.75)
-                              : const Color(0xFF9CA3AF),
-                          fontSize: 10,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
   Widget _buildStateSelector(bool isMobile, Color accent) {
     return Wrap(
       spacing: 10,
@@ -1061,14 +1077,21 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.map_outlined,
-                  size: 15,
-                  color: isSelected ? Colors.white : const Color(0xFF6B7280),
-                ),
+                if (isSelected)
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 15,
+                    color: Colors.white,
+                  )
+                else
+                  Icon(
+                    Icons.map_outlined,
+                    size: 15,
+                    color: const Color(0xFF6B7280),
+                  ),
                 const SizedBox(width: 8),
                 Text(
-                  state,
+                  state.toUpperCase(),
                   style: GoogleFonts.poppins(
                     color: isSelected ? Colors.white : const Color(0xFF374151),
                     fontSize: 13,
@@ -1167,9 +1190,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
         ),
       ),
       child: Container(
-        key: ValueKey(
-          '${_selectedType}-${_selectedState}-${_selectedDistrict}',
-        ),
+        key: ValueKey('${_selectedState}-${_selectedDistrict}'),
         width: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -1215,7 +1236,11 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
                   color: accent,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(office.type.icon, color: Colors.white, size: 22),
+                child: Icon(
+                  Icons.maps_home_work_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1232,7 +1257,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        office.type.label.toUpperCase(),
+                        'DISTRICT OFFICE',
                         style: GoogleFonts.poppins(
                           color: accent,
                           fontSize: 10,

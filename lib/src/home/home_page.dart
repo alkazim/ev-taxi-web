@@ -7,7 +7,7 @@ import 'sections/ev_fleet_section.dart';
 import 'sections/franchise_registration.dart';
 import 'sections/ev_stations_section.dart';
 import 'sections/service_areas_section.dart';
-import 'sections/contact_us_section.dart';
+
 import 'sections/contact_us_v2_section.dart';
 import 'sections/footer_section.dart';
 
@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
   final GlobalKey _fleetsKey = GlobalKey();
   final GlobalKey _franchiseKey = GlobalKey();
   final GlobalKey _evStationsKey = GlobalKey();
-  final GlobalKey _contactKey = GlobalKey();
+
   final GlobalKey _contactV2Key = GlobalKey();
 
   @override
@@ -111,7 +111,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 RepaintBoundary(child: EVStationsSection(key: _evStationsKey)),
                 RepaintBoundary(child: ContactUsV2Section(key: _contactV2Key)),
-                RepaintBoundary(child: ContactUsSection(key: _contactKey)),
+
                 const RepaintBoundary(child: FooterSection()),
               ],
             ),
