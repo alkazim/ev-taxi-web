@@ -45,22 +45,7 @@
 
 
 <body>
-  <script>
-    // Load Flutter without any loading indicator or splash screen.
-    // flutter_bootstrap.js exposes _flutter.loader; we call it immediately
-    // with a custom onEntrypointLoaded that skips the built-in progress bar.
-    var script = document.createElement('script');
-    script.src = 'flutter_bootstrap.js';
-    script.onload = function () {
-      _flutter.loader.load({
-        onEntrypointLoaded: async function (engineInitializer) {
-          const appRunner = await engineInitializer.initializeEngine();
-          await appRunner.runApp();
-        },
-      });
-    };
-    document.head.appendChild(script);
-  </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 
 </html>
