@@ -94,15 +94,48 @@ class SupabaseService {
     }
   }
 
-  /// Inserts a new Master Franchise application.
+  // ── Franchise helpers ───────────────────────────────────────────────────────
+
+  /// Signs in anonymously to obtain a valid UUID so that `auth.uid() = id`
+  /// satisfies the RLS INSERT policy on every franchise table.
+  Future<void> _insertFranchiseToTable(
+    String table,
+    Map<String, dynamic> data,
+  ) async {
+    final AuthResponse res = await client.auth.signInAnonymously();
+    if (res.user == null)
+      throw Exception('Failed to authenticate anonymously.');
+    final userId = res.user!.id;
+    await client
+        .from(table)
+        .insert({...data, 'id': userId})
+        .timeout(const Duration(seconds: 30));
+  }
+
+  /// Inserts a Master Franchise application → `master_franchise` table.
   Future<void> insertMasterFranchise(Map<String, dynamic> data) async {
     try {
-      await client
-          .from('master_franchises')
-          .insert(data)
-          .timeout(const Duration(seconds: 30));
+      await _insertFranchiseToTable('master_franchise', data);
     } catch (e) {
-      throw Exception('Failed to submit franchise application: $e');
+      throw Exception('Failed to submit Master Franchise application: $e');
+    }
+  }
+
+  /// Inserts a Mega Franchise application → `mega_franchise` table.
+  Future<void> insertMegaFranchise(Map<String, dynamic> data) async {
+    try {
+      await _insertFranchiseToTable('mega_franchise', data);
+    } catch (e) {
+      throw Exception('Failed to submit Mega Franchise application: $e');
+    }
+  }
+
+  /// Inserts a Super Franchise application → `super_franchise` table.
+  Future<void> insertSuperFranchise(Map<String, dynamic> data) async {
+    try {
+      await _insertFranchiseToTable('super_franchise', data);
+    } catch (e) {
+      throw Exception('Failed to submit Super Franchise application: $e');
     }
   }
 }

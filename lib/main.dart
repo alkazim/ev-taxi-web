@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'src/theme/app_theme.dart';
 import 'src/home/home_page.dart';
 import 'src/services/supabase_service.dart';
@@ -13,40 +12,11 @@ final ValueNotifier<bool> useYellowTheme = ValueNotifier(false);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Pre-warm GoogleFonts so fonts are fetched & cached BEFORE any widget
-  // builds. Without this, fonts load mid-render causing a visible layout shift.
-  GoogleFonts.poppins();
-  GoogleFonts.inter();
-
-  // Initialize Supabase
-  // Note: This will fail without valid keys.
-  // It's commented out/handled gracefully in service for now to allow UI demo.
-  try {
-    await SupabaseService().initialize();
-  } catch (e) {
-    debugPrint('Supabase init skipped/failed: $e');
-  }
-
-  // Precache the hero images into Flutter's image cache before the first frame.
-  // This ensures the full-bleed background renders instantly without any flicker.
-  final binding = WidgetsBinding.instance;
-  // We need a temporary BuildContext-like environment — use a PictureRecorder approach
-  // by scheduling precache after the first frame.
-  binding.addPostFrameCallback((_) async {
-    final context = binding.rootElement;
-    if (context != null) {
-      await Future.wait([
-        precacheImage(
-          const AssetImage('assets/images/cars/green_taxi_homescreen.webp'),
-          context,
-        ),
-        precacheImage(
-          const AssetImage('assets/images/cars/yellow_taxi_homescreen.webp'),
-          context,
-        ),
-      ]);
-    }
-  });
+  // Initialize Supabase in the background — it's only needed when forms submit,
+  // so we don't block the UI on it.
+  SupabaseService().initialize().catchError(
+    (e) => debugPrint('Supabase init skipped/failed: $e'),
+  );
 
   runApp(const MyApp());
 }

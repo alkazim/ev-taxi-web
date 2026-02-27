@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -112,6 +111,8 @@ class _FranchiseApplicationDialogState
   final _mainRoadKmCtrl = TextEditingController();
   final _townRoadNameCtrl = TextEditingController();
   final _townRoadKmCtrl = TextEditingController();
+  final _corpRoadNameCtrl = TextEditingController();
+  final _corpRoadKmCtrl = TextEditingController();
 
   // ── Business Profile ──────────────────────────────────────────────────────
   bool _hasTaxiDatabase = false;
@@ -176,6 +177,8 @@ class _FranchiseApplicationDialogState
       _mainRoadKmCtrl,
       _townRoadNameCtrl,
       _townRoadKmCtrl,
+      _corpRoadNameCtrl,
+      _corpRoadKmCtrl,
       _taxiDriverCountCtrl,
       _evChargerDetailsCtrl,
       _locationOverviewCtrl,
@@ -191,18 +194,12 @@ class _FranchiseApplicationDialogState
     super.dispose();
   }
 
-  // ── Meaningful ID generator ───────────────────────────────────────────────
-  String _generateFranchiseId() {
-    final now = DateTime.now();
-    final date =
-        '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    final rand = Random.secure();
-    final suffix = List.generate(
-      4,
-      (_) => chars[rand.nextInt(chars.length)],
-    ).join();
-    return 'ECABBZ-MFR-$date-$suffix';
+  // ── Date formatter ────────────────────────────────────────────────────────
+  /// Converts the form's "DD/MM/YYYY" date to "YYYY-MM-DD" for Supabase DATE type.
+  String? _parseDateForDB(String raw) {
+    final parts = raw.trim().split('/');
+    if (parts.length != 3) return null;
+    return '${parts[2]}-${parts[1]}-${parts[0]}';
   }
 
   // ── Submission ────────────────────────────────────────────────────────────
@@ -211,9 +208,11 @@ class _FranchiseApplicationDialogState
     setState(() => _isLoading = true);
 
     try {
-      final id = _generateFranchiseId();
-      final data = {
-        'id': id,
+      final isMaster = widget.franchiseType == 'Master Franchise';
+      final isMega = widget.franchiseType == 'Mega Franchise';
+
+      // Build the common data payload (no 'id' — added by service via auth.uid())
+      final data = <String, dynamic>{
         'full_name': _fullNameCtrl.text.trim(),
         'fathers_husband_name': _fatherHusbandNameCtrl.text.trim(),
         'age': int.tryParse(_ageCtrl.text.trim()) ?? 0,
@@ -246,6 +245,15 @@ class _FranchiseApplicationDialogState
         'main_road_km': _mainRoadKmCtrl.text.trim(),
         'town_road_name': _townRoadNameCtrl.text.trim(),
         'town_road_km': _townRoadKmCtrl.text.trim(),
+        // master_franchise has corp_road_name/km columns;
+        // mega_franchise & super_franchise use local_body_type/km instead.
+        if (isMaster) ...{
+          'corp_road_name': _corpRoadNameCtrl.text.trim(),
+          'corp_road_km': _corpRoadKmCtrl.text.trim(),
+        } else ...{
+          'local_body_type': _corpRoadNameCtrl.text.trim(),
+          'local_body_km': _corpRoadKmCtrl.text.trim(),
+        },
         'has_taxi_driver_database': _hasTaxiDatabase,
         'taxi_driver_count': _taxiDriverCountCtrl.text.trim(),
         'has_ev_charging_station': _hasEvCharger,
@@ -258,16 +266,21 @@ class _FranchiseApplicationDialogState
         'taxi_experience': _taxiExpCtrl.text.trim(),
         'ev_solar_experience': _evSolarExpCtrl.text.trim(),
         'verified_city': _verifiedCityCtrl.text.trim(),
-        'verified_date': _verifiedDateCtrl.text.trim().isEmpty
-            ? null
-            : _verifiedDateCtrl.text.trim(),
+        'verified_date': _parseDateForDB(_verifiedDateCtrl.text.trim()),
         'status': 'pending',
       };
 
-      await SupabaseService().insertMasterFranchise(data);
+      // Route to the correct table
+      if (isMaster) {
+        await SupabaseService().insertMasterFranchise(data);
+      } else if (isMega) {
+        await SupabaseService().insertMegaFranchise(data);
+      } else {
+        await SupabaseService().insertSuperFranchise(data);
+      }
 
       if (!mounted) return;
-      _showSuccessDialog(id);
+      _showSuccessDialog();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -282,7 +295,9 @@ class _FranchiseApplicationDialogState
     }
   }
 
-  void _showSuccessDialog(String id) {
+  void _showSuccessDialog() {
+    final name = _fullNameCtrl.text.trim();
+    final mobile = _mobile1Ctrl.text.trim();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -308,7 +323,7 @@ class _FranchiseApplicationDialogState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Your Master Franchise application has been received. Your unique Franchise ID is:',
+              'Your ${widget.franchiseType} application has been received successfully.',
               style: GoogleFonts.poppins(fontSize: 13, color: Colors.black54),
             ),
             const SizedBox(height: 16),
@@ -319,41 +334,32 @@ class _FranchiseApplicationDialogState
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFBBF7D0)),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      id,
-                      style: GoogleFonts.robotoMono(
-                        color: _darkGreen,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  Text(
+                    name,
+                    style: GoogleFonts.poppins(
+                      color: _darkGreen,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.copy_rounded,
-                      size: 18,
-                      color: _green,
+                  const SizedBox(height: 4),
+                  Text(
+                    mobile,
+                    style: GoogleFonts.robotoMono(
+                      color: _darkGreen,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
-                    tooltip: 'Copy ID',
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: id));
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        const SnackBar(
-                          content: Text('ID copied!'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Our team will review and contact you shortly.',
+              'Please save your registered mobile number as your reference. Our team will contact you shortly.',
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: Colors.black45,
@@ -898,6 +904,11 @@ class _FranchiseApplicationDialogState
                       'Nearest Town',
                       _townRoadNameCtrl,
                       _townRoadKmCtrl,
+                    ),
+                    _highwayRow(
+                      'Corp/Municipality/\nPanchayath Road',
+                      _corpRoadNameCtrl,
+                      _corpRoadKmCtrl,
                     ),
                     const SizedBox(height: 8),
 
