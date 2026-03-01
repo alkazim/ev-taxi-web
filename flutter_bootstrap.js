@@ -37,8 +37,14 @@ if (!window._flutter) {
 _flutter.buildConfig = {"engineRevision":"18818009497c581ede5d8a3b8b833b81d00cebb7","builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"}]};
 
 
+// Custom bootstrap: load Flutter without any loading indicator.
+// Providing onEntrypointLoaded skips the default progress bar.
 _flutter.loader.load({
   serviceWorkerSettings: {
-    serviceWorkerVersion: "1352922538"
-  }
+    serviceWorkerVersion: "690713378",
+  },
+  onEntrypointLoaded: async function (engineInitializer) {
+    const appRunner = await engineInitializer.initializeEngine();
+    await appRunner.runApp();
+  },
 });

@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/app_theme.dart';
-import '../../services/supabase_service.dart';
+import '../../services/firebase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DriverApplicationDialog extends StatefulWidget {
@@ -16,6 +17,8 @@ class DriverApplicationDialog extends StatefulWidget {
 class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   int _currentStep = 0;
   bool _isLoading = false;
+  String? _statusMessage; // shown under the spinner during long operations
+  Timer? _loadingTimer;
   String? _driverId;
   bool _isContinuation = false;
   final _formKey = GlobalKey<FormState>();
@@ -33,14 +36,13 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     if (savedId != null) {
       setState(() => _isLoading = true);
       try {
-        final data = await SupabaseService().getDriverByCode(savedId);
+        final data = await FirebaseService().getDriverByCode(savedId);
         if (data != null) {
           setState(() {
             _driverId = savedId;
             _isContinuation = true;
-            _currentStep = 1; // Start from Step 2 (Index 1)
+            _currentStep = 1;
 
-            // Populate basic info
             _firstNameController.text = data['first_name'] ?? '';
             _middleNameController.text = data['middle_name'] ?? '';
             _lastNameController.text = data['last_name'] ?? '';
@@ -61,11 +63,111 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           });
         }
       } catch (e) {
-        debugPrint('Error loading existing application: $e');
+        // Silently ignore errors when loading existing draft — user can
+        // still fill in the form manually.
+        debugPrint('Could not load existing application: $e');
       } finally {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
       }
     }
+  }
+
+  // ─── Loading timer helpers ──────────────────────────────────────────────────
+
+  /// Starts a timer that updates [_statusMessage] so the user knows the
+  /// request is still running (instead of seeing a frozen spinner).
+  void _startLoadingTimer() {
+    _statusMessage = null;
+    _loadingTimer?.cancel();
+    _loadingTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted && _isLoading) {
+        setState(() => _statusMessage = 'Still connecting, please wait…');
+      }
+      // After 12 s warn about slow connection
+      _loadingTimer = Timer(const Duration(seconds: 7), () {
+        if (mounted && _isLoading) {
+          setState(
+            () => _statusMessage =
+                'This is taking longer than expected.\nCheck your internet connection.',
+          );
+        }
+      });
+    });
+  }
+
+  void _stopLoadingTimer() {
+    _loadingTimer?.cancel();
+    _loadingTimer = null;
+    _statusMessage = null;
+  }
+
+  // ─── Error dialog ──────────────────────────────────────────────────────────
+
+  /// Shows a clean, user-friendly error dialog. If [onRetry] is provided, a
+  /// "Try Again" button will appear.
+  void _showErrorDialog({
+    required String title,
+    required String message,
+    VoidCallback? onRetry,
+  }) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                color: Colors.red,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          if (onRetry != null)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                onRetry();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Try Again'),
+            ),
+        ],
+      ),
+    );
   }
 
   // Controllers - Personal
@@ -131,6 +233,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
 
   // Personal 2
   final _dobController = TextEditingController();
+  final _ageController = TextEditingController();
   String? _bloodGroup;
   final _licenseNoController = TextEditingController();
   final _licenseIssueDateController = TextEditingController();
@@ -508,12 +611,21 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             'Date of Birth',
             icon: Icons.calendar_today_outlined,
             readOnly: true,
-            onTap: () => _selectDate(
-              context,
-              _dobController,
-              firstDate: DateTime(1970),
-              lastDate: DateTime.now(),
-            ),
+            onTap: () async {
+              final picked = await _selectDateReturn(
+                context,
+                firstDate: DateTime(1970),
+                lastDate: DateTime.now(),
+              );
+              if (picked != null) _onDobSelected(picked);
+            },
+          ),
+          _buildTextField(
+            _ageController,
+            'Age',
+            icon: Icons.cake_outlined,
+            readOnly: true,
+            hint: '--',
           ),
           _buildDropdown(
             'Blood Group',
@@ -582,6 +694,8 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             _panController,
             'PAN Number',
             icon: Icons.badge_outlined,
+            capitalization: TextCapitalization.characters,
+            inputFormatters: [_LicenseNumberFormatter()],
           ),
         ]),
         const Padding(
@@ -659,6 +773,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             keyboardType: TextInputType.phone,
             maxLength: 10,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            exactLength: 10,
           ),
         ]),
         _responsiveRow(isMobile, [
@@ -673,6 +788,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             keyboardType: TextInputType.phone,
             maxLength: 10,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            exactLength: 10,
           ),
         ]),
         _responsiveRow(isMobile, [
@@ -689,6 +805,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             keyboardType: TextInputType.phone,
             maxLength: 10,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            exactLength: 10,
           ),
         ]),
       ],
@@ -1032,11 +1149,41 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.3),
+                color: Colors.black.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Center(
-                child: CircularProgressIndicator(color: AppTheme.primaryColor),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(
+                      color: AppTheme.primaryColor,
+                    ),
+                    if (_statusMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 32),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          _statusMessage!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.textColor,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -1045,7 +1192,11 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   }
 
   Future<void> _submitInitialApplication() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _statusMessage = null;
+    });
+    _startLoadingTimer();
 
     try {
       final Map<String, dynamic> driverData = {
@@ -1062,35 +1213,36 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         'blood_group': _bloodGroup,
         'mobile1': _mobile1Controller.text.trim(),
         'email': _emailController.text.trim(),
-        // Driving License — mandatory in Phase 1
         'license_no': _licenseNoController.text.trim().toUpperCase(),
         'license_issue_date': _licenseIssueDateController.text.trim(),
         'license_expiry_date': _licenseExpiryDateController.text.trim(),
       };
 
-      final id = await SupabaseService().registerDriver(driverData);
-      // Persist driver ID locally in parallel — no need to await before showing dialog.
+      final id = await FirebaseService().registerDriver(driverData);
+
+      // Persist driver ID locally so user can continue later.
       SharedPreferences.getInstance().then(
         (prefs) => prefs.setString('driver_id', id),
       );
 
+      if (!mounted) return;
       setState(() {
         _driverId = id;
         _isContinuation = true;
       });
-
-      if (!mounted) return;
       _showPhase1SuccessDialog(id);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Initial submission failed: $e'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
+      final isAppEx = e is FirebaseAppException;
+      _showErrorDialog(
+        title: 'Submission Failed',
+        message: isAppEx
+            ? e.userMessage
+            : 'Unable to save your information.\n\nPlease check your internet connection and try again.',
+        onRetry: _submitInitialApplication,
       );
     } finally {
+      _stopLoadingTimer();
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -1172,7 +1324,11 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
 
   Future<void> _submitApplication() async {
     if (_driverId == null) return;
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _statusMessage = null;
+    });
+    _startLoadingTimer();
 
     try {
       final Map<String, dynamic> driverData = {
@@ -1187,6 +1343,8 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
 
         // Contact
         'mobile2': _mobile2Controller.text.trim(),
+        'dob': _dobController.text.trim(),
+        'age': _ageController.text.trim(),
 
         // Bank Details
         'bank1_name': _bank1NameController.text.trim(),
@@ -1247,7 +1405,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
 
       // Run DB update and local prefs removal in parallel for speed.
       await Future.wait([
-        SupabaseService().updateDriverByCode(_driverId!, driverData),
+        FirebaseService().updateDriverByCode(_driverId!, driverData),
         SharedPreferences.getInstance().then(
           (prefs) => prefs.remove('driver_id'),
         ),
@@ -1274,22 +1432,23 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Final submission failed: $e'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
+      final isAppEx = e is FirebaseAppException;
+      _showErrorDialog(
+        title: 'Submission Failed',
+        message: isAppEx
+            ? e.userMessage
+            : 'Unable to submit your application.\n\nPlease check your internet connection and try again.',
+        onRetry: _submitApplication,
       );
     } finally {
+      _stopLoadingTimer();
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   // ─── REUSABLE WIDGETS ─────────────────────
-  Future<void> _selectDate(
-    BuildContext context,
-    TextEditingController controller, {
+  Future<DateTime?> _selectDateReturn(
+    BuildContext context, {
     DateTime? firstDate,
     DateTime? lastDate,
   }) async {
@@ -1298,10 +1457,10 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         ? lastDate
         : now;
 
-    final DateTime? picked = await showDatePicker(
+    return showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: firstDate ?? DateTime(1900),
+      firstDate: firstDate ?? DateTime(1970),
       lastDate: lastDate ?? DateTime(2100),
       useRootNavigator: true,
       initialEntryMode: DatePickerEntryMode.calendarOnly,
@@ -1323,6 +1482,19 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         );
       },
     );
+  }
+
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller, {
+    DateTime? firstDate,
+    DateTime? lastDate,
+  }) async {
+    final picked = await _selectDateReturn(
+      context,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
     if (picked != null) {
       setState(() {
         final d = picked.day.toString().padLeft(2, '0');
@@ -1330,6 +1502,20 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         controller.text = '$d/$m/${picked.year}';
       });
     }
+  }
+
+  void _onDobSelected(DateTime picked) {
+    final now = DateTime.now();
+    int age = now.year - picked.year;
+    if (now.month < picked.month ||
+        (now.month == picked.month && now.day < picked.day)) {
+      age--;
+    }
+    setState(() {
+      _dobController.text =
+          '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      _ageController.text = age.toString();
+    });
   }
 
   /// Lays children out in a Row on desktop, stacked Column on mobile
@@ -1362,6 +1548,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     bool readOnly = false,
     VoidCallback? onTap,
     TextCapitalization capitalization = TextCapitalization.none,
+    String? hint,
   }) {
     // Append * to label for mandatory fields
     final displayLabel = isRequired ? '$label *' : label;
@@ -1377,6 +1564,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         decoration: InputDecoration(
           counterText: '', // Hide character counter
           labelText: displayLabel,
+          hintText: hint,
           prefixIcon: icon != null
               ? Icon(icon, size: 20, color: AppTheme.secondaryTextColor)
               : null,

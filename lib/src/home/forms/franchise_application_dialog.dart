@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../services/supabase_service.dart';
+import '../../services/firebase_service.dart';
 
 // ─── Colour palette (consistent with driver dialog) ─────────────────────────
 const _green = Color(0xFF16A34A);
@@ -65,7 +65,8 @@ class _FranchiseApplicationDialogState
 
   // ── Personal Info ─────────────────────────────────────────────────────────
   final _fullNameCtrl = TextEditingController();
-  final _fatherHusbandNameCtrl = TextEditingController();
+  final _spouseNameCtrl = TextEditingController();
+  final _dobCtrl = TextEditingController();
   final _ageCtrl = TextEditingController();
   final _companyNameCtrl = TextEditingController();
   String? _ownershipType;
@@ -143,11 +144,26 @@ class _FranchiseApplicationDialogState
         '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
   }
 
+  void _onDobSelected(DateTime picked) {
+    final now = DateTime.now();
+    int age = now.year - picked.year;
+    if (now.month < picked.month ||
+        (now.month == picked.month && now.day < picked.day)) {
+      age--;
+    }
+    setState(() {
+      _dobCtrl.text =
+          '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      _ageCtrl.text = age.toString();
+    });
+  }
+
   @override
   void dispose() {
     for (final c in [
       _fullNameCtrl,
-      _fatherHusbandNameCtrl,
+      _spouseNameCtrl,
+      _dobCtrl,
       _ageCtrl,
       _companyNameCtrl,
       _mobile1Ctrl,
@@ -195,7 +211,55 @@ class _FranchiseApplicationDialogState
   }
 
   // ── Date formatter ────────────────────────────────────────────────────────
-  /// Converts the form's "DD/MM/YYYY" date to "YYYY-MM-DD" for Supabase DATE type.
+  Future<DateTime?> _selectDateReturn(
+    BuildContext context, {
+    DateTime? firstDate,
+    DateTime? lastDate,
+  }) async {
+    final DateTime now = DateTime.now();
+    return showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: firstDate ?? DateTime(1970),
+      lastDate: lastDate ?? DateTime(now.year + 1),
+      useRootNavigator: true,
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: _green,
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+  }
+
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller, {
+    DateTime? firstDate,
+    DateTime? lastDate,
+  }) async {
+    final picked = await _selectDateReturn(
+      context,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+    if (picked != null) {
+      setState(() {
+        final d = picked.day.toString().padLeft(2, '0');
+        final m = picked.month.toString().padLeft(2, '0');
+        controller.text = '$d/$m/${picked.year}';
+      });
+    }
+  }
+
+  /// Converts the form's "DD/MM/YYYY" date to "YYYY-MM-DD" for Firestore DATE representation.
   String? _parseDateForDB(String raw) {
     final parts = raw.trim().split('/');
     if (parts.length != 3) return null;
@@ -211,12 +275,13 @@ class _FranchiseApplicationDialogState
       final isMaster = widget.franchiseType == 'Master Franchise';
       final isMega = widget.franchiseType == 'Mega Franchise';
 
-      // Build the common data payload (no 'id' — added by service via auth.uid())
+      // Build the common data payload
       final data = <String, dynamic>{
-        'full_name': _fullNameCtrl.text.trim(),
-        'fathers_husband_name': _fatherHusbandNameCtrl.text.trim(),
+        'full_name': _fullNameCtrl.text.trim().toUpperCase(),
+        'spouse_name': _spouseNameCtrl.text.trim().toUpperCase(),
+        'dob': _dobCtrl.text.trim(),
         'age': int.tryParse(_ageCtrl.text.trim()) ?? 0,
-        'company_name': _companyNameCtrl.text.trim(),
+        'company_name': _companyNameCtrl.text.trim().toUpperCase(),
         'ownership_type': _ownershipType,
         'mobile1': _mobile1Ctrl.text.trim(),
         'mobile2': _mobile2Ctrl.text.trim(),
@@ -270,22 +335,24 @@ class _FranchiseApplicationDialogState
         'status': 'pending',
       };
 
-      // Route to the correct table
+      // Route to the correct collection
+      final String code;
       if (isMaster) {
-        await SupabaseService().insertMasterFranchise(data);
+        code = await FirebaseService().insertMasterFranchise(data);
       } else if (isMega) {
-        await SupabaseService().insertMegaFranchise(data);
+        code = await FirebaseService().insertMegaFranchise(data);
       } else {
-        await SupabaseService().insertSuperFranchise(data);
+        code = await FirebaseService().insertSuperFranchise(data);
       }
 
       if (!mounted) return;
-      _showSuccessDialog();
+      _showSuccessDialog(code);
     } catch (e) {
       if (!mounted) return;
+      final isAppEx = e is FirebaseAppException;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Submission failed: $e'),
+          content: Text(isAppEx ? e.userMessage : 'Submission failed: $e'),
           backgroundColor: _red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -295,7 +362,7 @@ class _FranchiseApplicationDialogState
     }
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessDialog(String code) {
     final name = _fullNameCtrl.text.trim();
     final mobile = _mobile1Ctrl.text.trim();
     showDialog(
@@ -354,12 +421,61 @@ class _FranchiseApplicationDialogState
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  const Divider(color: Color(0xFFBBF7D0)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'YOUR FRANCHISE CODE',
+                              style: GoogleFonts.poppins(
+                                color: _darkGreen.withValues(alpha: 0.6),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            SelectableText(
+                              code,
+                              style: GoogleFonts.robotoMono(
+                                color: _darkGreen,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: code));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Code copied to clipboard'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.copy_rounded,
+                          size: 18,
+                          color: _darkGreen,
+                        ),
+                        tooltip: 'Copy Code',
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(
-              'Please save your registered mobile number as your reference. Our team will contact you shortly.',
+              'Please save this code for your reference. Our team will contact you shortly.',
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: Colors.black45,
@@ -396,7 +512,12 @@ class _FranchiseApplicationDialogState
     TextInputType keyboardType = TextInputType.text,
     List<TextInputFormatter>? inputFormatters,
     int maxLines = 1,
+    int? maxLength,
+    int? exactLength,
+    TextCapitalization capitalization = TextCapitalization.none,
     String? Function(String?)? validator,
+    VoidCallback? onTap,
+    bool readOnly = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,10 +526,13 @@ class _FranchiseApplicationDialogState
         const SizedBox(height: 6),
         TextFormField(
           controller: ctrl,
-          readOnly: label == 'Date',
+          readOnly: readOnly,
+          onTap: onTap,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           maxLines: maxLines,
+          maxLength: maxLength,
+          textCapitalization: capitalization,
           style: GoogleFonts.poppins(fontSize: 13),
           decoration: InputDecoration(
             hintText: hint,
@@ -431,13 +555,21 @@ class _FranchiseApplicationDialogState
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: _green, width: 1.5),
             ),
+            counterText: '',
           ),
           validator:
               validator ??
               (required
-                  ? (v) => (v == null || v.trim().isEmpty)
-                        ? '$label is required'
-                        : null
+                  ? (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return '$label is required';
+                      }
+                      if (exactLength != null &&
+                          v.replaceAll(' ', '').length != exactLength) {
+                        return 'Must be $exactLength digits';
+                      }
+                      return null;
+                    }
                   : null),
         ),
         const SizedBox(height: 14),
@@ -474,8 +606,9 @@ class _FranchiseApplicationDialogState
   Widget _highwayRow(
     String label,
     TextEditingController nameCtrl,
-    TextEditingController kmCtrl,
-  ) {
+    TextEditingController kmCtrl, {
+    TextCapitalization capitalization = TextCapitalization.none,
+  }) {
     final inputDecoration = InputDecoration(
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       filled: true,
@@ -517,6 +650,7 @@ class _FranchiseApplicationDialogState
             flex: 5,
             child: TextFormField(
               controller: nameCtrl,
+              textCapitalization: capitalization,
               style: GoogleFonts.poppins(fontSize: 13),
               decoration: inputDecoration.copyWith(
                 hintText: 'Name / Route',
@@ -623,34 +757,48 @@ class _FranchiseApplicationDialogState
                     _field(
                       'Full Name',
                       _fullNameCtrl,
-                      hint: 'e.g. Rajesh Kumar',
+                      hint: 'e.g. RAJESH KUMAR',
+                      capitalization: TextCapitalization.characters,
                     ),
                     _field(
-                      "Father's / Husband's Name",
-                      _fatherHusbandNameCtrl,
-                      hint: 'e.g. Suresh Kumar',
+                      'Spouse Name',
+                      _spouseNameCtrl,
+                      hint: 'e.g. SMITA KUMARI',
+                      capitalization: TextCapitalization.characters,
                     ),
-                    _field(
-                      'Age',
-                      _ageCtrl,
-                      hint: 'Years',
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty)
-                          return 'Age is required';
-                        final age = int.tryParse(v.trim());
-                        if (age == null || age < 18 || age > 80) {
-                          return 'Enter a valid age (18–80)';
-                        }
-                        return null;
-                      },
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _field(
+                            'Date of Birth',
+                            _dobCtrl,
+                            hint: 'DD/MM/YYYY',
+                            readOnly: true,
+                            onTap: () async {
+                              final picked = await _selectDateReturn(context);
+                              if (picked != null) _onDobSelected(picked);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 80,
+                          child: _field(
+                            'Age',
+                            _ageCtrl,
+                            hint: '--',
+                            readOnly: true,
+                          ),
+                        ),
+                      ],
                     ),
                     _field(
                       'Company Name',
                       _companyNameCtrl,
                       hint: 'Optional',
                       required: false,
+                      capitalization: TextCapitalization.characters,
                     ),
 
                     // Ownership type
@@ -722,14 +870,9 @@ class _FranchiseApplicationDialogState
                       _mobile1Ctrl,
                       hint: '10-digit mobile number',
                       keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      exactLength: 10,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty)
-                          return 'Mobile number is required';
-                        if (v.trim().length != 10)
-                          return 'Enter a valid 10-digit number';
-                        return null;
-                      },
                     ),
                     _field(
                       'Mobile Number (2)',
@@ -737,15 +880,9 @@ class _FranchiseApplicationDialogState
                       hint: 'Optional alternate number',
                       required: false,
                       keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      exactLength: 10,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: (v) {
-                        if (v != null &&
-                            v.trim().isNotEmpty &&
-                            v.trim().length != 10) {
-                          return 'Enter a valid 10-digit number';
-                        }
-                        return null;
-                      },
                     ),
                     _field(
                       'Email Address',
@@ -769,6 +906,14 @@ class _FranchiseApplicationDialogState
                       'PAN Card Number',
                       _panCtrl,
                       hint: 'e.g. ABCDE1234F',
+                      capitalization: TextCapitalization.characters,
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          return newValue.copyWith(
+                            text: newValue.text.toUpperCase(),
+                          );
+                        }),
+                      ],
                       validator: (v) {
                         if (v == null || v.trim().isEmpty)
                           return 'PAN is required';
@@ -800,9 +945,24 @@ class _FranchiseApplicationDialogState
                     // ║  SECTION 4 — ADDRESS                      ║
                     // ╚═══════════════════════════════════════════╝
                     _section('4. Address'),
-                    _field('State', _stateCtrl, hint: 'e.g. Tamil Nadu'),
-                    _field('District', _districtCtrl, hint: 'e.g. Coimbatore'),
-                    _field('Town', _townCtrl, hint: 'e.g. Pollachi'),
+                    _field(
+                      'State',
+                      _stateCtrl,
+                      hint: 'e.g. TAMIL NADU',
+                      capitalization: TextCapitalization.characters,
+                    ),
+                    _field(
+                      'District',
+                      _districtCtrl,
+                      hint: 'e.g. COIMBATORE',
+                      capitalization: TextCapitalization.characters,
+                    ),
+                    _field(
+                      'Town',
+                      _townCtrl,
+                      hint: 'e.g. POLLACHI',
+                      capitalization: TextCapitalization.characters,
+                    ),
                     _field(
                       'Full Address',
                       _addressCtrl,
@@ -838,6 +998,7 @@ class _FranchiseApplicationDialogState
                       _policeStationCtrl,
                       hint: 'Name of police station',
                       required: false,
+                      capitalization: TextCapitalization.characters,
                     ),
                     _field(
                       'Police Station Contact Number',
@@ -884,31 +1045,37 @@ class _FranchiseApplicationDialogState
                       'Expressway',
                       _expresswayNameCtrl,
                       _expresswayKmCtrl,
+                      capitalization: TextCapitalization.characters,
                     ),
                     _highwayRow(
                       'National Highway',
                       _nationalHwyNameCtrl,
                       _nationalHwyKmCtrl,
+                      capitalization: TextCapitalization.characters,
                     ),
                     _highwayRow(
                       'State Highway',
                       _stateHwyNameCtrl,
                       _stateHwyKmCtrl,
+                      capitalization: TextCapitalization.characters,
                     ),
                     _highwayRow(
                       'Main Central Road',
                       _mainRoadNameCtrl,
                       _mainRoadKmCtrl,
+                      capitalization: TextCapitalization.characters,
                     ),
                     _highwayRow(
                       'Nearest Town',
                       _townRoadNameCtrl,
                       _townRoadKmCtrl,
+                      capitalization: TextCapitalization.characters,
                     ),
                     _highwayRow(
                       'Corp/Municipality/\nPanchayath Road',
                       _corpRoadNameCtrl,
                       _corpRoadKmCtrl,
+                      capitalization: TextCapitalization.characters,
                     ),
                     const SizedBox(height: 8),
 
@@ -1014,13 +1181,15 @@ class _FranchiseApplicationDialogState
                     _field(
                       'City / Place of Verification',
                       _verifiedCityCtrl,
-                      hint: 'e.g. Coimbatore',
+                      hint: 'e.g. COIMBATORE',
+                      capitalization: TextCapitalization.characters,
                     ),
                     _field(
                       'Date',
                       _verifiedDateCtrl,
                       hint: 'DD/MM/YYYY',
-                      keyboardType: TextInputType.datetime,
+                      readOnly: true,
+                      onTap: () => _selectDate(context, _verifiedDateCtrl),
                     ),
 
                     // ── Submit Button ──────────────────────────────────
