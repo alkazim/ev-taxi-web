@@ -477,7 +477,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
   }
 
   Widget _hqDesktop() {
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
@@ -493,60 +493,64 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
             size: 36,
           ),
         ),
-        const SizedBox(width: 28),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: _amber.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'HEADQUARTERS',
-                  style: GoogleFonts.poppins(
-                    color: _amber,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'E-CABBZ TAXI PRIVATE LIMITED',
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Arunodayam, 3rd A Cross, Mariyappa Street,\nHRBR, 2nd Stage, Kalyan Nagar, BENGALURU, KARNATAKA 560043',
-                style: GoogleFonts.poppins(
-                  color: Colors.white.withValues(alpha: 0.65),
-                  fontSize: 13.5,
-                  height: 1.6,
-                ),
-              ),
-            ],
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: _amber.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'HEADQUARTERS',
+            style: GoogleFonts.poppins(
+              color: _amber,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
+            ),
           ),
         ),
-        const SizedBox(width: 40),
-        _hqStat(Icons.phone_rounded, '+91 44 6789 0123', 'Main Hotline'),
-        const SizedBox(width: 32),
-        _hqStat(Icons.email_rounded, 'hello@ecabbz.in', 'General Enquiry'),
-        const SizedBox(width: 32),
-        _hqStat(
-          Icons.access_time_filled_rounded,
-          'Mon–Sat: 9 AM – 7 PM',
-          'Working Hours',
+        const SizedBox(height: 12),
+        Text(
+          'E-CABBZ TAXI PRIVATE LIMITED',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Arunodayam, 3rd A Cross, Mariyappa Street,\nHRBR, 2nd Stage, Kalyan Nagar, BENGALURU, KARNATAKA 560043',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            color: Colors.white.withValues(alpha: 0.75),
+            fontSize: 15,
+            height: 1.6,
+          ),
+        ),
+        const SizedBox(height: 32),
+        Container(
+          width: 100,
+          height: 1,
+          color: Colors.white.withValues(alpha: 0.15),
+        ),
+        const SizedBox(height: 32),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _hqStat(Icons.phone_rounded, '+91 44 6789 0123', 'Main Hotline'),
+            const SizedBox(width: 48),
+            _hqStat(Icons.email_rounded, 'hello@ecabbz.in', 'General Enquiry'),
+            const SizedBox(width: 48),
+            _hqStat(
+              Icons.access_time_filled_rounded,
+              'Mon–Sat: 9 AM – 7 PM',
+              'Working Hours',
+            ),
+          ],
         ),
       ],
     );
@@ -554,76 +558,69 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
 
   Widget _hqMobile() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: _amber,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.business_rounded,
-                color: Color(0xFF052014),
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _amber.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      'HEADQUARTERS',
-                      style: GoogleFonts.poppins(
-                        color: _amber,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'E-CABBZ TAXI PRIVATE LIMITED',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: _amber,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Icon(
+            Icons.business_rounded,
+            color: Color(0xFF052014),
+            size: 28,
+          ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+          decoration: BoxDecoration(
+            color: _amber.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'HEADQUARTERS',
+            style: GoogleFonts.poppins(
+              color: _amber,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'E-CABBZ TAXI PRIVATE LIMITED',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
         Text(
           'Arunodayam, 3rd A Cross, Mariyappa Street,\nHRBR, 2nd Stage, Kalyan Nagar,\nBENGALURU, KARNATAKA 560043',
+          textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
             color: Colors.white.withValues(alpha: 0.65),
-            fontSize: 13,
+            fontSize: 12,
             height: 1.6,
           ),
         ),
-        const SizedBox(height: 18),
-        Container(height: 1, color: Colors.white.withValues(alpha: 0.1)),
-        const SizedBox(height: 18),
+        const SizedBox(height: 24),
+        Container(
+          width: 60,
+          height: 1,
+          color: Colors.white.withValues(alpha: 0.1),
+        ),
+        const SizedBox(height: 24),
         Wrap(
           spacing: 24,
-          runSpacing: 14,
+          runSpacing: 20,
+          alignment: WrapAlignment.center,
           children: [
             _hqStat(Icons.phone_rounded, '+91 44 6789 0123', 'Main Hotline'),
             _hqStat(Icons.email_rounded, 'hello@ecabbz.in', 'General Enquiry'),
@@ -1108,68 +1105,49 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
 
   Widget _buildDistrictSelector(Color accent) {
     final districts = _availableDistricts;
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 240),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: ListView.separated(
-          shrinkWrap: true,
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          itemCount: districts.length,
-          separatorBuilder: (_, __) => Container(
-            height: 1,
-            color: const Color(0xFFF3F4F6),
-            margin: const EdgeInsets.symmetric(horizontal: 12),
-          ),
-          itemBuilder: (context, index) {
-            final district = districts[index];
-            final isSelected = _selectedDistrict == district;
-            return InkWell(
-              onTap: () => setState(() => _selectedDistrict = district),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                color: isSelected
-                    ? accent.withValues(alpha: 0.08)
-                    : Colors.transparent,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 11,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isSelected
-                          ? Icons.radio_button_checked_rounded
-                          : Icons.radio_button_unchecked_rounded,
-                      size: 18,
-                      color: isSelected ? accent : const Color(0xFFD1D5DB),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      district,
-                      style: GoogleFonts.poppins(
-                        color: isSelected ? accent : const Color(0xFF374151),
-                        fontSize: 14,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (isSelected)
-                      Icon(Icons.check_circle_rounded, size: 16, color: accent),
-                  ],
-                ),
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: districts.map((district) {
+        final isSelected = _selectedDistrict == district;
+        return InkWell(
+          onTap: () => setState(() => _selectedDistrict = district),
+          borderRadius: BorderRadius.circular(12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected ? accent.withValues(alpha: 0.1) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? accent : const Color(0xFFE5E7EB),
+                width: isSelected ? 1.5 : 1,
               ),
-            );
-          },
-        ),
-      ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isSelected
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  size: 16,
+                  color: isSelected ? accent : const Color(0xFFD1D5DB),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  district,
+                  style: GoogleFonts.poppins(
+                    color: isSelected ? accent : const Color(0xFF374151),
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 

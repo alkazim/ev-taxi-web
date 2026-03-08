@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'form_persistence_state.dart';
 import '../../theme/app_theme.dart';
 import '../../services/firebase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,6 +31,194 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   void initState() {
     super.initState();
     _checkExistingApplication();
+
+    // Restores and starts listening to changes for persistence
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = Provider.of<FormPersistenceState>(context, listen: false);
+      final data = state.driverData;
+
+      if (data.isNotEmpty) {
+        _firstNameController.text = data['first_name'] ?? '';
+        _middleNameController.text = data['middle_name'] ?? '';
+        _lastNameController.text = data['last_name'] ?? '';
+        _selectedState = data['state'];
+        _selectedDistrict = data['district'];
+        _villageController.text = data['village'] ?? '';
+        _addressController.text = data['address'] ?? '';
+        _pinController.text = data['pin'] ?? '';
+        _landmarkController.text = data['landmark'] ?? '';
+        _mobile1Controller.text = data['mobile1'] ?? '';
+        _dobController.text = data['dob'] ?? '';
+        _ageController.text = data['age'] ?? '';
+        _bloodGroup = data['blood_group'];
+        _emailController.text = data['email'] ?? '';
+        _licenseNoController.text = data['license_no'] ?? '';
+        _licenseIssueDateController.text = data['license_issue_date'] ?? '';
+        _licenseExpiryDateController.text = data['license_expiry_date'] ?? '';
+        _mobile2Controller.text = data['mobile2'] ?? '';
+        _panController.text = data['pan'] ?? '';
+        _aadhaarController.text = data['aadhaar'] ?? '';
+        _bank1NameController.text = data['bank1_name'] ?? '';
+        _bank1AccController.text = data['bank1_acc'] ?? '';
+        _bank1IfscController.text = data['bank1_ifsc'] ?? '';
+        _bank2NameController.text = data['bank2_name'] ?? '';
+        _bank2AccController.text = data['bank2_acc'] ?? '';
+        _bank2IfscController.text = data['bank2_ifsc'] ?? '';
+        _fatherNameController.text = data['father_name'] ?? '';
+        _fatherMobileController.text = data['father_mobile'] ?? '';
+        _motherNameController.text = data['mother_name'] ?? '';
+        _motherMobileController.text = data['mother_mobile'] ?? '';
+        _spouseNameController.text = data['spouse_name'] ?? '';
+        _spouseMobileController.text = data['spouse_mobile'] ?? '';
+        _insuranceCompanyController.text = data['insurance_company'] ?? '';
+        _policyNoController.text = data['policy_no'] ?? '';
+        _sumInsuredController.text = data['sum_insured'] ?? '';
+        _policyEndDateController.text = data['policy_end_date'] ?? '';
+        _caseDetailsController.text = data['case_details'] ?? '';
+
+        _sslcStatus = data['sslc_status'];
+        _plusTwoStatus = data['plus_two_status'];
+        _degreeStatus = data['degree_status'];
+        _postGradStatus = data['post_grad_status'];
+        _diplomaStatus = data['diploma_status'];
+        _techCourseStatus = data['tech_course_status'];
+
+        _sslcYear = data['sslc_year'];
+        _plusTwoYear = data['plus_two_year'];
+        _degreeYear = data['degree_year'];
+        _postGradYear = data['post_grad_year'];
+        _diplomaYear = data['diploma_year'];
+        _techCourseYear = data['tech_course_year'];
+
+        _engSpeak = data['eng_speak'] == 'true';
+        _engRead = data['eng_read'] == 'true';
+        _engWrite = data['eng_write'] == 'true';
+        _hinSpeak = data['hin_speak'] == 'true';
+        _hinRead = data['hin_read'] == 'true';
+        _hinWrite = data['hin_write'] == 'true';
+        _malSpeak = data['mal_speak'] == 'true';
+        _malRead = data['mal_read'] == 'true';
+        _malWrite = data['mal_write'] == 'true';
+        _kanSpeak = data['kan_speak'] == 'true';
+        _kanRead = data['kan_read'] == 'true';
+        _kanWrite = data['kan_write'] == 'true';
+        _tamSpeak = data['tam_speak'] == 'true';
+        _tamRead = data['tam_read'] == 'true';
+        _tamWrite = data['tam_write'] == 'true';
+
+        _hasInsurance = data['has_insurance'] == 'true';
+        _hasPoliceCase = data['has_police_case'] == 'true';
+        _declarationAccepted = data['declaration_accepted'] == 'true';
+        _verifiedCityController.text = data['verified_city'] ?? '';
+        _verifiedDateController.text = data['verified_date'] ?? '';
+
+        // Restore experiences
+        final expJson = data['experiences'];
+        if (expJson != null && expJson.isNotEmpty) {
+          try {
+            final List<dynamic> decoded = jsonDecode(expJson);
+            final restored = decoded.map((e) {
+              final entry = _ExperienceEntry();
+              entry.companyController.text = e['company'] ?? '';
+              entry.joinDateController.text = e['join_date'] ?? '';
+              entry.leaveDateController.text = e['leave_date'] ?? '';
+              entry.reasonController.text = e['reason'] ?? '';
+              _addExperienceListeners(entry);
+              return entry;
+            }).toList();
+            _experiences.clear();
+            _experiences.addAll(restored);
+          } catch (e) {
+            debugPrint('Error restoring experiences: $e');
+          }
+        }
+
+        _currentStep = state.driverCurrentStep;
+
+        setState(() {});
+      }
+
+      // Add listeners to all controllers
+      _addListener(_firstNameController, 'first_name');
+      _addListener(_middleNameController, 'middle_name');
+      _addListener(_lastNameController, 'last_name');
+      _addListener(_villageController, 'village');
+      _addListener(_addressController, 'address');
+      _addListener(_pinController, 'pin');
+      _addListener(_landmarkController, 'landmark');
+      _addListener(_mobile1Controller, 'mobile1');
+      _addListener(_dobController, 'dob');
+      _addListener(_ageController, 'age');
+      _addListener(_emailController, 'email');
+      _addListener(_licenseNoController, 'license_no');
+      _addListener(_licenseIssueDateController, 'license_issue_date');
+      _addListener(_licenseExpiryDateController, 'license_expiry_date');
+      _addListener(_mobile2Controller, 'mobile2');
+      _addListener(_panController, 'pan');
+      _addListener(_aadhaarController, 'aadhaar');
+      _addListener(_bank1NameController, 'bank1_name');
+      _addListener(_bank1AccController, 'bank1_acc');
+      _addListener(_bank1IfscController, 'bank1_ifsc');
+      _addListener(_bank2NameController, 'bank2_name');
+      _addListener(_bank2AccController, 'bank2_acc');
+      _addListener(_bank2IfscController, 'bank2_ifsc');
+      _addListener(_fatherNameController, 'father_name');
+      _addListener(_fatherMobileController, 'father_mobile');
+      _addListener(_motherNameController, 'mother_name');
+      _addListener(_motherMobileController, 'mother_mobile');
+      _addListener(_spouseNameController, 'spouse_name');
+      _addListener(_spouseMobileController, 'spouse_mobile');
+      _addListener(_insuranceCompanyController, 'insurance_company');
+      _addListener(_policyNoController, 'policy_no');
+      _addListener(_sumInsuredController, 'sum_insured');
+      _addListener(_policyEndDateController, 'policy_end_date');
+      _addListener(_caseDetailsController, 'case_details');
+      _addListener(_verifiedCityController, 'verified_city');
+      _addListener(_verifiedDateController, 'verified_date');
+    });
+  }
+
+  void _addListener(TextEditingController ctrl, String key) {
+    ctrl.addListener(() {
+      if (!mounted) return;
+      Provider.of<FormPersistenceState>(
+        context,
+        listen: false,
+      ).updateDriverField(key, ctrl.text);
+    });
+  }
+
+  void _updatePersistedField(String key, String value) {
+    Provider.of<FormPersistenceState>(
+      context,
+      listen: false,
+    ).updateDriverField(key, value);
+  }
+
+  void _updatePersistedStep(int step) {
+    Provider.of<FormPersistenceState>(
+      context,
+      listen: false,
+    ).setDriverStep(step);
+  }
+
+  void _saveExperiences() {
+    final List<Map<String, String>> data = _experiences.map((e) {
+      return {
+        'company': e.companyController.text,
+        'join_date': e.joinDateController.text,
+        'leave_date': e.leaveDateController.text,
+        'reason': e.reasonController.text,
+      };
+    }).toList();
+    _updatePersistedField('experiences', jsonEncode(data));
+  }
+
+  void _addExperienceListeners(_ExperienceEntry entry) {
+    entry.companyController.addListener(_saveExperiences);
+    entry.joinDateController.addListener(_saveExperiences);
+    entry.leaveDateController.addListener(_saveExperiences);
+    entry.reasonController.addListener(_saveExperiences);
   }
 
   Future<void> _checkExistingApplication() async {
@@ -240,7 +432,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   final _licenseExpiryDateController = TextEditingController();
 
   // Experience entries
-  final List<_ExperienceEntry> _experiences = [];
+  List<_ExperienceEntry> _experiences = [];
 
   // Insurance & Legal
   bool _hasInsurance = false;
@@ -251,6 +443,9 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
 
   bool _hasPoliceCase = false;
   final _caseDetailsController = TextEditingController();
+  final _verifiedCityController = TextEditingController();
+  final _verifiedDateController = TextEditingController();
+  bool _declarationAccepted = false;
 
   final List<String> _states = [
     'Kerala',
@@ -552,6 +747,8 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             setState(() {
               _selectedState = v;
               _selectedDistrict = null; // Reset district when state changes
+              _updatePersistedField('state', v ?? '');
+              _updatePersistedField('district', '');
             });
           }),
           _buildDropdown(
@@ -560,7 +757,10 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             _selectedState != null
                 ? (_stateDistricts[_selectedState] ?? [])
                 : [],
-            (v) => setState(() => _selectedDistrict = v),
+            (v) {
+              setState(() => _selectedDistrict = v);
+              _updatePersistedField('district', v ?? '');
+            },
           ),
         ]),
         _buildTextField(
@@ -575,6 +775,8 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           'Full Address',
           maxLines: 2,
           icon: Icons.home_outlined,
+          capitalization: TextCapitalization.characters,
+          inputFormatters: [_LicenseNumberFormatter()],
         ),
         _responsiveRow(isMobile, [
           _buildTextField(
@@ -627,12 +829,10 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             readOnly: true,
             hint: '--',
           ),
-          _buildDropdown(
-            'Blood Group',
-            _bloodGroup,
-            _bloodGroups,
-            (v) => setState(() => _bloodGroup = v),
-          ),
+          _buildDropdown('Blood Group', _bloodGroup, _bloodGroups, (v) {
+            setState(() => _bloodGroup = v);
+            _updatePersistedField('blood_group', v ?? '');
+          }),
         ]),
         _buildTextField(
           _emailController,
@@ -658,14 +858,73 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             'Issue Date',
             icon: Icons.calendar_today_outlined,
             readOnly: true,
-            onTap: () => _selectDate(context, _licenseIssueDateController),
+            onTap: () async {
+              final picked = await _selectDateReturn(
+                context,
+                firstDate: DateTime(1988),
+                lastDate: DateTime.now(),
+              );
+              if (picked != null) {
+                setState(() {
+                  final d = picked.day.toString().padLeft(2, '0');
+                  final m = picked.month.toString().padLeft(2, '0');
+                  _licenseIssueDateController.text = '$d/$m/${picked.year}';
+
+                  // If expiry date exists, check if it's still valid (at least 5 years after issue)
+                  if (_licenseExpiryDateController.text.isNotEmpty) {
+                    final currentExpiry = _parseDate(
+                      _licenseExpiryDateController.text,
+                    );
+                    if (currentExpiry != null) {
+                      final minExpiry = DateTime(
+                        picked.year + 5,
+                        picked.month,
+                        picked.day,
+                      );
+                      if (currentExpiry.isBefore(minExpiry)) {
+                        _licenseExpiryDateController.clear();
+                      }
+                    }
+                  }
+                });
+              }
+            },
           ),
           _buildTextField(
             _licenseExpiryDateController,
             'Expiry Date',
             icon: Icons.event_outlined,
             readOnly: true,
-            onTap: () => _selectDate(context, _licenseExpiryDateController),
+            onTap: () async {
+              if (_licenseIssueDateController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please select Issue Date first'),
+                  ),
+                );
+                return;
+              }
+              final issueDate = _parseDate(_licenseIssueDateController.text);
+              if (issueDate == null) return;
+
+              final minExpiry = DateTime(
+                issueDate.year + 5,
+                issueDate.month,
+                issueDate.day,
+              );
+              final picked = await _selectDateReturn(
+                context,
+                firstDate: minExpiry,
+                lastDate: DateTime(DateTime.now().year + 50),
+              );
+              if (picked != null) {
+                setState(() {
+                  final d = picked.day.toString().padLeft(2, '0');
+                  final m = picked.month.toString().padLeft(2, '0');
+                  _licenseExpiryDateController.text = '$d/$m/${picked.year}';
+                });
+              }
+            },
           ),
         ]),
       ],
@@ -694,8 +953,17 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             _panController,
             'PAN Number',
             icon: Icons.badge_outlined,
+            hint: 'e.g. ABCDE1234F',
             capitalization: TextCapitalization.characters,
             inputFormatters: [_LicenseNumberFormatter()],
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Required';
+              final pan = v.trim().toUpperCase();
+              if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(pan)) {
+                return 'Invalid PAN format';
+              }
+              return null;
+            },
           ),
         ]),
         const Padding(
@@ -824,14 +1092,24 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           _sslcYear,
           (s) => setState(() {
             _sslcStatus = s;
+            _updatePersistedField('sslc_status', s ?? '');
             if (s == 'Fail') {
               _plusTwoStatus = _degreeStatus = _postGradStatus =
                   _diplomaStatus = _techCourseStatus = null;
               _plusTwoYear = _degreeYear = _postGradYear = _diplomaYear =
                   _techCourseYear = null;
+              // Clear dependent fields in persistence
+              _updatePersistedField('plus_two_status', '');
+              _updatePersistedField('degree_status', '');
+              _updatePersistedField('post_grad_status', '');
+              _updatePersistedField('diploma_status', '');
+              _updatePersistedField('tech_course_status', '');
             }
           }),
-          (y) => setState(() => _sslcYear = y),
+          (y) => setState(() {
+            _sslcYear = y;
+            _updatePersistedField('sslc_year', y ?? '');
+          }),
           isMobile,
         ),
         if (_sslcStatus == 'Pass') ...[
@@ -839,40 +1117,70 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             '+2',
             _plusTwoStatus,
             _plusTwoYear,
-            (s) => setState(() => _plusTwoStatus = s),
-            (y) => setState(() => _plusTwoYear = y),
+            (s) => setState(() {
+              _plusTwoStatus = s;
+              _updatePersistedField('plus_two_status', s ?? '');
+            }),
+            (y) => setState(() {
+              _plusTwoYear = y;
+              _updatePersistedField('plus_two_year', y ?? '');
+            }),
             isMobile,
           ),
           _buildEducationLevel(
             'Graduation',
             _degreeStatus,
             _degreeYear,
-            (s) => setState(() => _degreeStatus = s),
-            (y) => setState(() => _degreeYear = y),
+            (s) => setState(() {
+              _degreeStatus = s;
+              _updatePersistedField('degree_status', s ?? '');
+            }),
+            (y) => setState(() {
+              _degreeYear = y;
+              _updatePersistedField('degree_year', y ?? '');
+            }),
             isMobile,
           ),
           _buildEducationLevel(
             'Post Graduation',
             _postGradStatus,
             _postGradYear,
-            (s) => setState(() => _postGradStatus = s),
-            (y) => setState(() => _postGradYear = y),
+            (s) => setState(() {
+              _postGradStatus = s;
+              _updatePersistedField('post_grad_status', s ?? '');
+            }),
+            (y) => setState(() {
+              _postGradYear = y;
+              _updatePersistedField('post_grad_year', y ?? '');
+            }),
             isMobile,
           ),
           _buildEducationLevel(
             'Diploma',
             _diplomaStatus,
             _diplomaYear,
-            (s) => setState(() => _diplomaStatus = s),
-            (y) => setState(() => _diplomaYear = y),
+            (s) => setState(() {
+              _diplomaStatus = s;
+              _updatePersistedField('diploma_status', s ?? '');
+            }),
+            (y) => setState(() {
+              _diplomaYear = y;
+              _updatePersistedField('diploma_year', y ?? '');
+            }),
             isMobile,
           ),
           _buildEducationLevel(
             'Technical Course',
             _techCourseStatus,
             _techCourseYear,
-            (s) => setState(() => _techCourseStatus = s),
-            (y) => setState(() => _techCourseYear = y),
+            (s) => setState(() {
+              _techCourseStatus = s;
+              _updatePersistedField('tech_course_status', s ?? '');
+            }),
+            (y) => setState(() {
+              _techCourseYear = y;
+              _updatePersistedField('tech_course_year', y ?? '');
+            }),
             isMobile,
           ),
         ],
@@ -894,6 +1202,9 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             _engSpeak = s;
             _engRead = r;
             _engWrite = w;
+            _updatePersistedField('eng_speak', s.toString());
+            _updatePersistedField('eng_read', r.toString());
+            _updatePersistedField('eng_write', w.toString());
           }),
           isMobile,
         ),
@@ -906,6 +1217,9 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             _hinSpeak = s;
             _hinRead = r;
             _hinWrite = w;
+            _updatePersistedField('hin_speak', s.toString());
+            _updatePersistedField('hin_read', r.toString());
+            _updatePersistedField('hin_write', w.toString());
           }),
           isMobile,
         ),
@@ -918,6 +1232,9 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             _malSpeak = s;
             _malRead = r;
             _malWrite = w;
+            _updatePersistedField('mal_speak', s.toString());
+            _updatePersistedField('mal_read', r.toString());
+            _updatePersistedField('mal_write', w.toString());
           }),
           isMobile,
         ),
@@ -930,6 +1247,9 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             _kanSpeak = s;
             _kanRead = r;
             _kanWrite = w;
+            _updatePersistedField('kan_speak', s.toString());
+            _updatePersistedField('kan_read', r.toString());
+            _updatePersistedField('kan_write', w.toString());
           }),
           isMobile,
         ),
@@ -942,6 +1262,9 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             _tamSpeak = s;
             _tamRead = r;
             _tamWrite = w;
+            _updatePersistedField('tam_speak', s.toString());
+            _updatePersistedField('tam_read', r.toString());
+            _updatePersistedField('tam_write', w.toString());
           }),
           isMobile,
         ),
@@ -959,8 +1282,14 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           children: [
             _buildSectionLabel('Previous Experience', isOptional: true),
             TextButton.icon(
-              onPressed: () =>
-                  setState(() => _experiences.add(_ExperienceEntry())),
+              onPressed: () {
+                setState(() {
+                  final entry = _ExperienceEntry();
+                  _experiences.add(entry);
+                  _addExperienceListeners(entry);
+                  _saveExperiences();
+                });
+              },
               icon: const Icon(Icons.add_rounded),
               label: const Text('Add Experience'),
               style: TextButton.styleFrom(
@@ -1009,7 +1338,10 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           'Do you have Medical Insurance?',
           _hasInsurance,
           Icons.health_and_safety_rounded,
-          (v) => setState(() => _hasInsurance = v),
+          (v) => setState(() {
+            _hasInsurance = v;
+            _updatePersistedField('has_insurance', v.toString());
+          }),
         ),
         if (_hasInsurance) ...[
           const SizedBox(height: 8),
@@ -1043,7 +1375,10 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           'Any Police/Judicial Cases?',
           _hasPoliceCase,
           Icons.gavel_rounded,
-          (v) => setState(() => _hasPoliceCase = v),
+          (v) => setState(() {
+            _hasPoliceCase = v;
+            _updatePersistedField('has_police_case', v.toString());
+          }),
         ),
         if (_hasPoliceCase) ...[
           const SizedBox(height: 8),
@@ -1054,6 +1389,179 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             icon: Icons.description_outlined,
           ),
         ],
+        const SizedBox(height: 20),
+        const SizedBox(height: 16),
+        _buildTextField(
+          _verifiedCityController,
+          'City / Place of Verification',
+          icon: Icons.location_on_outlined,
+        ),
+        _buildTextField(
+          _verifiedDateController,
+          'Date',
+          icon: Icons.calendar_today_outlined,
+          readOnly: true,
+          onTap: () async {
+            await _selectDate(context, _verifiedDateController);
+            _updatePersistedField(
+              'verified_date',
+              _verifiedDateController.text,
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        // Declaration Checkbox & Signature
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: _declarationAccepted
+                ? const Color(0xFFF0FDF4)
+                : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _declarationAccepted
+                  ? AppTheme.primaryColor.withOpacity(0.3)
+                  : Colors.grey.shade200,
+            ),
+          ),
+          child: Column(
+            children: [
+              InkWell(
+                onTap: () {
+                  if (!_formKey.currentState!.validate()) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Please fill all mandatory fields correctly before accepting the declaration.',
+                        ),
+                        backgroundColor: Colors.orange,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+                  setState(() => _declarationAccepted = !_declarationAccepted);
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: Checkbox(
+                        value: _declarationAccepted,
+                        onChanged: (v) {
+                          if (!_formKey.currentState!.validate()) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Please fill all mandatory fields correctly before accepting the declaration.',
+                                ),
+                                backgroundColor: Colors.orange,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                            return;
+                          }
+                          setState(() {
+                            _declarationAccepted = v ?? false;
+                            _updatePersistedField(
+                              'declaration_accepted',
+                              _declarationAccepted.toString(),
+                            );
+                          });
+                        },
+                        activeColor: AppTheme.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '" That if any of the information provided above is found to be false or incorrect, I shall be liable for legal action and my application may be rejected "',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: Colors.black87,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: _declarationAccepted
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_declarationAccepted) ...[
+                const SizedBox(height: 16),
+                const Divider(height: 1),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SIGNATURE',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey.shade500,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            (_firstNameController.text.isEmpty &&
+                                    _lastNameController.text.isEmpty)
+                                ? '[ FULL NAME ]'
+                                : '${_firstNameController.text} ${_lastNameController.text}'
+                                      .toUpperCase(),
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'DATE',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade500,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _verifiedDateController.text.isEmpty
+                              ? '${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year}'
+                              : _verifiedDateController.text,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -1080,7 +1588,12 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
               if (!isFirstStep)
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => setState(() => _currentStep--),
+                    onPressed: () {
+                      setState(() {
+                        _currentStep--;
+                        _updatePersistedStep(_currentStep);
+                      });
+                    },
                     icon: const Icon(Icons.arrow_back_rounded, size: 18),
                     label: Text(isMobile ? 'Back' : 'Previous Step'),
                     style: OutlinedButton.styleFrom(
@@ -1103,11 +1616,25 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
+                      if (_currentStep == 5 && !_declarationAccepted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Please accept the declaration to proceed',
+                            ),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                        return;
+                      }
                       if (_currentStep < 5) {
                         if (_currentStep == 0 && !_isContinuation) {
                           _submitInitialApplication();
                         } else {
-                          setState(() => _currentStep++);
+                          setState(() {
+                            _currentStep++;
+                            _updatePersistedStep(_currentStep);
+                          });
                         }
                       } else {
                         _submitApplication();
@@ -1401,6 +1928,9 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         'policy_end_date': _policyEndDateController.text.trim(),
         'has_police_case': _hasPoliceCase,
         'case_details': _caseDetailsController.text.trim(),
+        'verified_city': _verifiedCityController.text.trim().toUpperCase(),
+        'verified_date': _verifiedDateController.text.trim(),
+        'declaration_accepted': _declarationAccepted,
       };
 
       // Run DB update and local prefs removal in parallel for speed.
@@ -1410,6 +1940,9 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           (prefs) => prefs.remove('driver_id'),
         ),
       ]);
+
+      if (!mounted) return;
+      Provider.of<FormPersistenceState>(context, listen: false).clearDriver();
 
       if (!mounted) return;
 
@@ -1461,7 +1994,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
       context: context,
       initialDate: initial,
       firstDate: firstDate ?? DateTime(1970),
-      lastDate: lastDate ?? DateTime(2100),
+      lastDate: lastDate ?? now,
       useRootNavigator: true,
       initialEntryMode: DatePickerEntryMode.calendarOnly,
       builder: (context, child) {
@@ -1518,6 +2051,18 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     });
   }
 
+  /// Helper to parse "DD/MM/YYYY" string back to DateTime
+  DateTime? _parseDate(String text) {
+    if (text.isEmpty) return null;
+    final parts = text.split('/');
+    if (parts.length != 3) return null;
+    final d = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    final y = int.tryParse(parts[2]);
+    if (d == null || m == null || y == null) return null;
+    return DateTime(y, m, d);
+  }
+
   /// Lays children out in a Row on desktop, stacked Column on mobile
   Widget _responsiveRow(bool isMobile, List<Widget> children) {
     if (isMobile) {
@@ -1549,6 +2094,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     VoidCallback? onTap,
     TextCapitalization capitalization = TextCapitalization.none,
     String? hint,
+    String? Function(String?)? validator,
   }) {
     // Append * to label for mandatory fields
     final displayLabel = isRequired ? '$label *' : label;
@@ -1596,19 +2142,21 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         ),
         keyboardType: keyboardType,
         maxLines: maxLines,
-        validator: (v) {
-          if (isRequired && (v == null || v.trim().isEmpty)) {
-            return 'Required';
-          }
-          if (exactLength != null && v != null && v.isNotEmpty) {
-            // Strip spaces (e.g. Aadhaar formatted) before checking length
-            final stripped = v.replaceAll(' ', '');
-            if (stripped.length < exactLength) {
-              return 'Must be exactly $exactLength digits';
-            }
-          }
-          return null;
-        },
+        validator:
+            validator ??
+            (v) {
+              if (isRequired && (v == null || v.trim().isEmpty)) {
+                return 'Required';
+              }
+              if (exactLength != null && v != null && v.isNotEmpty) {
+                // Strip spaces (e.g. Aadhaar formatted) before checking length
+                final stripped = v.replaceAll(' ', '');
+                if (stripped.length < exactLength) {
+                  return 'Must be exactly $exactLength digits';
+                }
+              }
+              return null;
+            },
       ),
     );
   }

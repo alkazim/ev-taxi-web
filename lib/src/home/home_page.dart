@@ -5,7 +5,7 @@ import 'sections/hero_section.dart';
 import 'sections/driver_registration.dart';
 import 'sections/ev_fleet_section.dart';
 import 'sections/franchise_registration.dart';
-import 'sections/ev_stations_section.dart';
+import 'sections/ev_map_page.dart';
 import 'sections/service_areas_section.dart';
 
 import 'sections/contact_us_v2_section.dart';
@@ -109,7 +109,7 @@ class _HomePageState extends State<HomePage> {
                 RepaintBoundary(
                   child: FranchiseRegistrationSection(key: _franchiseKey),
                 ),
-                RepaintBoundary(child: EVStationsSection(key: _evStationsKey)),
+                RepaintBoundary(child: EVMapPage(key: _evStationsKey)),
                 RepaintBoundary(child: ContactUsV2Section(key: _contactV2Key)),
 
                 const RepaintBoundary(child: FooterSection()),

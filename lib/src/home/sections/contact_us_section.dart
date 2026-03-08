@@ -969,7 +969,6 @@ class _ContactChip extends StatelessWidget {
     required this.value,
     required this.isDesktop,
     this.isFontAwesome = false,
-    this.iconWidget,
   });
 
   static const _green = Color(0xFF16A34A);

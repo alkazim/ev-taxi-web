@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'src/theme/app_theme.dart';
 import 'src/home/home_page.dart';
+import 'src/home/forms/form_persistence_state.dart';
 import 'src/services/firebase_service.dart';
 
 /// Global notifier — true = V2 theme (green primary + yellow accent), false = Classic theme.
@@ -17,7 +19,14 @@ void main() async {
     (e) => debugPrint('Firebase init failed: $e'),
   );
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => FormPersistenceState()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

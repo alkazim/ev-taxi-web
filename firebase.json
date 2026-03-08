@@ -1,0 +1,24 @@
+{
+  "hosting": {
+    "site": "e-cabbz-taxi-web",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "lib/**",
+      "test/**",
+      "android/**",
+      "ios/**",
+      "windows/**",
+      "linux/**",
+      "macos/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'form_persistence_state.dart';
 import '../../services/firebase_service.dart';
 
 // ─── Colour palette (consistent with driver dialog) ─────────────────────────
@@ -72,8 +74,9 @@ class _FranchiseApplicationDialogState
   String? _ownershipType;
   static const _ownershipOptions = [
     'Individual',
-    'Pvt Ltd',
-    'Partnership',
+    'Proprietorship',
+    'Capitalize',
+    'Private Limited',
     'Trust',
   ];
 
@@ -87,8 +90,8 @@ class _FranchiseApplicationDialogState
   final _aadhaarCtrl = TextEditingController();
 
   // ── Address ───────────────────────────────────────────────────────────────
-  final _stateCtrl = TextEditingController();
-  final _districtCtrl = TextEditingController();
+  String? _selectedState;
+  String? _selectedDistrict;
   final _townCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
@@ -97,10 +100,14 @@ class _FranchiseApplicationDialogState
   // ── Nearby Landmarks ──────────────────────────────────────────────────────
   final _policeStationCtrl = TextEditingController();
   final _policeContactCtrl = TextEditingController();
-  final _railwayStationCtrl = TextEditingController();
-  final _airportCtrl = TextEditingController();
-  final _seaportCtrl = TextEditingController();
-  final _metroStationCtrl = TextEditingController();
+  final _railwayStationNameCtrl = TextEditingController();
+  final _railwayStationKmCtrl = TextEditingController();
+  final _airportNameCtrl = TextEditingController();
+  final _airportKmCtrl = TextEditingController();
+  final _seaportNameCtrl = TextEditingController();
+  final _seaportKmCtrl = TextEditingController();
+  final _metroStationNameCtrl = TextEditingController();
+  final _metroStationKmCtrl = TextEditingController();
   // Highway — 5 types, each with a name + km controller
   final _expresswayNameCtrl = TextEditingController();
   final _expresswayKmCtrl = TextEditingController();
@@ -132,9 +139,37 @@ class _FranchiseApplicationDialogState
   final _taxiExpCtrl = TextEditingController();
   final _evSolarExpCtrl = TextEditingController();
 
-  // ── Verification ─────────────────────────────────────────────────────────
   final _verifiedCityCtrl = TextEditingController();
   final _verifiedDateCtrl = TextEditingController();
+  bool _declarationAccepted = false;
+
+  final List<String> _states = [
+    'KERALA',
+    'KARNATAKA',
+    'TAMIL NADU',
+    'PUDUCHERRY',
+  ];
+  final Map<String, List<String>> _stateDistricts = {
+    'KERALA': [
+      'ALAPPUZHA',
+      'ERNAKULAM',
+      'IDUKKI',
+      'KANNUR',
+      'KASARAGOD',
+      'KOLLAM',
+      'KOTTAYAM',
+      'KOZHIKODE',
+      'MALAPPURAM',
+      'PALAKKAD',
+      'PATHANAMTHITTA',
+      'THIRUVANANTHAPURAM',
+      'THRISSUR',
+      'WAYANAD',
+    ],
+    'KARNATAKA': ['BANGALORE', 'MYSORE', 'HUBLI', 'DHARWAD', 'MANGALORE'],
+    'TAMIL NADU': ['CHENNAI', 'COIMBATORE', 'MADURAI', 'TRICHY', 'SALEM'],
+    'PUDUCHERRY': ['PUDUCHERRY', 'KARAIKAL', 'MAHE', 'YANAM'],
+  };
 
   @override
   void initState() {
@@ -142,6 +177,138 @@ class _FranchiseApplicationDialogState
     final now = DateTime.now();
     _verifiedDateCtrl.text =
         '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+
+    // Restores and starts listening to changes for persistence
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = Provider.of<FormPersistenceState>(context, listen: false);
+      final data = state.franchiseData;
+
+      if (data.isNotEmpty) {
+        _fullNameCtrl.text = data['full_name'] ?? '';
+        _spouseNameCtrl.text = data['spouse_name'] ?? '';
+        _dobCtrl.text = data['dob'] ?? '';
+        _ageCtrl.text = data['age'] ?? '';
+        _companyNameCtrl.text = data['company_name'] ?? '';
+        _ownershipType = data['ownership_type'];
+        _mobile1Ctrl.text = data['mobile1'] ?? '';
+        _mobile2Ctrl.text = data['mobile2'] ?? '';
+        _emailCtrl.text = data['email'] ?? '';
+        _panCtrl.text = data['pan'] ?? '';
+        _aadhaarCtrl.text = data['aadhaar'] ?? '';
+        _selectedState = data['state'];
+        _selectedDistrict = data['district'];
+        _townCtrl.text = data['town'] ?? '';
+        _addressCtrl.text = data['address'] ?? '';
+        _pinCtrl.text = data['pin'] ?? '';
+        _avgPopulationCtrl.text = data['avg_population'] ?? '';
+        _policeStationCtrl.text = data['police_station'] ?? '';
+        _policeContactCtrl.text = data['police_contact'] ?? '';
+        _railwayStationNameCtrl.text = data['railway_station_name'] ?? '';
+        _railwayStationKmCtrl.text = data['railway_station_km'] ?? '';
+        _airportNameCtrl.text = data['airport_name'] ?? '';
+        _airportKmCtrl.text = data['airport_km'] ?? '';
+        _seaportNameCtrl.text = data['seaport_name'] ?? '';
+        _seaportKmCtrl.text = data['seaport_km'] ?? '';
+        _metroStationNameCtrl.text = data['metro_station_name'] ?? '';
+        _metroStationKmCtrl.text = data['metro_station_km'] ?? '';
+        _expresswayNameCtrl.text = data['expressway_name'] ?? '';
+        _expresswayKmCtrl.text = data['expressway_km'] ?? '';
+        _nationalHwyNameCtrl.text = data['national_hwy_name'] ?? '';
+        _nationalHwyKmCtrl.text = data['national_hwy_km'] ?? '';
+        _stateHwyNameCtrl.text = data['state_hwy_name'] ?? '';
+        _stateHwyKmCtrl.text = data['state_hwy_km'] ?? '';
+        _mainRoadNameCtrl.text = data['main_road_name'] ?? '';
+        _mainRoadKmCtrl.text = data['main_road_km'] ?? '';
+        _townRoadNameCtrl.text = data['town_road_name'] ?? '';
+        _townRoadKmCtrl.text = data['town_road_km'] ?? '';
+        _corpRoadNameCtrl.text = data['corp_road_name'] ?? '';
+        _corpRoadKmCtrl.text = data['corp_road_km'] ?? '';
+        _taxiDriverCountCtrl.text = data['taxi_driver_count'] ?? '';
+        _evChargerDetailsCtrl.text = data['ev_charger_details'] ?? '';
+        _locationOverviewCtrl.text = data['location_overview'] ?? '';
+        _landDetailsCtrl.text = data['land_details'] ?? '';
+        _officeDetailsCtrl.text = data['office_details'] ?? '';
+        _taxiExpCtrl.text = data['taxi_exp'] ?? '';
+        _evSolarExpCtrl.text = data['ev_solar_exp'] ?? '';
+        _verifiedCityCtrl.text = data['verified_city'] ?? '';
+        // Note: verified date is intentionally reset to 'now' in initState
+
+        _hasTaxiDatabase = data['has_taxi_database'] == 'true';
+        _hasEvCharger = data['has_ev_charger'] == 'true';
+        _hasLand = data['has_land'] == 'true';
+        _hasOffice = data['has_office'] == 'true';
+        _declarationAccepted = data['declaration_accepted'] == 'true';
+        _verifiedDateCtrl.text =
+            data['verified_date'] ??
+            '${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year}';
+
+        setState(() {});
+      }
+
+      // Add listeners to all controllers
+      _addListener(_fullNameCtrl, 'full_name');
+      _addListener(_spouseNameCtrl, 'spouse_name');
+      _addListener(_dobCtrl, 'dob');
+      _addListener(_ageCtrl, 'age');
+      _addListener(_companyNameCtrl, 'company_name');
+      _addListener(_mobile1Ctrl, 'mobile1');
+      _addListener(_mobile2Ctrl, 'mobile2');
+      _addListener(_emailCtrl, 'email');
+      _addListener(_panCtrl, 'pan');
+      _addListener(_aadhaarCtrl, 'aadhaar');
+      _addListener(_townCtrl, 'town');
+      _addListener(_addressCtrl, 'address');
+      _addListener(_pinCtrl, 'pin');
+      _addListener(_avgPopulationCtrl, 'avg_population');
+      _addListener(_policeStationCtrl, 'police_station');
+      _addListener(_policeContactCtrl, 'police_contact');
+      _addListener(_railwayStationNameCtrl, 'railway_station_name');
+      _addListener(_railwayStationKmCtrl, 'railway_station_km');
+      _addListener(_airportNameCtrl, 'airport_name');
+      _addListener(_airportKmCtrl, 'airport_km');
+      _addListener(_seaportNameCtrl, 'seaport_name');
+      _addListener(_seaportKmCtrl, 'seaport_km');
+      _addListener(_metroStationNameCtrl, 'metro_station_name');
+      _addListener(_metroStationKmCtrl, 'metro_station_km');
+      _addListener(_expresswayNameCtrl, 'expressway_name');
+      _addListener(_expresswayKmCtrl, 'expressway_km');
+      _addListener(_nationalHwyNameCtrl, 'national_hwy_name');
+      _addListener(_nationalHwyKmCtrl, 'national_hwy_km');
+      _addListener(_stateHwyNameCtrl, 'state_hwy_name');
+      _addListener(_stateHwyKmCtrl, 'state_hwy_km');
+      _addListener(_mainRoadNameCtrl, 'main_road_name');
+      _addListener(_mainRoadKmCtrl, 'main_road_km');
+      _addListener(_townRoadNameCtrl, 'town_road_name');
+      _addListener(_townRoadKmCtrl, 'town_road_km');
+      _addListener(_corpRoadNameCtrl, 'corp_road_name');
+      _addListener(_corpRoadKmCtrl, 'corp_road_km');
+      _addListener(_taxiDriverCountCtrl, 'taxi_driver_count');
+      _addListener(_evChargerDetailsCtrl, 'ev_charger_details');
+      _addListener(_locationOverviewCtrl, 'location_overview');
+      _addListener(_landDetailsCtrl, 'land_details');
+      _addListener(_officeDetailsCtrl, 'office_details');
+      _addListener(_taxiExpCtrl, 'taxi_exp');
+      _addListener(_evSolarExpCtrl, 'ev_solar_exp');
+      _addListener(_verifiedCityCtrl, 'verified_city');
+      _addListener(_verifiedDateCtrl, 'verified_date');
+    });
+  }
+
+  void _addListener(TextEditingController ctrl, String key) {
+    ctrl.addListener(() {
+      if (!mounted) return;
+      Provider.of<FormPersistenceState>(
+        context,
+        listen: false,
+      ).updateFranchiseField(key, ctrl.text);
+    });
+  }
+
+  void _updatePersistedField(String key, String value) {
+    Provider.of<FormPersistenceState>(
+      context,
+      listen: false,
+    ).updateFranchiseField(key, value);
   }
 
   void _onDobSelected(DateTime picked) {
@@ -171,18 +338,20 @@ class _FranchiseApplicationDialogState
       _emailCtrl,
       _panCtrl,
       _aadhaarCtrl,
-      _stateCtrl,
-      _districtCtrl,
       _townCtrl,
       _addressCtrl,
       _pinCtrl,
       _avgPopulationCtrl,
       _policeStationCtrl,
       _policeContactCtrl,
-      _railwayStationCtrl,
-      _airportCtrl,
-      _seaportCtrl,
-      _metroStationCtrl,
+      _railwayStationNameCtrl,
+      _railwayStationKmCtrl,
+      _airportNameCtrl,
+      _airportKmCtrl,
+      _seaportNameCtrl,
+      _seaportKmCtrl,
+      _metroStationNameCtrl,
+      _metroStationKmCtrl,
       _expresswayNameCtrl,
       _expresswayKmCtrl,
       _nationalHwyNameCtrl,
@@ -221,7 +390,7 @@ class _FranchiseApplicationDialogState
       context: context,
       initialDate: now,
       firstDate: firstDate ?? DateTime(1970),
-      lastDate: lastDate ?? DateTime(now.year + 1),
+      lastDate: lastDate ?? now,
       useRootNavigator: true,
       initialEntryMode: DatePickerEntryMode.calendarOnly,
       builder: (context, child) {
@@ -237,26 +406,6 @@ class _FranchiseApplicationDialogState
         );
       },
     );
-  }
-
-  Future<void> _selectDate(
-    BuildContext context,
-    TextEditingController controller, {
-    DateTime? firstDate,
-    DateTime? lastDate,
-  }) async {
-    final picked = await _selectDateReturn(
-      context,
-      firstDate: firstDate,
-      lastDate: lastDate,
-    );
-    if (picked != null) {
-      setState(() {
-        final d = picked.day.toString().padLeft(2, '0');
-        final m = picked.month.toString().padLeft(2, '0');
-        controller.text = '$d/$m/${picked.year}';
-      });
-    }
   }
 
   /// Converts the form's "DD/MM/YYYY" date to "YYYY-MM-DD" for Firestore DATE representation.
@@ -287,19 +436,23 @@ class _FranchiseApplicationDialogState
         'mobile2': _mobile2Ctrl.text.trim(),
         'email': _emailCtrl.text.trim(),
         'pan': _panCtrl.text.trim().toUpperCase(),
-        'aadhaar': _aadhaarCtrl.text.trim(),
-        'state': _stateCtrl.text.trim(),
-        'district': _districtCtrl.text.trim(),
+        'aadhaar': _aadhaarCtrl.text.replaceAll(' ', ''),
+        'state': _selectedState,
+        'district': _selectedDistrict,
         'town': _townCtrl.text.trim(),
         'address': _addressCtrl.text.trim(),
         'pin': _pinCtrl.text.trim(),
         'avg_population': _avgPopulationCtrl.text.trim(),
-        'police_station_name': _policeStationCtrl.text.trim(),
-        'police_station_contact': _policeContactCtrl.text.trim(),
-        'railway_station': _railwayStationCtrl.text.trim(),
-        'airport': _airportCtrl.text.trim(),
-        'seaport': _seaportCtrl.text.trim(),
-        'metro_station': _metroStationCtrl.text.trim(),
+        'police_station': _policeStationCtrl.text.trim(),
+        'police_contact': _policeContactCtrl.text.trim(),
+        'railway_station_name': _railwayStationNameCtrl.text.trim(),
+        'railway_station_km': _railwayStationKmCtrl.text.trim(),
+        'airport_name': _airportNameCtrl.text.trim(),
+        'airport_km': _airportKmCtrl.text.trim(),
+        'seaport_name': _seaportNameCtrl.text.trim(),
+        'seaport_km': _seaportKmCtrl.text.trim(),
+        'metro_station_name': _metroStationNameCtrl.text.trim(),
+        'metro_station_km': _metroStationKmCtrl.text.trim(),
         'expressway_name': _expresswayNameCtrl.text.trim(),
         'expressway_km': _expresswayKmCtrl.text.trim(),
         'national_hwy_name': _nationalHwyNameCtrl.text.trim(),
@@ -330,8 +483,12 @@ class _FranchiseApplicationDialogState
         'office_details': _officeDetailsCtrl.text.trim(),
         'taxi_experience': _taxiExpCtrl.text.trim(),
         'ev_solar_experience': _evSolarExpCtrl.text.trim(),
-        'verified_city': _verifiedCityCtrl.text.trim(),
-        'verified_date': _parseDateForDB(_verifiedDateCtrl.text.trim()),
+        'verified_city': _verifiedCityCtrl.text.trim().toUpperCase(),
+        'verified_date': _parseDateForDB(
+          _verifiedDateCtrl.text.isEmpty
+              ? '${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year}'
+              : _verifiedDateCtrl.text.trim(),
+        ),
         'status': 'pending',
       };
 
@@ -347,6 +504,16 @@ class _FranchiseApplicationDialogState
 
       if (!mounted) return;
       _showSuccessDialog(code);
+      // Success path
+      if (!mounted) return;
+
+      // Clear persistence upon successful submission
+      Provider.of<FormPersistenceState>(
+        context,
+        listen: false,
+      ).clearFranchise();
+
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       final isAppEx = e is FirebaseAppException;
@@ -433,7 +600,7 @@ class _FranchiseApplicationDialogState
                             Text(
                               'YOUR FRANCHISE CODE',
                               style: GoogleFonts.poppins(
-                                color: _darkGreen.withValues(alpha: 0.6),
+                                color: _darkGreen.withOpacity(0.6),
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1,
@@ -506,15 +673,15 @@ class _FranchiseApplicationDialogState
   // ── Form field builder ────────────────────────────────────────────────────
   Widget _field(
     String label,
-    TextEditingController ctrl, {
+    TextEditingController controller, {
     String? hint,
     bool required = true,
-    TextInputType keyboardType = TextInputType.text,
+    TextInputType? keyboardType,
+    TextCapitalization capitalization = TextCapitalization.none,
     List<TextInputFormatter>? inputFormatters,
     int maxLines = 1,
     int? maxLength,
     int? exactLength,
-    TextCapitalization capitalization = TextCapitalization.none,
     String? Function(String?)? validator,
     VoidCallback? onTap,
     bool readOnly = false,
@@ -525,36 +692,40 @@ class _FranchiseApplicationDialogState
         _label(label, required: required),
         const SizedBox(height: 6),
         TextFormField(
-          controller: ctrl,
+          controller: controller,
           readOnly: readOnly,
           onTap: onTap,
+          textCapitalization: capitalization,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           maxLines: maxLines,
           maxLength: maxLength,
-          textCapitalization: capitalization,
-          style: GoogleFonts.poppins(fontSize: 13),
+          style: GoogleFonts.poppins(fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.poppins(fontSize: 12, color: Colors.black26),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
+            hintStyle: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.grey.shade400,
             ),
             filled: true,
-            fillColor: const Color(0xFFF9FAFB),
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: _green, width: 1.5),
             ),
+            errorStyle: GoogleFonts.poppins(fontSize: 11),
             counterText: '',
           ),
           validator:
@@ -576,6 +747,52 @@ class _FranchiseApplicationDialogState
       ],
     );
   }
+
+  Widget _fieldDropdown(
+    String label,
+    String? value,
+    List<String> options,
+    void Function(String?)? onChanged,
+  ) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label(label),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: value,
+          onChanged: onChanged,
+          items: options
+              .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
+              .toList(),
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: _green, width: 1.5),
+            ),
+            errorStyle: GoogleFonts.poppins(fontSize: 11),
+          ),
+          validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+        ),
+      ],
+    ),
+  );
 
   Widget _yesNoTile(String question, bool value, ValueChanged<bool> onChanged) {
     return Padding(
@@ -759,12 +976,14 @@ class _FranchiseApplicationDialogState
                       _fullNameCtrl,
                       hint: 'e.g. RAJESH KUMAR',
                       capitalization: TextCapitalization.characters,
+                      inputFormatters: [_UpperCaseTextFormatter()],
                     ),
                     _field(
                       'Spouse Name',
                       _spouseNameCtrl,
                       hint: 'e.g. SMITA KUMARI',
                       capitalization: TextCapitalization.characters,
+                      inputFormatters: [_UpperCaseTextFormatter()],
                     ),
                     Row(
                       children: [
@@ -799,6 +1018,7 @@ class _FranchiseApplicationDialogState
                       hint: 'Optional',
                       required: false,
                       capitalization: TextCapitalization.characters,
+                      inputFormatters: [_UpperCaseTextFormatter()],
                     ),
 
                     // Ownership type
@@ -813,7 +1033,10 @@ class _FranchiseApplicationDialogState
                           children: _ownershipOptions.map((opt) {
                             final selected = _ownershipType == opt;
                             return GestureDetector(
-                              onTap: () => setState(() => _ownershipType = opt),
+                              onTap: () => setState(() {
+                                _ownershipType = opt;
+                                _updatePersistedField('ownership_type', opt);
+                              }),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -907,13 +1130,7 @@ class _FranchiseApplicationDialogState
                       _panCtrl,
                       hint: 'e.g. ABCDE1234F',
                       capitalization: TextCapitalization.characters,
-                      inputFormatters: [
-                        TextInputFormatter.withFunction((oldValue, newValue) {
-                          return newValue.copyWith(
-                            text: newValue.text.toUpperCase(),
-                          );
-                        }),
-                      ],
+                      inputFormatters: [_UpperCaseTextFormatter()],
                       validator: (v) {
                         if (v == null || v.trim().isEmpty)
                           return 'PAN is required';
@@ -929,13 +1146,17 @@ class _FranchiseApplicationDialogState
                     _field(
                       'Aadhaar Card Number',
                       _aadhaarCtrl,
-                      hint: 'Enter 12-digit Aadhaar number',
+                      hint: '1234 5678 9012',
                       keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        _AadhaarNumberFormatter(),
+                      ],
                       validator: (v) {
                         if (v == null || v.trim().isEmpty)
                           return 'Aadhaar is required';
-                        if (v.trim().length != 12)
+                        final stripped = v.replaceAll(' ', '');
+                        if (stripped.length != 12)
                           return 'Aadhaar must be 12 digits';
                         return null;
                       },
@@ -945,29 +1166,42 @@ class _FranchiseApplicationDialogState
                     // ║  SECTION 4 — ADDRESS                      ║
                     // ╚═══════════════════════════════════════════╝
                     _section('4. Address'),
-                    _field(
+                    _fieldDropdown(
                       'State',
-                      _stateCtrl,
-                      hint: 'e.g. TAMIL NADU',
-                      capitalization: TextCapitalization.characters,
+                      _selectedState,
+                      _states,
+                      (val) => setState(() {
+                        _selectedState = val;
+                        _selectedDistrict = null;
+                        _updatePersistedField('state', val ?? '');
+                        _updatePersistedField('district', '');
+                      }),
                     ),
-                    _field(
+                    _fieldDropdown(
                       'District',
-                      _districtCtrl,
-                      hint: 'e.g. COIMBATORE',
-                      capitalization: TextCapitalization.characters,
+                      _selectedDistrict,
+                      (_selectedState != null)
+                          ? (_stateDistricts[_selectedState] ?? [])
+                          : [],
+                      (val) => setState(() {
+                        _selectedDistrict = val;
+                        _updatePersistedField('district', val ?? '');
+                      }),
                     ),
                     _field(
                       'Town',
                       _townCtrl,
                       hint: 'e.g. POLLACHI',
                       capitalization: TextCapitalization.characters,
+                      inputFormatters: [_UpperCaseTextFormatter()],
                     ),
                     _field(
                       'Full Address',
                       _addressCtrl,
                       hint: 'Door no., Street, Area...',
                       maxLines: 3,
+                      capitalization: TextCapitalization.characters,
+                      inputFormatters: [_UpperCaseTextFormatter()],
                     ),
                     _field(
                       'PIN Code',
@@ -975,6 +1209,8 @@ class _FranchiseApplicationDialogState
                       hint: '6-digit PIN',
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      maxLength: 6,
+                      exactLength: 6,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty)
                           return 'PIN is required';
@@ -985,8 +1221,10 @@ class _FranchiseApplicationDialogState
                     _field(
                       'Average Population in Your Area',
                       _avgPopulationCtrl,
-                      hint: 'e.g. 2,00,000',
+                      hint: 'e.g. 200000',
                       required: false,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
 
                     // ╔═══════════════════════════════════════════╗
@@ -1006,30 +1244,31 @@ class _FranchiseApplicationDialogState
                       hint: 'Contact number',
                       required: false,
                       keyboardType: TextInputType.phone,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
-                    _field(
-                      'Nearest Railway Station (Name & Distance)',
-                      _railwayStationCtrl,
-                      hint: 'e.g. Coimbatore Junction — 5 km',
-                      required: false,
+                    _highwayRow(
+                      'Railway Station',
+                      _railwayStationNameCtrl,
+                      _railwayStationKmCtrl,
+                      capitalization: TextCapitalization.characters,
                     ),
-                    _field(
-                      'Nearest Airport (Name & Distance)',
-                      _airportCtrl,
-                      hint: 'e.g. Coimbatore International — 8 km',
-                      required: false,
+                    _highwayRow(
+                      'Airport',
+                      _airportNameCtrl,
+                      _airportKmCtrl,
+                      capitalization: TextCapitalization.characters,
                     ),
-                    _field(
-                      'Nearest Seaport (Name & Distance)',
-                      _seaportCtrl,
-                      hint: 'e.g. Chennai Port — 500 km',
-                      required: false,
+                    _highwayRow(
+                      'Seaport',
+                      _seaportNameCtrl,
+                      _seaportKmCtrl,
+                      capitalization: TextCapitalization.characters,
                     ),
-                    _field(
-                      'Nearest Metro Station (Name & Distance)',
-                      _metroStationCtrl,
-                      hint: 'e.g. N/A or Chennai Metro — 200 km',
-                      required: false,
+                    _highwayRow(
+                      'Metro Station',
+                      _metroStationNameCtrl,
+                      _metroStationKmCtrl,
+                      capitalization: TextCapitalization.characters,
                     ),
                     // Highway rows — name + km side by side
                     Text(
@@ -1087,7 +1326,13 @@ class _FranchiseApplicationDialogState
                     _yesNoTile(
                       'Do you have a database of online taxi drivers?',
                       _hasTaxiDatabase,
-                      (v) => setState(() => _hasTaxiDatabase = v),
+                      (v) => setState(() {
+                        _hasTaxiDatabase = v;
+                        _updatePersistedField(
+                          'has_taxi_database',
+                          v.toString(),
+                        );
+                      }),
                     ),
                     if (_hasTaxiDatabase)
                       _field(
@@ -1100,7 +1345,10 @@ class _FranchiseApplicationDialogState
                     _yesNoTile(
                       'Do you own or lease an EV charging station?',
                       _hasEvCharger,
-                      (v) => setState(() => _hasEvCharger = v),
+                      (v) => setState(() {
+                        _hasEvCharger = v;
+                        _updatePersistedField('has_ev_charger', v.toString());
+                      }),
                     ),
                     if (_hasEvCharger)
                       _field(
@@ -1128,7 +1376,10 @@ class _FranchiseApplicationDialogState
                     _yesNoTile(
                       'Do you own or lease 30–50 cents of level land on a State/National Highway?',
                       _hasLand,
-                      (v) => setState(() => _hasLand = v),
+                      (v) => setState(() {
+                        _hasLand = v;
+                        _updatePersistedField('has_land', v.toString());
+                      }),
                     ),
                     if (_hasLand)
                       _field(
@@ -1142,7 +1393,10 @@ class _FranchiseApplicationDialogState
                     _yesNoTile(
                       'Do you have an office?',
                       _hasOffice,
-                      (v) => setState(() => _hasOffice = v),
+                      (v) => setState(() {
+                        _hasOffice = v;
+                        _updatePersistedField('has_office', v.toString());
+                      }),
                     ),
                     if (_hasOffice)
                       _field(
@@ -1184,15 +1438,173 @@ class _FranchiseApplicationDialogState
                       hint: 'e.g. COIMBATORE',
                       capitalization: TextCapitalization.characters,
                     ),
-                    _field(
-                      'Date',
-                      _verifiedDateCtrl,
-                      hint: 'DD/MM/YYYY',
-                      readOnly: true,
-                      onTap: () => _selectDate(context, _verifiedDateCtrl),
-                    ),
 
                     // ── Submit Button ──────────────────────────────────
+                    const SizedBox(height: 16),
+                    // Declaration Checkbox & Signature
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: _declarationAccepted
+                            ? const Color(0xFFF0FDF4)
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _declarationAccepted
+                              ? _green.withOpacity(0.3)
+                              : Colors.grey.shade200,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              if (!_formKey.currentState!.validate()) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Please fill all mandatory fields correctly before accepting the declaration.',
+                                    ),
+                                    backgroundColor: Colors.orange,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                return;
+                              }
+                              setState(
+                                () => _declarationAccepted =
+                                    !_declarationAccepted,
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: Checkbox(
+                                    value: _declarationAccepted,
+                                    onChanged: (v) {
+                                      if (!_formKey.currentState!.validate()) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Please fill all mandatory fields correctly before accepting the declaration.',
+                                            ),
+                                            backgroundColor: Colors.orange,
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      setState(() {
+                                        _declarationAccepted = v ?? false;
+                                        _updatePersistedField(
+                                          'declaration_accepted',
+                                          _declarationAccepted.toString(),
+                                        );
+                                      });
+                                    },
+                                    activeColor: _green,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    '" That if any of the information provided above is found to be false or incorrect, I shall be liable for legal action and my application may be rejected "',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                      fontStyle: FontStyle.italic,
+                                      fontWeight: _declarationAccepted
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_declarationAccepted) ...[
+                            const SizedBox(height: 16),
+                            const Divider(height: 1),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'SIGNATURE',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.grey.shade500,
+                                          letterSpacing: 1.2,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _fullNameCtrl.text.isEmpty
+                                            ? '[ FULL NAME ]'
+                                            : _fullNameCtrl.text.toUpperCase(),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: _darkGreen,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'DATE',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.grey.shade500,
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _verifiedDateCtrl.text.isEmpty
+                                          ? DateTime.now().day
+                                                    .toString()
+                                                    .padLeft(2, '0') +
+                                                '/' +
+                                                DateTime.now().month
+                                                    .toString()
+                                                    .padLeft(2, '0') +
+                                                '/' +
+                                                DateTime.now().year.toString()
+                                          : _verifiedDateCtrl.text,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
@@ -1200,6 +1612,17 @@ class _FranchiseApplicationDialogState
                         onPressed: _isLoading
                             ? null
                             : () {
+                                if (!_declarationAccepted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Please accept the declaration to proceed',
+                                      ),
+                                      backgroundColor: Colors.redAccent,
+                                    ),
+                                  );
+                                  return;
+                                }
                                 if (_ownershipType == null) {
                                   setState(() {});
                                   return;
@@ -1258,6 +1681,48 @@ class _FranchiseApplicationDialogState
             ),
         ],
       ),
+    );
+  }
+}
+
+class _UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final uppercased = newValue.text.toUpperCase();
+    final selectionOffset = newValue.selection.end.clamp(0, uppercased.length);
+    return TextEditingValue(
+      text: uppercased,
+      selection: TextSelection.collapsed(offset: selectionOffset),
+    );
+  }
+}
+
+class _AadhaarNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // Strip all non-digit characters to get raw digits only
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+
+    // Limit to 12 digits max
+    final limitedDigits = digits.length > 12 ? digits.substring(0, 12) : digits;
+
+    // Re-build with spaces after every 4 digits: XXXX XXXX XXXX
+    final buffer = StringBuffer();
+    for (int i = 0; i < limitedDigits.length; i++) {
+      if (i > 0 && i % 4 == 0) buffer.write(' ');
+      buffer.write(limitedDigits[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

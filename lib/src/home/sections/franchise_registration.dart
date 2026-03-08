@@ -154,6 +154,33 @@ class _FranchiseRegistrationSectionState
           ),
           const SizedBox(height: 50),
 
+          // ── Quick Franchise Application Row ──
+          Text(
+            'QUICK APPLY',
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF6B7280),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            alignment: WrapAlignment.center,
+            children: [
+              _buildSimpleApplyButton('Mega', green, context),
+              _buildSimpleApplyButton('Master', amber, context),
+              _buildSimpleApplyButton(
+                'Super',
+                const Color(0xFF3B82F6),
+                context,
+              ),
+            ],
+          ),
+          const SizedBox(height: 60),
+
           // ── Content Card with Fade/Slide ──
           // Tab content: use LayoutBuilder for adaptive height
           LayoutBuilder(
@@ -589,6 +616,52 @@ class _FranchiseRegistrationSectionState
             ),
             const SizedBox(width: 10),
             const FaIcon(FontAwesomeIcons.arrowRight, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSimpleApplyButton(
+    String title,
+    Color color,
+    BuildContext context,
+  ) {
+    return InkWell(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) =>
+              FranchiseApplicationDialog(franchiseType: '$title Franchise'),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Apply $title',
+              style: GoogleFonts.poppins(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios_rounded, size: 12, color: color),
           ],
         ),
       ),
