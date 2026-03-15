@@ -1,0 +1,1730 @@
+﻿import 'dart:convert';
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../theme/app_theme.dart';
+
+// ÔöÇÔöÇÔöÇ Known Cities ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+const _kCities = <String, LatLng>{
+  'ernakulam': LatLng(9.9816, 76.2999),
+  'kochi': LatLng(9.9312, 76.2673),
+  'cochin': LatLng(9.9312, 76.2673),
+  'trivandrum': LatLng(8.4875, 76.9492),
+  'thiruvananthapuram': LatLng(8.4875, 76.9492),
+  'calicut': LatLng(11.2588, 75.7804),
+  'kozhikode': LatLng(11.2588, 75.7804),
+  'thrissur': LatLng(10.5276, 76.2144),
+  'trichur': LatLng(10.5276, 76.2144),
+  'palakkad': LatLng(10.7867, 76.6547),
+  'palghat': LatLng(10.7867, 76.6547),
+  'coimbatore': LatLng(11.0168, 76.9558),
+  'cbe': LatLng(11.0168, 76.9558),
+  'bangalore': LatLng(12.9716, 77.5946),
+  'bengaluru': LatLng(12.9716, 77.5946),
+  'banglore': LatLng(12.9716, 77.5946),
+  'bengalore': LatLng(12.9716, 77.5946),
+  'blr': LatLng(12.9716, 77.5946),
+  'mysuru': LatLng(12.2958, 76.6394),
+  'mysore': LatLng(12.2958, 76.6394),
+  'chennai': LatLng(13.0827, 80.2707),
+  'madras': LatLng(13.0827, 80.2707),
+  'madurai': LatLng(9.9252, 78.1198),
+  'mangalore': LatLng(12.9141, 74.8560),
+  'mangaluru': LatLng(12.9141, 74.8560),
+  'salem': LatLng(11.6643, 78.1460),
+  'hubli': LatLng(15.3647, 75.1240),
+  'huballi': LatLng(15.3647, 75.1240),
+  'dharwad': LatLng(15.4589, 75.0078),
+  'tiruppur': LatLng(11.1085, 77.3411),
+  'tirupur': LatLng(11.1085, 77.3411),
+  'hosur': LatLng(12.7409, 77.8253),
+  'kollam': LatLng(8.8832, 76.5940),
+  'quilon': LatLng(8.8832, 76.5940),
+  'kannur': LatLng(11.8745, 75.3704),
+  'cannanore': LatLng(11.8745, 75.3704),
+  'delhi': LatLng(28.6139, 77.2090),
+  'new delhi': LatLng(28.6139, 77.2090),
+  'mumbai': LatLng(19.0760, 72.8777),
+  'bombay': LatLng(19.0760, 72.8777),
+  'pune': LatLng(18.5204, 73.8567),
+  'poona': LatLng(18.5204, 73.8567),
+  'hyderabad': LatLng(17.3850, 78.4867),
+  'ahmedabad': LatLng(23.0225, 72.5714),
+  'vikkadu': LatLng(8.1833, 77.4167),
+  'varkala': LatLng(8.7323, 76.7160),
+  'alappuzha': LatLng(9.4981, 76.3388),
+  'alleppey': LatLng(9.4981, 76.3388),
+};
+
+// ÔöÇÔöÇÔöÇ Mode ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+enum _MapMode { idle, nearest, route }
+
+// ÔöÇÔöÇÔöÇ Station Model ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+class _Station {
+  final String name;
+  final String address;
+  final LatLng position;
+  _Station({required this.name, required this.address, required this.position});
+}
+
+// ÔöÇÔöÇÔöÇ EVMapPage ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+class EVMapPage extends StatefulWidget {
+  const EVMapPage({super.key});
+
+  @override
+  State<EVMapPage> createState() => _EVMapPageState();
+}
+
+class _EVMapPageState extends State<EVMapPage> {
+  final MapController _mapController = MapController();
+  bool _mapReady = false;
+
+  LatLng? _userLatLng;
+  _MapMode _mode = _MapMode.idle;
+  bool _isLocating = false;
+  bool _isRouting = false;
+
+  final _fromCtrl = TextEditingController();
+  final _viaCtrl = TextEditingController();
+  final _toCtrl = TextEditingController();
+
+  List<LatLng> _routePoints = [];
+  List<_Station> _stationList = [];
+  LatLng? _fromLatLng;
+  LatLng? _toLatLng;
+  LatLng? _viaLatLng;
+  String _routeInfo = '';
+
+  static const _kDefaultCenter = LatLng(10.8505, 76.2711);
+  static const _kDefaultZoom = 6.5;
+
+  // ÔöÇÔöÇÔöÇ Lifecycle ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  @override
+  void initState() {
+    super.initState();
+    // Start fetching location immediately (parallel with map loading).
+    // By the time _onMapReady fires, location may already be available.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchUserLocation(centerMap: true, silent: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _fromCtrl.dispose();
+    _viaCtrl.dispose();
+    _toCtrl.dispose();
+    super.dispose();
+  }
+
+  // ÔöÇÔöÇÔöÇ Location ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  // ÔöÇÔöÇÔöÇ Map Ready ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  void _onMapReady() {
+    setState(() => _mapReady = true);
+    // If location was already fetched while map was loading, center now
+    if (_userLatLng != null) {
+      _mapController.move(_userLatLng!, 13.0);
+    }
+    // Otherwise _fetchUserLocation will center when it completes
+  }
+
+  Future<void> _fetchUserLocation({
+    bool centerMap = false,
+    bool silent = false,
+  }) async {
+    if (_isLocating) return;
+    if (!silent) setState(() => _isLocating = true);
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (!silent && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location services are disabled.')),
+          );
+        }
+        if (!silent) setState(() => _isLocating = false);
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (!silent) setState(() => _isLocating = false);
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        if (!silent) setState(() => _isLocating = false);
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _userLatLng = LatLng(pos.latitude, pos.longitude);
+        if (!silent) _isLocating = false;
+      });
+      // Center map whenever we have fresh location AND the map is ready
+      if (_mapReady) {
+        _mapController.move(_userLatLng!, 13.0);
+      }
+    } catch (e) {
+      if (!silent && mounted) setState(() => _isLocating = false);
+    }
+  }
+
+  // ÔöÇÔöÇÔöÇ External Navigation ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Future<void> _openInGoogleMaps(double lat, double lng) async {
+    final url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch Google Maps')),
+        );
+      }
+    }
+  }
+
+  // ÔöÇÔöÇÔöÇ Geocode ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Future<LatLng?> _geocode(String place) async {
+    final key = place.toLowerCase().trim();
+    if (key == 'my location') return _userLatLng;
+    if (_kCities.containsKey(key)) return _kCities[key];
+
+    try {
+      final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/search'
+        '?q=${Uri.encodeComponent(place)}&format=json&limit=1',
+      );
+      final resp = await http
+          .get(
+            url,
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'EVTaxiDemo/1.0',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (resp.statusCode == 200) {
+        final list = jsonDecode(resp.body) as List<dynamic>;
+        if (list.isNotEmpty) {
+          final first = list.first as Map<String, dynamic>;
+          final lat = double.tryParse(first['lat'] as String? ?? '');
+          final lng = double.tryParse(first['lon'] as String? ?? '');
+          if (lat != null && lng != null) return LatLng(lat, lng);
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // ÔöÇÔöÇÔöÇ OpenChargeMap API ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Future<List<_Station>> _fetchOpenChargeMap(
+    double lat,
+    double lng,
+    int distanceKm, {
+    int maxResults = 40,
+  }) async {
+    try {
+      final url = Uri.parse(
+        'https://api.openchargemap.io/v3/poi'
+        '?distance=$distanceKm'
+        '&latitude=$lat'
+        '&longitude=$lng'
+        '&maxresults=$maxResults',
+      );
+      final resp = await http
+          .get(url, headers: {'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 15));
+
+      if (resp.statusCode != 200) {
+        debugPrint('OpenChargeMap error ${resp.statusCode}');
+        return [];
+      }
+
+      final list = jsonDecode(resp.body) as List<dynamic>;
+      final stations = <_Station>[];
+      for (final item in list) {
+        try {
+          final m = item as Map<String, dynamic>;
+          final al = m['AddressInfo'] as Map<String, dynamic>?;
+          if (al == null) continue;
+          // API returns both Latitude/Longitude (full) and Lat/Lng (compact)
+          final sLat = (al['Latitude'] ?? al['Lat']) as num?;
+          final sLng = (al['Longitude'] ?? al['Lng']) as num?;
+          if (sLat == null || sLng == null) continue;
+          final title =
+              (al['Title'] ?? al['T']) as String? ?? 'EV Charging Station';
+          final addr = (al['AddressLine1'] ?? al['A1'] ?? '') as String;
+          stations.add(
+            _Station(
+              name: title,
+              address: addr,
+              position: LatLng(sLat.toDouble(), sLng.toDouble()),
+            ),
+          );
+        } catch (_) {
+          continue;
+        }
+      }
+      return stations;
+    } catch (e) {
+      debugPrint('OpenChargeMap exception: $e');
+      return [];
+    }
+  }
+
+  // ÔöÇÔöÇÔöÇ OSM Overpass ÔÇô nearby EV chargers ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Future<List<_Station>> _fetchOverpassStations({
+    double? lat,
+    double? lng,
+    double? radiusM,
+    double? minLat,
+    double? minLng,
+    double? maxLat,
+    double? maxLng,
+  }) async {
+    try {
+      String spatialFilter;
+      if (minLat != null &&
+          minLng != null &&
+          maxLat != null &&
+          maxLng != null) {
+        spatialFilter = '($minLat,$minLng,$maxLat,$maxLng)';
+      } else if (lat != null && lng != null && radiusM != null) {
+        spatialFilter = '(around:$radiusM,$lat,$lng)';
+      } else {
+        return [];
+      }
+
+      final query =
+          '[out:json][timeout:30];'
+          '(node["amenity"="charging_station"]$spatialFilter;'
+          ' way["amenity"="charging_station"]$spatialFilter;);'
+          'out center 150;';
+      final url = Uri.parse('https://overpass-api.de/api/interpreter');
+      final resp = await http
+          .post(url, body: 'data=${Uri.encodeComponent(query)}')
+          .timeout(const Duration(seconds: 30));
+
+      if (resp.statusCode != 200) return [];
+
+      final json = jsonDecode(resp.body) as Map<String, dynamic>;
+      final elements = json['elements'] as List<dynamic>? ?? [];
+      final stations = <_Station>[];
+      for (final el in elements) {
+        final m = el as Map<String, dynamic>;
+        final sLat = (m['lat'] ?? m['center']?['lat']) as num?;
+        final sLng = (m['lon'] ?? m['center']?['lon']) as num?;
+        if (sLat == null || sLng == null) continue;
+        final tags = m['tags'] as Map<String, dynamic>? ?? {};
+        final name =
+            (tags['name'] ?? tags['operator'] ?? 'EV Charging Station')
+                as String;
+        final addr = [
+          tags['addr:street'],
+          tags['addr:city'],
+        ].where((v) => v != null).join(', ');
+        stations.add(
+          _Station(
+            name: name,
+            address: addr,
+            position: LatLng(sLat.toDouble(), sLng.toDouble()),
+          ),
+        );
+      }
+      return stations;
+    } catch (e) {
+      debugPrint('Overpass error: $e');
+      return [];
+    }
+  }
+
+  // ÔöÇÔöÇÔöÇ Option 1: Find Nearest Stations ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Future<void> _findNearestStations() async {
+    if (_isLocating || _isRouting) return;
+
+    if (_userLatLng == null) {
+      setState(() => _isLocating = true);
+      await _fetchUserLocation(centerMap: true);
+      if (_userLatLng == null) {
+        if (mounted) setState(() => _isLocating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please allow location access first')),
+        );
+        return;
+      }
+    }
+
+    setState(() {
+      _mode = _MapMode.nearest;
+      _isRouting = true;
+      _stationList = [];
+      _routePoints = [];
+      _fromLatLng = null;
+      _toLatLng = null;
+      _viaLatLng = null;
+      _routeInfo = '';
+    });
+
+    final lat = _userLatLng!.latitude;
+    final lng = _userLatLng!.longitude;
+
+    // Try OSM Overpass first ÔÇô has rich India EV station data
+    List<_Station> found = await _fetchOverpassStations(
+      lat: lat,
+      lng: lng,
+      radiusM: 30000,
+    );
+    if (found.isEmpty) {
+      found = await _fetchOverpassStations(lat: lat, lng: lng, radiusM: 100000);
+    }
+    // Fallback to OpenChargeMap
+    if (found.isEmpty) found = await _fetchOpenChargeMap(lat, lng, 150);
+    if (found.isEmpty) {
+      found = await _fetchOpenChargeMap(lat, lng, 300, maxResults: 50);
+    }
+
+    if (mounted) {
+      setState(() {
+        _stationList = found.take(15).toList();
+        _isRouting = false;
+      });
+      if (found.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No EV stations found in your area (300 km radius).'),
+          ),
+        );
+      }
+    }
+
+    // Fit map
+    if (found.isNotEmpty) {
+      final allPoints = [
+        _userLatLng!,
+        ...found.take(10).map((s) => s.position),
+      ];
+      _fitMap(allPoints);
+    } else {
+      _mapController.move(_userLatLng!, 11.0);
+    }
+  }
+
+  // ÔöÇÔöÇÔöÇ Option 2: Plan Route ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Future<void> _planRoute() async {
+    final from = _fromCtrl.text.trim();
+    final to = _toCtrl.text.trim();
+    final via = _viaCtrl.text.trim();
+
+    if (from.isEmpty || to.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter both From and To locations'),
+        ),
+      );
+      return;
+    }
+    if (_isLocating || _isRouting) return;
+
+    setState(() {
+      _mode = _MapMode.route;
+      _isRouting = true;
+      _stationList = [];
+      _routePoints = [];
+      _fromLatLng = null;
+      _toLatLng = null;
+      _viaLatLng = null;
+      _routeInfo = '';
+    });
+
+    // Geocode
+    final fromLL = await _geocode(from);
+    final toLL = await _geocode(to);
+    LatLng? viaLL;
+    if (via.isNotEmpty) viaLL = await _geocode(via);
+
+    if (fromLL == null || toLL == null) {
+      if (!mounted) return;
+      setState(() => _isRouting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Could not find "${fromLL == null ? from : to}". Check spelling.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final waypoints = <LatLng>[fromLL];
+    if (viaLL != null) waypoints.add(viaLL);
+    waypoints.add(toLL);
+
+    // Fetch route from OSRM
+    final routePts = await _fetchOsrmRoute(waypoints);
+
+    if (mounted) {
+      setState(() {
+        _fromLatLng = fromLL;
+        _toLatLng = toLL;
+        _viaLatLng = viaLL;
+        _routePoints = routePts.length >= 2 ? routePts : waypoints;
+      });
+    }
+
+    // EV stations along route using Overpass (Bounding Box + Polyline Buffer)
+    final effectivePts = routePts.length >= 2 ? routePts : waypoints;
+    final lats = effectivePts.map((p) => p.latitude).toList();
+    final lngs = effectivePts.map((p) => p.longitude).toList();
+
+    // Calculate bounding box with a ~15km buffer (0.15 degrees)
+    final minLat = lats.reduce(math.min) - 0.15;
+    final maxLat = lats.reduce(math.max) + 0.15;
+    final minLng = lngs.reduce(math.min) - 0.15;
+    final maxLng = lngs.reduce(math.max) + 0.15;
+
+    final allStations = await _fetchOverpassStations(
+      minLat: minLat,
+      minLng: minLng,
+      maxLat: maxLat,
+      maxLng: maxLng,
+    );
+
+    final filtered = allStations
+        .where(
+          (s) =>
+              _distToRoutePoly(
+                s.position.latitude,
+                s.position.longitude,
+                effectivePts,
+              ) <=
+              2.5,
+        )
+        .toList();
+
+    if (mounted) {
+      setState(() {
+        _stationList = filtered;
+        _isRouting = false;
+      });
+    }
+
+    _fitMap(effectivePts);
+  }
+
+  // ÔöÇÔöÇÔöÇ OSRM Directions ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Future<List<LatLng>> _fetchOsrmRoute(List<LatLng> waypoints) async {
+    try {
+      final coordsStr = waypoints
+          .map((p) => '${p.longitude},${p.latitude}')
+          .join(';');
+      final url = Uri.parse(
+        'https://router.project-osrm.org/route/v1/driving/$coordsStr?overview=full&geometries=geojson',
+      );
+
+      final resp = await http.get(url).timeout(const Duration(seconds: 20));
+
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        final routes = data['routes'] as List<dynamic>?;
+        if (routes != null && routes.isNotEmpty) {
+          final route = routes.first as Map<String, dynamic>;
+          final distM = route['distance'] as num? ?? 0;
+          final durS = route['duration'] as num? ?? 0;
+
+          if (mounted) {
+            setState(
+              () => _routeInfo =
+                  '${(distM / 1000).toStringAsFixed(1)} km  ÔÇó  ${(durS / 60).toStringAsFixed(0)} min',
+            );
+          }
+
+          final geom = route['geometry'] as Map<String, dynamic>?;
+          if (geom != null) {
+            final coordList = geom['coordinates'] as List<dynamic>? ?? [];
+            return coordList.map((c) {
+              final pair = c as List<dynamic>;
+              return LatLng(
+                (pair[1] as num).toDouble(),
+                (pair[0] as num).toDouble(),
+              );
+            }).toList();
+          }
+        }
+      } else {
+        debugPrint('OSRM error ${resp.statusCode}: ${resp.body}');
+      }
+    } catch (e) {
+      debugPrint('OSRM exception: $e');
+    }
+    return [];
+  }
+
+  // ÔöÇÔöÇÔöÇ Helpers ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  double _distKm(double lat1, double lng1, double lat2, double lng2) {
+    const r = 6371.0;
+    final dLat = (lat2 - lat1) * math.pi / 180;
+    final dLng = (lng2 - lng1) * math.pi / 180;
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * math.pi / 180) *
+            math.cos(lat2 * math.pi / 180) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
+    return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+  }
+
+  double _distToSegKm(
+    double lat,
+    double lng,
+    double lat1,
+    double lng1,
+    double lat2,
+    double lng2,
+  ) {
+    final dx = lat2 - lat1, dy = lng2 - lng1;
+    if (dx == 0 && dy == 0) return _distKm(lat, lng, lat1, lng1);
+    final t = ((lat - lat1) * dx + (lng - lng1) * dy) / (dx * dx + dy * dy);
+    final c = t.clamp(0.0, 1.0);
+    return _distKm(lat, lng, lat1 + c * dx, lng1 + c * dy);
+  }
+
+  double _distToRoutePoly(double lat, double lng, List<LatLng> poly) {
+    double min = double.infinity;
+    // Lower step size for better accuracy on sharp turns
+    const int step = 2;
+    for (int i = 0; i < poly.length - 1; i += step) {
+      final next = (i + step < poly.length) ? i + step : poly.length - 1;
+      final d = _distToSegKm(
+        lat,
+        lng,
+        poly[i].latitude,
+        poly[i].longitude,
+        poly[next].latitude,
+        poly[next].longitude,
+      );
+      if (d < min) min = d;
+      if (min < 0.05) break; // Very close
+    }
+    return min;
+  }
+
+  void _fitMap(List<LatLng> points) {
+    if (points.isEmpty || !_mapReady) return;
+    final lats = points.map((p) => p.latitude).toList();
+    final lngs = points.map((p) => p.longitude).toList();
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: LatLngBounds(
+          LatLng(lats.reduce(math.min), lngs.reduce(math.min)),
+          LatLng(lats.reduce(math.max), lngs.reduce(math.max)),
+        ),
+        padding: const EdgeInsets.all(60),
+      ),
+    );
+  }
+
+  // ÔöÇÔöÇÔöÇ Build Markers ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  List<Marker> _buildMarkers() {
+    final markers = <Marker>[];
+
+    if (_userLatLng != null) {
+      markers.add(
+        Marker(
+          point: _userLatLng!,
+          width: 36,
+          height: 36,
+          child: Tooltip(
+            message: 'Your Location',
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1D4ED8),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1D4ED8).withValues(alpha: 0.4),
+                    blurRadius: 10,
+                    spreadRadius: 3,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    for (final s in _stationList) {
+      markers.add(
+        Marker(
+          point: s.position,
+          width: 30,
+          height: 30,
+          child: GestureDetector(
+            onTap: () =>
+                _openInGoogleMaps(s.position.latitude, s.position.longitude),
+            child: Tooltip(
+              message: s.address.isNotEmpty
+                  ? '${s.name}\n${s.address}\nClick for directions'
+                  : '${s.name}\nClick for directions',
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16A34A),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF16A34A).withValues(alpha: 0.35),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.ev_station,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_fromLatLng != null) {
+      markers.add(
+        Marker(
+          point: _fromLatLng!,
+          width: 32,
+          height: 32,
+          child: Tooltip(
+            message: 'Start: ${_fromCtrl.text}',
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1D4ED8),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(
+                Icons.trip_origin,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_viaLatLng != null) {
+      markers.add(
+        Marker(
+          point: _viaLatLng!,
+          width: 28,
+          height: 28,
+          child: Tooltip(
+            message: 'Via: ${_viaCtrl.text}',
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFD97706),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_toLatLng != null) {
+      markers.add(
+        Marker(
+          point: _toLatLng!,
+          width: 32,
+          height: 32,
+          child: Tooltip(
+            message: 'Destination: ${_toCtrl.text}',
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(
+                Icons.location_on,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return markers;
+  }
+
+  // ÔöÇÔöÇÔöÇ Build ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  @override
+  Widget build(BuildContext context) {
+    final sw = MediaQuery.of(context).size.width;
+    final isMobile = sw < 600;
+    final isTablet = sw >= 600 && sw < 1024;
+    final isDesktop = sw >= 1024;
+    final isModern = context.isModernStyle;
+
+    final activeGreen = context.isYellowTheme
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF16A34A);
+    final activeAmber = const Color(0xFFF59E0B);
+    final textDark = const Color(0xFF111827);
+
+    if (!isModern) return _buildClassic(context, isMobile);
+
+    final hPad = isMobile
+        ? 20.0
+        : isTablet
+        ? 40.0
+        : 80.0;
+
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFF9FAFB),
+      padding: EdgeInsets.symmetric(
+        vertical: isMobile ? 60 : 100,
+        horizontal: hPad,
+      ),
+      child: Column(
+        children: [
+          // ÔöÇÔöÇ Header ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+          Text(
+            'CHARGING NETWORK',
+            style: GoogleFonts.poppins(
+              color: activeGreen,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Powering Your Journey',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: isMobile
+                  ? 28
+                  : isTablet
+                  ? 38
+                  : 48,
+              fontWeight: FontWeight.w800,
+              color: textDark,
+              height: 1.1,
+              letterSpacing: -1,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: isMobile ? double.infinity : 600,
+            child: Text(
+              'Explore EV charging stations across South India ÔÇö find the nearest charger or plan your route with stops along the way.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF6B7280),
+                fontSize: isMobile ? 13 : 16,
+                height: 1.6,
+              ),
+            ),
+          ),
+          SizedBox(height: isMobile ? 40 : 60),
+
+          // ÔöÇÔöÇ Stats Row ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+          Wrap(
+            spacing: isMobile ? 12 : 20,
+            runSpacing: isMobile ? 12 : 20,
+            alignment: WrapAlignment.center,
+            children: [
+              _statCard(
+                '50+',
+                'Active Stations',
+                FontAwesomeIcons.chargingStation,
+                activeGreen,
+                isMobile,
+              ),
+              _statCard(
+                '4',
+                'States Covered',
+                FontAwesomeIcons.mapLocationDot,
+                activeAmber,
+                isMobile,
+              ),
+              _statCard(
+                '24/7',
+                'Availability',
+                FontAwesomeIcons.clock,
+                const Color(0xFF3B82F6),
+                isMobile,
+              ),
+              _statCard(
+                '100%',
+                'Green Energy',
+                FontAwesomeIcons.leaf,
+                const Color(0xFF10B981),
+                isMobile,
+              ),
+            ],
+          ),
+          SizedBox(height: isMobile ? 48 : 80),
+
+          // ÔöÇÔöÇ Map + Controls ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+          isDesktop
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 6, child: _buildMap(isMobile, activeGreen)),
+                    const SizedBox(width: 40),
+                    Expanded(
+                      flex: 4,
+                      child: _buildControlPanel(
+                        context,
+                        isMobile,
+                        activeGreen,
+                        activeAmber,
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildMap(isMobile, activeGreen),
+                    const SizedBox(height: 32),
+                    _buildControlPanel(
+                      context,
+                      isMobile,
+                      activeGreen,
+                      activeAmber,
+                    ),
+                  ],
+                ),
+        ],
+      ),
+    );
+  }
+
+  // ÔöÇÔöÇÔöÇ Map Widget ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Widget _buildMap(bool isMobile, Color activeGreen) {
+    return Container(
+      height: isMobile ? 320 : 560,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: Stack(
+          children: [
+            // ÔöÇÔöÇ FlutterMap ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _kDefaultCenter,
+                initialZoom: _kDefaultZoom,
+                onMapReady: _onMapReady,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all,
+                ),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.evtaxi.demo',
+                  maxNativeZoom: 19,
+                  tileProvider: CancellableNetworkTileProvider(),
+                ),
+                if (_routePoints.length >= 2)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _routePoints,
+                        color: const Color(0xFF4F46E5),
+                        strokeWidth: 5.5,
+                        borderColor: const Color(0xFF3730A3),
+                        borderStrokeWidth: 1.0,
+                      ),
+                    ],
+                  ),
+                MarkerLayer(markers: _buildMarkers()),
+              ],
+            ),
+
+            // ÔöÇÔöÇ Legend pill ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.93),
+                  borderRadius: BorderRadius.circular(50),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _legendDot(const Color(0xFF1D4ED8)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'You',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    _legendDot(const Color(0xFF16A34A)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Station',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF374151),
+                      ),
+                    ),
+                    if (_mode == _MapMode.route) ...[
+                      const SizedBox(width: 12),
+                      _legendDot(const Color(0xFF4F46E5), size: 10),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Route',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+            // ÔöÇÔöÇ My Location button ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: FloatingActionButton.small(
+                onPressed: _isLocating
+                    ? null
+                    : () => _fetchUserLocation(centerMap: true),
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF1D4ED8),
+                elevation: 4,
+                child: _isLocating
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const FaIcon(FontAwesomeIcons.crosshairs, size: 16),
+              ),
+            ),
+
+            // ÔöÇÔöÇ Loading overlay ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+            if (_isRouting)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 20,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Color(0xFF4F46E5),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Text(
+                            _mode == _MapMode.nearest
+                                ? 'Finding Stations...'
+                                : 'Planning Route...',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF111827),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _legendDot(Color color, {double size = 9}) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
+
+  // ÔöÇÔöÇÔöÇ Control Panel ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  Widget _buildControlPanel(
+    BuildContext context,
+    bool isMobile,
+    Color green,
+    Color amber,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ÔöÇÔöÇ Option 1 ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+        _SectionCard(
+          isActive: _mode == _MapMode.nearest,
+          badgeColor: green,
+          badgeLabel: 'Option 1',
+          icon: FontAwesomeIcons.locationCrosshairs,
+          iconColor: green,
+          title: 'Find Nearest Stations',
+          subtitle:
+              'Show the closest EV charging stations to your current location using OpenChargeMap.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: (_isLocating || _isRouting)
+                      ? null
+                      : _findNearestStations,
+                  icon:
+                      (_isLocating || (_isRouting && _mode == _MapMode.nearest))
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const FaIcon(FontAwesomeIcons.boltLightning, size: 16),
+                  label: Text(
+                    'Find Nearest Charging',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: green,
+                    foregroundColor: context.isYellowTheme
+                        ? Colors.black87
+                        : Colors.white,
+                    elevation: 3,
+                    shadowColor: green.withValues(alpha: 0.35),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+              if (_mode == _MapMode.nearest && _stationList.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                _buildStationList(green),
+              ],
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // ÔöÇÔöÇ Option 2 ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+        _SectionCard(
+          isActive: _mode == _MapMode.route,
+          badgeColor: const Color(0xFF4F46E5),
+          badgeLabel: 'Option 2',
+          icon: FontAwesomeIcons.route,
+          iconColor: const Color(0xFF4F46E5),
+          title: 'Plan Route with Chargers',
+          subtitle:
+              'Enter your journey and see the route with EV stations along the way powered by OpenRouteService.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _RouteField(
+                controller: _fromCtrl,
+                label: 'From',
+                hint: 'Enter origin',
+                icon: FontAwesomeIcons.locationArrow,
+                iconColor: const Color(0xFF4F46E5),
+                suffix: IconButton(
+                  tooltip: 'Use My Location',
+                  onPressed: () async {
+                    if (_userLatLng == null) {
+                      await _fetchUserLocation(silent: false);
+                    }
+                    if (_userLatLng != null) {
+                      setState(() {
+                        _fromCtrl.text = 'My Location';
+                      });
+                    }
+                  },
+                  icon: const FaIcon(
+                    FontAwesomeIcons.crosshairs,
+                    size: 14,
+                    color: Color(0xFF4F46E5),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              _RouteField(
+                controller: _viaCtrl,
+                label: 'Via (optional)',
+                hint: 'e.g. Coimbatore',
+                icon: FontAwesomeIcons.circleHalfStroke,
+                iconColor: const Color(0xFFD97706),
+              ),
+              const SizedBox(height: 10),
+              _RouteField(
+                controller: _toCtrl,
+                label: 'To',
+                hint: 'e.g. Bangalore',
+                icon: FontAwesomeIcons.flagCheckered,
+                iconColor: const Color(0xFFDC2626),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: (_isLocating || _isRouting) ? null : _planRoute,
+                icon: _isRouting && _mode == _MapMode.route
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const FaIcon(FontAwesomeIcons.route, size: 16),
+                label: Text(
+                  'Show Route & Stations',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4F46E5),
+                  foregroundColor: Colors.white,
+                  elevation: 3,
+                  shadowColor: const Color(0xFF4F46E5).withValues(alpha: 0.35),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              if (_routeInfo.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const FaIcon(
+                        FontAwesomeIcons.route,
+                        size: 14,
+                        color: Color(0xFF4F46E5),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _routeInfo,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4F46E5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (_mode == _MapMode.route && _stationList.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                _buildStationList(const Color(0xFF4F46E5)),
+              ],
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // ÔöÇÔöÇ Legend info ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFBBF7D0)),
+          ),
+          child: Row(
+            children: [
+              const FaIcon(
+                FontAwesomeIcons.circleInfo,
+                size: 15,
+                color: Color(0xFF16A34A),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Green dots = EV stations  ÔÇó  Blue dot = You  ÔÇó  Indigo line = Route  ÔÇó  Powered by OpenStreetMap',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5,
+                    color: const Color(0xFF166534),
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStationList(Color accentColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${_stationList.length} station${_stationList.length == 1 ? '' : 's'} found',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: accentColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...(_stationList.take(5).map((s) => _StationTile(station: s))),
+        if (_stationList.length > 5)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              '+ ${_stationList.length - 5} more on map',
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                color: const Color(0xFF9CA3AF),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _statCard(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+    bool isMobile,
+  ) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 24,
+        vertical: isMobile ? 14 : 20,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: FaIcon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF111827),
+                  height: 1,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClassic(BuildContext context, bool isMobile) {
+    final isV2 = context.isV2Theme;
+    final activeGreen = context.isYellowTheme
+        ? const Color(0xFFF59E0B)
+        : (isV2 ? const Color(0xFF16A34A) : AppTheme.primaryColor);
+    return Container(
+      color: isV2
+          ? const Color(0xFFF9FAFB)
+          : Theme.of(context).scaffoldBackgroundColor,
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        vertical: 80,
+        horizontal: MediaQuery.of(context).size.width >= 1024 ? 80 : 20,
+      ),
+      child: Column(
+        children: [
+          Text(
+            'CHARGING NETWORK',
+            style: TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              color: activeGreen,
+              letterSpacing: 3,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text('Classic View Enabled'),
+        ],
+      ),
+    );
+  }
+}
+
+// ÔöÇÔöÇÔöÇ Station Tile ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+class _StationTile extends StatelessWidget {
+  final _Station station;
+  const _StationTile({required this.station});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        final state = context.findAncestorStateOfType<_EVMapPageState>();
+        state?._openInGoogleMaps(
+          station.position.latitude,
+          station.position.longitude,
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0FDF4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFFBBF7D0).withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                color: Color(0xFF16A34A),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.ev_station,
+                color: Colors.white,
+                size: 12,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    station.name,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF111827),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (station.address.isNotEmpty)
+                    Text(
+                      station.address,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10.5,
+                        color: const Color(0xFF6B7280),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            const Icon(Icons.directions, size: 16, color: Color(0xFF166534)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ÔöÇÔöÇÔöÇ Section Card ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+class _SectionCard extends StatelessWidget {
+  final bool isActive;
+  final Color badgeColor;
+  final String badgeLabel;
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  const _SectionCard({
+    required this.isActive,
+    required this.badgeColor,
+    required this.badgeLabel,
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isActive
+              ? badgeColor.withValues(alpha: 0.5)
+              : Colors.black.withValues(alpha: 0.06),
+          width: isActive ? 2 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isActive
+                ? badgeColor.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.04),
+            blurRadius: isActive ? 20 : 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  badgeLabel,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: badgeColor,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              FaIcon(icon, size: 18, color: iconColor),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: GoogleFonts.poppins(
+              fontSize: 12.5,
+              color: const Color(0xFF6B7280),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 18),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+// ÔöÇÔöÇÔöÇ Route Field ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+class _RouteField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final IconData icon;
+  final Color iconColor;
+  final Widget? suffix;
+
+  const _RouteField({
+    required this.controller,
+    required this.label,
+    required this.hint,
+    required this.icon,
+    required this.iconColor,
+    this.suffix,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF111827)),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        hintStyle: GoogleFonts.poppins(
+          fontSize: 13,
+          color: const Color(0xFFD1D5DB),
+        ),
+        labelStyle: GoogleFonts.poppins(
+          fontSize: 13,
+          color: const Color(0xFF6B7280),
+          fontWeight: FontWeight.w500,
+        ),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: FaIcon(icon, size: 16, color: iconColor),
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 44),
+        suffixIcon: suffix,
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 44,
+          minHeight: 44,
+        ),
+        filled: true,
+        fillColor: const Color(0xFFF9FAFB),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
+        ),
+      ),
+    );
+  }
+}

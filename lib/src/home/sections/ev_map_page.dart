@@ -747,6 +747,28 @@ class _EVMapPageState extends State<EVMapPage> {
     }
   }
 
+  // ─── Switch alternate route + refresh stations ────────────────────────────
+  void _selectRoute(int index) {
+    if (index < 0 || index >= _routeAlternatives.length) return;
+    final geom = _routeAlternatives[index]['geometry'] as Map<String, dynamic>?;
+    if (geom == null) return;
+    final coordList = geom['coordinates'] as List<dynamic>? ?? [];
+    final pts = coordList.map((c) {
+      final pair = c as List<dynamic>;
+      return LatLng((pair[1] as num).toDouble(), (pair[0] as num).toDouble());
+    }).toList();
+
+    setState(() {
+      _selectedRouteIndex = index;
+      _routePoints = pts;
+      _stationList = [];         // Clear old stations immediately
+      _isRouting = true;         // Show loading indicator
+    });
+
+    // Re-fetch stations specific to this route
+    _fetchStationsForRoute(pts);
+  }
+
   // ─── Option 2: Plan Route ─────────────────────────────────────────────────
   Future<void> _planRoute() async {
     final from = _fromCtrl.text.trim();
@@ -825,10 +847,10 @@ class _EVMapPageState extends State<EVMapPage> {
       final lats = effectivePts.map((p) => p.latitude).toList();
       final lngs = effectivePts.map((p) => p.longitude).toList();
 
-      final minLat = lats.reduce(math.min) - 0.15;
-      final maxLat = lats.reduce(math.max) + 0.15;
-      final minLng = lngs.reduce(math.min) - 0.15;
-      final maxLng = lngs.reduce(math.max) + 0.15;
+      final minLat = lats.reduce(math.min) - 0.05;
+      final maxLat = lats.reduce(math.max) + 0.05;
+      final minLng = lngs.reduce(math.min) - 0.05;
+      final maxLng = lngs.reduce(math.max) + 0.05;
 
       final allStations = await _fetchOverpassStations(
         minLat: minLat,
@@ -845,10 +867,11 @@ class _EVMapPageState extends State<EVMapPage> {
                   s.position.longitude,
                   effectivePts,
                 ) <=
-                2.5,
+                2.0, // stations within 2km corridor of the route
           )
           .toList();
 
+      debugPrint('🔍 [Stations] ${allStations.length} raw → ${filtered.length} within 2km of route');
       if (mounted) {
         setState(() {
           _stationList = filtered;
@@ -1115,9 +1138,9 @@ class _EVMapPageState extends State<EVMapPage> {
   @override
   Widget build(BuildContext context) {
     final sw = MediaQuery.of(context).size.width;
-    final isMobile = sw < 600;
-    final isTablet = sw >= 600 && sw < 1024;
-    final isDesktop = sw >= 1024;
+    final isMobile = sw < 768; // Standard breakpoint for tablets
+    final isTablet = sw >= 768 && sw < 1100;
+    final isDesktop = sw >= 1100;
     final isModern = context.isModernStyle;
 
     final activeGreen = context.isYellowTheme
@@ -1129,10 +1152,10 @@ class _EVMapPageState extends State<EVMapPage> {
     if (!isModern) return _buildClassic(context, isMobile);
 
     final hPad = isMobile
-        ? 20.0
+        ? 24.0
         : isTablet
-        ? 40.0
-        : 80.0;
+        ? 60.0
+        : 120.0;
 
     return GestureDetector(
       onTap: _hideAllSuggestions,
@@ -1146,26 +1169,21 @@ class _EVMapPageState extends State<EVMapPage> {
         ),
         child: Column(
           children: [
-          // ── Header ──────────────────────────────────────────────────────────
           Text(
             'CHARGING NETWORK',
             style: GoogleFonts.poppins(
               color: activeGreen,
-              fontSize: 13,
+              fontSize: isMobile ? 12 : 14,
               fontWeight: FontWeight.w700,
               letterSpacing: 2,
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            'Powering Your Journey',
+            'Explore South India',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
-              fontSize: isMobile
-                  ? 28
-                  : isTablet
-                  ? 38
-                  : 48,
+              fontSize: isMobile ? 32 : isTablet ? 42 : 56,
               fontWeight: FontWeight.w800,
               color: textDark,
               height: 1.1,
@@ -1173,19 +1191,19 @@ class _EVMapPageState extends State<EVMapPage> {
             ),
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: isMobile ? double.infinity : 600,
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 700),
             child: Text(
-              'Explore EV charging stations across South India — find the nearest charger or plan your route with stops along the way.',
+              'Find the nearest charging stations or plan your journey with optimized stops. High-speed charging at your fingertips.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: const Color(0xFF6B7280),
-                fontSize: isMobile ? 13 : 16,
+                fontSize: isMobile ? 15 : 18,
                 height: 1.6,
               ),
             ),
           ),
-          SizedBox(height: isMobile ? 40 : 60),
+          SizedBox(height: isMobile ? 48 : 64),
 
           // ── Stats Row ────────────────────────────────────────────────────────
           Wrap(
@@ -1195,57 +1213,67 @@ class _EVMapPageState extends State<EVMapPage> {
             children: [
               _statCard(
                 '50+',
-                'Active Stations',
-                Icons.ev_station, // Replaced FontAwesomeIcons.chargingStation
+                'Stations',
+                Icons.ev_station,
                 activeGreen,
                 isMobile,
+                isTablet,
               ),
               _statCard(
                 '4',
-                'States Covered',
-                Icons.map, // Replaced FontAwesomeIcons.mapLocationDot
+                'States',
+                Icons.map,
                 activeAmber,
                 isMobile,
+                isTablet,
               ),
               _statCard(
                 '24/7',
                 'Availability',
-                Icons.access_time, // Replaced FontAwesomeIcons.clock
+                Icons.access_time,
                 const Color(0xFF3B82F6),
                 isMobile,
+                isTablet,
               ),
               _statCard(
                 '100%',
-                'Green Energy',
-                Icons.eco, // Replaced FontAwesomeIcons.leaf
+                'Reliable',
+                Icons.verified_user_outlined,
                 const Color(0xFF10B981),
                 isMobile,
+                isTablet,
               ),
             ],
           ),
           SizedBox(height: isMobile ? 48 : 80),
 
           // ── Map + Controls ────────────────────────────────────────────────────
-          isDesktop
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 6, child: _buildMap(isMobile, activeGreen)),
-                    const SizedBox(width: 40),
-                    Expanded(
-                      flex: 4,
-                      child: _buildControlPanel(
-                        context,
-                        isMobile,
-                        activeGreen,
-                        activeAmber,
+          (isDesktop || isTablet)
+              ? ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1400),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: isDesktop ? 65 : 60,
+                        child: _buildMap(isMobile, isTablet, isDesktop, activeGreen),
                       ),
-                    ),
-                  ],
+                      SizedBox(width: isDesktop ? 48 : 32),
+                      Expanded(
+                        flex: isDesktop ? 35 : 40,
+                        child: _buildControlPanel(
+                          context,
+                          isMobile,
+                          activeGreen,
+                          activeAmber,
+                        ),
+                      ),
+                    ],
+                  ),
                 )
               : Column(
                   children: [
-                    _buildMap(isMobile, activeGreen),
+                    _buildMap(isMobile, isTablet, isDesktop, activeGreen),
                     const SizedBox(height: 32),
                     _buildControlPanel(
                       context,
@@ -1262,9 +1290,16 @@ class _EVMapPageState extends State<EVMapPage> {
 }
 
   // ─── Map Widget ──────────────────────────────────────────────────────────────
-  Widget _buildMap(bool isMobile, Color activeGreen) {
+  Widget _buildMap(bool isMobile, bool isTablet, bool isDesktop, Color activeGreen) {
+    double mapHeight = 360; // Mobile
+    if (isDesktop) {
+      mapHeight = 650;
+    } else if (isTablet) {
+      mapHeight = 580;
+    }
+
     return Container(
-      height: isMobile ? 320 : 560,
+      height: mapHeight,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
@@ -1299,6 +1334,38 @@ class _EVMapPageState extends State<EVMapPage> {
                   maxNativeZoom: 19,
                   tileProvider: CancellableNetworkTileProvider(),
                 ),
+                // ── Alternate routes (light grey, behind) ────────────────
+                if (_routeAlternatives.length > 1)
+                  ..._routeAlternatives.asMap().entries
+                      .where((e) => e.key != _selectedRouteIndex)
+                      .map((e) {
+                    final coordList = ((e.value['geometry']
+                            as Map<String, dynamic>?)?['coordinates']
+                        as List<dynamic>?) ??
+                        [];
+                    final pts = coordList.map((c) {
+                      final pair = c as List<dynamic>;
+                      return LatLng(
+                        (pair[1] as num).toDouble(),
+                        (pair[0] as num).toDouble(),
+                      );
+                    }).toList();
+                    return GestureDetector(
+                      onTap: () => _selectRoute(e.key),
+                      child: PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: pts,
+                            color: const Color(0xFFB0BEC5),
+                            strokeWidth: 5.0,
+                            borderColor: const Color(0xFF90A4AE),
+                            borderStrokeWidth: 1.0,
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                // ── Selected route (blue, on top) ────────────────────────
                 if (_routePoints.length >= 2)
                   PolylineLayer(
                     polylines: [
@@ -1722,12 +1789,7 @@ class _EVMapPageState extends State<EVMapPage> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        _selectedRouteIndex = index;
-                      });
-                      _replotRoute();
-                    },
+                    onTap: () => _selectRoute(index),
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1779,30 +1841,6 @@ class _EVMapPageState extends State<EVMapPage> {
     );
   }
 
-  void _replotRoute() {
-    if (_routeAlternatives.isEmpty || _selectedRouteIndex >= _routeAlternatives.length) return;
-    
-    final route = _routeAlternatives[_selectedRouteIndex];
-    final geom = route['geometry'] as Map<String, dynamic>?;
-    if (geom != null) {
-      final coordList = geom['coordinates'] as List<dynamic>? ?? [];
-      final newPts = coordList.map((c) {
-        final pair = c as List<dynamic>;
-        return LatLng(
-          (pair[1] as num).toDouble(),
-          (pair[0] as num).toDouble(),
-        );
-      }).toList();
-      
-      final effectivePts = newPts.length >= 2 ? newPts : _routePoints;
-      setState(() {
-        _routePoints = effectivePts;
-        _stationList = []; // Clear while fetching
-      });
-      _fitMap(effectivePts);
-      _fetchStationsForRoute(effectivePts);
-    }
-  }
 
   Widget _buildTabButton(String title, bool isSelected, VoidCallback onTap) {
     return GestureDetector(
@@ -2106,20 +2144,23 @@ class _EVMapPageState extends State<EVMapPage> {
     IconData icon,
     Color color,
     bool isMobile,
+    bool isTablet,
   ) {
+    final double padH = isMobile ? 16 : isTablet ? 20 : 28;
+    final double padV = isMobile ? 12 : isTablet ? 16 : 24;
+    final double iconSize = isMobile ? 36 : 48;
+
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 24,
-        vertical: isMobile ? 14 : 20,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -2127,31 +2168,32 @@ class _EVMapPageState extends State<EVMapPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            width: iconSize,
+            height: iconSize,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: color, size: iconSize * 0.5),
           ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 value,
                 style: GoogleFonts.poppins(
-                  fontSize: 24,
+                  fontSize: isMobile ? 18 : 22,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF111827),
-                  height: 1,
+                  height: 1.1,
                 ),
               ),
-              const SizedBox(height: 4),
               Text(
                 label,
                 style: GoogleFonts.poppins(
-                  fontSize: 12,
+                  fontSize: isMobile ? 11 : 12,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
                 ),

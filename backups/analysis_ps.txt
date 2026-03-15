@@ -1,0 +1,13 @@
+Analyzing taxi_demo...                                          
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\home\forms\driver_application_dialog.dart:1423:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\home\forms\franchise_application_dialog.dart:603:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\home\forms\franchise_application_dialog.dart:1454:40 - deprecated_member_use
+  error - Target of URI doesn't exist: '../../theme/app_theme.dart' - tmp_old_page_utf8.dart:13:8 - uri_does_not_exist
+  error - The getter 'isModernStyle' isn't defined for the type 'BuildContext' - tmp_old_page_utf8.dart:798:30 - undefined_getter
+  error - The getter 'isYellowTheme' isn't defined for the type 'BuildContext' - tmp_old_page_utf8.dart:800:33 - undefined_getter
+  error - The getter 'isYellowTheme' isn't defined for the type 'BuildContext' - tmp_old_page_utf8.dart:1183:46 - undefined_getter
+  error - The getter 'isV2Theme' isn't defined for the type 'BuildContext' - tmp_old_page_utf8.dart:1457:26 - undefined_getter
+  error - The getter 'isYellowTheme' isn't defined for the type 'BuildContext' - tmp_old_page_utf8.dart:1458:33 - undefined_getter
+  error - Undefined name 'AppTheme' - tmp_old_page_utf8.dart:1460:45 - undefined_identifier
+

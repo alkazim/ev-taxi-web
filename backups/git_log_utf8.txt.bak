@@ -1,0 +1,30 @@
+﻿7087cd6 Build: Updated release version for GitHub
+f9d56bf Optimize EV map performance and fix route station visibility
+cdad504 Refine Franchise and Driver forms with DOB age calculation, mobile 10-digit lock, and capitalization improvements. Update hosted web release.
+efc2172 Deploy: Update Contact Us ÔÇö real addresses, state offices, district finder
+ee7aff4 Update Contact Us: real HQ address, 4 state office cards, simplified district finder
+9a60c75 Fix: remove loading screen via custom flutter_bootstrap.js template with onEntrypointLoaded
+fe6a9d9 Remove loading screen: use custom flutter loader in index.html
+ba4309b Deploy: performance optimizations ÔÇö faster hero load + dark loading screen
+31cf3d5 perf: preload hero images, dark loading screen, precacheImage, cacheWidth hint
+de5a75c Deploy: full uppercase for all name/village/landmark fields
+96e7727 fix: change name/village/landmark fields to full uppercase (all caps)
+a16236c Deploy: auto-capitalize fields + Supabase anonymous auth fix [2026-02-26 18:01]
+9878cb8 feat: auto-capitalize name fields, license number uppercase, Supabase anonymous auth for driver registration
+1c23e14 UI: Update EV charging hint and set fixed today's date in franchise form
+b996cdd UI: Bold highway label and rename town road in franchise form - FINAL FIX
+5771ca0 UI: Change FranchiseApplicationDialog background to white
+bf0cac5 Fix: include both car images in build for hero section
+dba5736 Update: optimized hero images, DOB range (1970-current), auto-capitalization, and increased Supabase timeout to 30s
+e408943 fix: Replace broken WhatsApp custom painter with FontAwesomeIcons.whatsapp
+43f52ac chore: Update schema - replace nearest_highway with 10 highway type columns
+fef0e5e feat: Replace single highway field with 5 typed highway rows (name + km each)
+45e67df feat: Add Contact Us V2 section with state/district office finder
+e8d5296 Remove auto-swipe in franchise section
+18db192 Deploy: force-add WebP image assets to build/web for gh-pages
+3119159 Deploy: rebuild with all WebP asset files included
+aa97a07 Perf: convert car images to WebP, remove unused PNG bundles, optimize Supabase save, add preconnect hints
+58a7b28 Implement two-phase driver registration with mutual exclusive buttons
+8d27da7 Implement two-phase driver registration with mutual exclusive buttons
+734cbf4 perf: convert large PNG images to WebP (hero 8MBÔåÆ124KB, driver 8MBÔåÆ59KB, places ~2.8MBÔåÆ150-290KB each) for mobile loading performance
+e477a08 perf: convert large PNG images to WebP (hero 8MBÔåÆ124KB, driver 8MBÔåÆ59KB, places ~2.8MBÔåÆ150-290KB each) for mobile loading performance

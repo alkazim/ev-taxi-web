@@ -1418,11 +1418,11 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                 ? const Color(0xFFF0FDF4)
                 : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _declarationAccepted
-                  ? AppTheme.primaryColor.withOpacity(0.3)
-                  : Colors.grey.shade200,
-            ),
+              border: Border.all(
+                color: _declarationAccepted
+                    ? AppTheme.primaryColor.withValues(alpha: 0.3)
+                    : Colors.grey.shade200,
+              ),
           ),
           child: Column(
             children: [

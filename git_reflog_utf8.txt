@@ -1,0 +1,30 @@
+﻿7087cd6 HEAD@{0}: commit: Build: Updated release version for GitHub
+f9d56bf HEAD@{1}: commit: Optimize EV map performance and fix route station visibility
+cdad504 HEAD@{2}: commit: Refine Franchise and Driver forms with DOB age calculation, mobile 10-digit lock, and capitalization improvements. Update hosted web release.
+ee7aff4 HEAD@{3}: commit: Update Contact Us: real HQ address, 4 state office cards, simplified district finder
+9a60c75 HEAD@{4}: commit: Fix: remove loading screen via custom flutter_bootstrap.js template with onEntrypointLoaded
+fe6a9d9 HEAD@{5}: commit: Remove loading screen: use custom flutter loader in index.html
+31cf3d5 HEAD@{6}: checkout: moving from gh-pages to main
+ba4309b HEAD@{7}: commit: Deploy: performance optimizations ÔÇö faster hero load + dark loading screen
+de5a75c HEAD@{8}: checkout: moving from main to gh-pages
+31cf3d5 HEAD@{9}: commit: perf: preload hero images, dark loading screen, precacheImage, cacheWidth hint
+96e7727 HEAD@{10}: checkout: moving from gh-pages to main
+de5a75c HEAD@{11}: commit: Deploy: full uppercase for all name/village/landmark fields
+58a7b28 HEAD@{12}: checkout: moving from main to gh-pages
+96e7727 HEAD@{13}: commit: fix: change name/village/landmark fields to full uppercase (all caps)
+a16236c HEAD@{14}: checkout: moving from main to main
+a16236c HEAD@{15}: checkout: moving from main to main
+a16236c HEAD@{16}: checkout: moving from main to main
+a16236c HEAD@{17}: commit: Deploy: auto-capitalize fields + Supabase anonymous auth fix [2026-02-26 18:01]
+9878cb8 HEAD@{18}: commit: feat: auto-capitalize name fields, license number uppercase, Supabase anonymous auth for driver registration
+1c23e14 HEAD@{19}: checkout: moving from gh-pages to main
+58a7b28 HEAD@{20}: checkout: moving from main to gh-pages
+1c23e14 HEAD@{21}: reset: moving to HEAD
+1c23e14 HEAD@{22}: reset: moving to HEAD~1
+b0d6cc2 HEAD@{23}: commit: Deployment: Updated build for franchise form EV hint and fixed date
+1c23e14 HEAD@{24}: commit: UI: Update EV charging hint and set fixed today's date in franchise form
+b996cdd HEAD@{25}: reset: moving to HEAD~1
+c41ebb6 HEAD@{26}: commit: Deployment: Updated build for franchise form fixes
+b996cdd HEAD@{27}: commit: UI: Bold highway label and rename town road in franchise form - FINAL FIX
+5771ca0 HEAD@{28}: reset: moving to HEAD~1
+3e8164d HEAD@{29}: commit: UI: Bold highway label and rename town road in franchise form

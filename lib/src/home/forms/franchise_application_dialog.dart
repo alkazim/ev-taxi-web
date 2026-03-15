@@ -600,7 +600,7 @@ class _FranchiseApplicationDialogState
                             Text(
                               'YOUR FRANCHISE CODE',
                               style: GoogleFonts.poppins(
-                                color: _darkGreen.withOpacity(0.6),
+                                color: _darkGreen.withValues(alpha: 0.6),
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1,
@@ -1451,8 +1451,8 @@ class _FranchiseApplicationDialogState
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _declarationAccepted
-                              ? _green.withOpacity(0.3)
-                              : Colors.grey.shade200,
+                      ? _darkGreen.withValues(alpha: 0.1)
+                      : Colors.grey.shade50,
                         ),
                       ),
                       child: Column(
