@@ -200,7 +200,11 @@ class _EVMapPageState extends State<EVMapPage> {
           if (!mounted) return;
           final lat = pos.coords.latitude;
           final lng = pos.coords.longitude;
-          debugPrint('✅ [Location] Received coordinates: $lat, $lng');
+          final accuracy = pos.coords.accuracy;
+          debugPrint('✅ [Location] Received coordinates: $lat, $lng (accuracy: ${accuracy.toStringAsFixed(0)}m)');
+          if (accuracy > 150) {
+            debugPrint('⚠️ [Location] Low accuracy (${accuracy.toStringAsFixed(0)}m) — result may be approximate');
+          }
           setState(() {
             _userLatLng = LatLng(lat, lng);
             if (!silent) _isLocating = false;
@@ -234,8 +238,9 @@ class _EVMapPageState extends State<EVMapPage> {
           }
         }.toJS,
         web.PositionOptions(
-            enableHighAccuracy: true,
-            timeout: 10000,
+          enableHighAccuracy: true,
+          timeout: 15000,     // 15s gives GPS time to get satellite fix
+          maximumAge: 0,      // Always request a FRESH position, never use cache
         ),
       );
     } catch (e) {
@@ -281,7 +286,7 @@ class _EVMapPageState extends State<EVMapPage> {
             const SnackBar(content: Text('Could not get current location.')),
           );
         }.toJS,
-        web.PositionOptions(enableHighAccuracy: true, timeout: 5000),
+        web.PositionOptions(enableHighAccuracy: true, timeout: 15000, maximumAge: 0),
       );
     } catch (_) {
       if (mounted) setState(() => _isLocating = false);
