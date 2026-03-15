@@ -740,7 +740,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
           // ── Header ──────────────────────────────────────────────────────────
           Text(
             'CHARGING NETWORK',
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.notoSans(
               color: activeGreen,
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -751,7 +751,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
           Text(
             'Powering Your Journey',
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.notoSans(
               fontSize: isMobile
                   ? 28
                   : isTablet
@@ -769,7 +769,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
             child: Text(
               'Explore EV charging stations across South India — find the nearest charger or plan your route with stops along the way.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.notoSans(
                 color: const Color(0xFF6B7280),
                 fontSize: isMobile ? 13 : 16,
                 height: 1.6,
@@ -906,7 +906,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
                     const SizedBox(width: 6),
                     Text(
                       'You',
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.notoSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF374151),
@@ -917,7 +917,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
                     const SizedBox(width: 6),
                     Text(
                       'Station',
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.notoSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF374151),
@@ -929,7 +929,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
                       const SizedBox(width: 6),
                       Text(
                         'Route',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.notoSans(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF374151),
@@ -999,7 +999,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
                             _mode == _MapMode.nearest
                                 ? 'Finding Stations...'
                                 : 'Planning Route...',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.notoSans(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF111827),
@@ -1065,7 +1065,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
                       : const FaIcon(FontAwesomeIcons.boltLightning, size: 16),
                   label: Text(
                     'Find Nearest Charging',
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.notoSans(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
                     ),
@@ -1145,7 +1145,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
                     : const FaIcon(FontAwesomeIcons.route, size: 16),
                 label: Text(
                   'Show Route & Stations',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.notoSans(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),
@@ -1182,7 +1182,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
                       const SizedBox(width: 8),
                       Text(
                         _routeInfo,
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.notoSans(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF4F46E5),
@@ -1221,7 +1221,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
               Expanded(
                 child: Text(
                   'Green dots = EV stations  •  Blue dot = You  •  Indigo line = Route  •  Powered by Mappls',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.notoSans(
                     fontSize: 11.5,
                     color: const Color(0xFF166534),
                     height: 1.5,
@@ -1241,7 +1241,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
       children: [
         Text(
           '${_stationList.length} station${_stationList.length == 1 ? '' : 's'} found',
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.notoSans(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: accentColor,
@@ -1254,7 +1254,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
             padding: const EdgeInsets.only(top: 6),
             child: Text(
               '+ ${_stationList.length - 5} more on map',
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.notoSans(
                 fontSize: 11,
                 color: const Color(0xFF9CA3AF),
               ),
@@ -1304,7 +1304,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
             children: [
               Text(
                 value,
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.notoSans(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF111827),
@@ -1314,7 +1314,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
               const SizedBox(height: 4),
               Text(
                 label,
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.notoSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
@@ -1393,7 +1393,7 @@ class _StationTile extends StatelessWidget {
               children: [
                 Text(
                   station.name,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.notoSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF111827),
@@ -1404,7 +1404,7 @@ class _StationTile extends StatelessWidget {
                 if (station.address.isNotEmpty)
                   Text(
                     station.address,
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.notoSans(
                       fontSize: 10.5,
                       color: const Color(0xFF6B7280),
                     ),
@@ -1482,7 +1482,7 @@ class _SectionCard extends StatelessWidget {
                 ),
                 child: Text(
                   badgeLabel,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.notoSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: badgeColor,
@@ -1496,7 +1496,7 @@ class _SectionCard extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             title,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.notoSans(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF111827),
@@ -1505,7 +1505,7 @@ class _SectionCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             subtitle,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.notoSans(
               fontSize: 12.5,
               color: const Color(0xFF6B7280),
               height: 1.5,
@@ -1539,15 +1539,15 @@ class _RouteField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF111827)),
+      style: GoogleFonts.notoSans(fontSize: 14, color: const Color(0xFF111827)),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: GoogleFonts.poppins(
+        hintStyle: GoogleFonts.notoSans(
           fontSize: 13,
           color: const Color(0xFFD1D5DB),
         ),
-        labelStyle: GoogleFonts.poppins(
+        labelStyle: GoogleFonts.notoSans(
           fontSize: 13,
           color: const Color(0xFF6B7280),
           fontWeight: FontWeight.w500,

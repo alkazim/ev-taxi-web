@@ -36,6 +36,9 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      textTheme: GoogleFonts.notoSansTextTheme(
+        ThemeData.light().textTheme,
+      ).apply(bodyColor: textColor, displayColor: textColor),
       scaffoldBackgroundColor: scaffoldBackgroundColor,
       colorScheme: const ColorScheme.light(
         primary: primaryColor,
@@ -45,15 +48,12 @@ class AppTheme {
         secondary: primaryLight,
         tertiary: Color(0xFF0D9488), // Classic teal accent
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(
-        ThemeData.light().textTheme,
-      ).apply(bodyColor: textColor, displayColor: textColor),
       cardColor: cardFillColor,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          textStyle: GoogleFonts.notoSans(fontWeight: FontWeight.bold),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
           elevation: 0,
@@ -99,6 +99,9 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      textTheme: GoogleFonts.notoSansTextTheme(
+        ThemeData.dark().textTheme,
+      ).apply(bodyColor: Colors.white, displayColor: Colors.white),
       scaffoldBackgroundColor: const Color(0xFF0B0F19),
       colorScheme: const ColorScheme.dark(
         primary: primaryColor,
@@ -107,14 +110,12 @@ class AppTheme {
         secondary: primaryColor,
         tertiary: Color(0xFF29B6F6),
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(
-        ThemeData.dark().textTheme,
-      ).apply(bodyColor: Colors.white, displayColor: Colors.white),
+      cardColor: const Color(0xFF151B2B),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          textStyle: GoogleFonts.notoSans(fontWeight: FontWeight.bold),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
           elevation: 0,
@@ -173,6 +174,9 @@ class AppThemeV2 {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      textTheme: GoogleFonts.notoSansTextTheme(
+        ThemeData.light().textTheme,
+      ).apply(bodyColor: textColor, displayColor: textColor),
       scaffoldBackgroundColor: scaffoldBg,
       colorScheme: const ColorScheme.light(
         primary: primaryColor,
@@ -183,15 +187,12 @@ class AppThemeV2 {
         tertiary: accentYellow, // ← yellow accent token used by all sections
         onTertiary: Colors.white,
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(
-        ThemeData.light().textTheme,
-      ).apply(bodyColor: textColor, displayColor: textColor),
       cardColor: cardFillColor,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          textStyle: GoogleFonts.notoSans(fontWeight: FontWeight.bold),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -259,6 +260,9 @@ class AppYellowTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      textTheme: GoogleFonts.notoSansTextTheme(
+        ThemeData.light().textTheme,
+      ).apply(bodyColor: textColor, displayColor: textColor),
       scaffoldBackgroundColor: scaffoldBg,
       colorScheme: const ColorScheme.light(
         primary: primaryColor,
@@ -269,15 +273,12 @@ class AppYellowTheme {
         tertiary: accentMark, // ← sentinel so isYellowTheme returns true
         onTertiary: Colors.black87,
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(
-        ThemeData.light().textTheme,
-      ).apply(bodyColor: textColor, displayColor: textColor),
       cardColor: cardFillColor,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.black87,
-          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          textStyle: GoogleFonts.notoSans(fontWeight: FontWeight.bold),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),

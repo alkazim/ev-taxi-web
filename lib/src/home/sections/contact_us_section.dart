@@ -961,8 +961,6 @@ class _ContactChip extends StatelessWidget {
   final String value;
   final bool isDesktop;
   final bool isFontAwesome;
-  final Widget? iconWidget;
-
   const _ContactChip({
     required this.icon,
     required this.label,
@@ -979,21 +977,19 @@ class _ContactChip extends StatelessWidget {
         ? const Color(0xFFF59E0B)
         : _green;
 
-    final resolvedIcon =
-        iconWidget ??
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: activeColor,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Center(
-            child: isFontAwesome
-                ? FaIcon(icon, color: Colors.white, size: 20)
-                : Icon(icon, color: Colors.white, size: 22),
-          ),
-        );
+    final resolvedIcon = Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: activeColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Center(
+        child: isFontAwesome
+            ? FaIcon(icon, color: Colors.white, size: 20)
+            : Icon(icon, color: Colors.white, size: 22),
+      ),
+    );
 
     return Row(
       mainAxisSize: MainAxisSize.min,

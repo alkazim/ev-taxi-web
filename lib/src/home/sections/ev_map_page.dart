@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:geolocator/geolocator.dart';
+import 'dart:js_interop';
+import 'package:web/web.dart' as web;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
@@ -72,7 +73,51 @@ class _Station {
   final String name;
   final String address;
   final LatLng position;
-  _Station({required this.name, required this.address, required this.position});
+  final String? chargerType;
+  _Station({
+    required this.name,
+    required this.address,
+    required this.position,
+    this.chargerType,
+  });
+}
+
+// ─── Crosshair / GPS Painter ──────────────────────────────────────────────────
+class _CrosshairPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  _CrosshairPainter({this.color = Colors.white, this.strokeWidth = 2.2});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final r = size.width * 0.32;   // Outer circle radius
+    final gap = size.width * 0.14; // Gap between crosshair line and circle
+
+    // Outer circle
+    canvas.drawCircle(Offset(cx, cy), r, paint);
+    // Inner dot
+    final dotPaint = Paint()..color = color..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(cx, cy), size.width * 0.07, dotPaint);
+    // Top tick
+    canvas.drawLine(Offset(cx, cy - r - gap), Offset(cx, cy - r - gap - size.width * 0.12), paint);
+    // Bottom tick
+    canvas.drawLine(Offset(cx, cy + r + gap), Offset(cx, cy + r + gap + size.width * 0.12), paint);
+    // Left tick
+    canvas.drawLine(Offset(cx - r - gap, cy), Offset(cx - r - gap - size.width * 0.12, cy), paint);
+    // Right tick
+    canvas.drawLine(Offset(cx + r + gap, cy), Offset(cx + r + gap + size.width * 0.12, cy), paint);
+  }
+
+  @override
+  bool shouldRepaint(_CrosshairPainter old) => old.color != color;
 }
 
 // ─── EVMapPage ────────────────────────────────────────────────────────────────
@@ -91,6 +136,13 @@ class _EVMapPageState extends State<EVMapPage> {
   _MapMode _mode = _MapMode.idle;
   bool _isLocating = false;
   bool _isRouting = false;
+  bool _isLoadingLocation = true; // Tracks the initial GPS load
+
+  Timer? _debounceTimer;
+  List<Map<String, dynamic>> _fromSuggestions = [];
+  List<Map<String, dynamic>> _toSuggestions = [];
+  bool _showFromSuggestions = false;
+  bool _showToSuggestions = false;
 
   final _fromCtrl = TextEditingController();
   final _viaCtrl = TextEditingController();
@@ -101,7 +153,9 @@ class _EVMapPageState extends State<EVMapPage> {
   LatLng? _fromLatLng;
   LatLng? _toLatLng;
   LatLng? _viaLatLng;
-  String _routeInfo = '';
+
+  int _selectedRouteIndex = 0;
+  List<Map<String, dynamic>> _routeAlternatives = [];
 
   static const _kDefaultCenter = LatLng(10.8505, 76.2711);
   static const _kDefaultZoom = 6.5;
@@ -129,11 +183,7 @@ class _EVMapPageState extends State<EVMapPage> {
   // ─── Map Ready ──────────────────────────────────────────────────────────────
   void _onMapReady() {
     setState(() => _mapReady = true);
-    // If location was already fetched while map was loading, center now
-    if (_userLatLng != null) {
-      _mapController.move(_userLatLng!, 13.0);
-    }
-    // Otherwise _fetchUserLocation will center when it completes
+    // Initial center is handled by _fetchUserLocation once finished
   }
 
   Future<void> _fetchUserLocation({
@@ -141,52 +191,277 @@ class _EVMapPageState extends State<EVMapPage> {
     bool silent = false,
   }) async {
     if (_isLocating) return;
+    debugPrint('📍 [Location] Requesting real-time GPS position...');
     if (!silent) setState(() => _isLocating = true);
 
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (!silent && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location services are disabled.')),
-          );
-        }
-        if (!silent) setState(() => _isLocating = false);
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (!silent) setState(() => _isLocating = false);
-          return;
-        }
-      }
-      if (permission == LocationPermission.deniedForever) {
-        if (!silent) setState(() => _isLocating = false);
-        return;
-      }
-
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
+      web.window.navigator.geolocation.getCurrentPosition(
+        (web.GeolocationPosition pos) {
+          if (!mounted) return;
+          final lat = pos.coords.latitude;
+          final lng = pos.coords.longitude;
+          debugPrint('✅ [Location] Received coordinates: $lat, $lng');
+          setState(() {
+            _userLatLng = LatLng(lat, lng);
+            if (!silent) _isLocating = false;
+            _isLoadingLocation = false;
+          });
+          // Center map whenever we have fresh location AND the map is ready
+          if (_mapReady && centerMap) {
+            debugPrint('🗺️ [Map] Centering on user location...');
+            _mapController.move(_userLatLng!, 13.0);
+            _findNearestStations(); // Auto-load stations as per required flow
+          }
+        }.toJS,
+        (web.GeolocationPositionError error) {
+          if (!mounted) return;
+          debugPrint('⚠️ [Location] Geolocation error or denied. Code: ${error.code}');
+          setState(() {
+            // Fallback to Kochi, India
+            _userLatLng = const LatLng(9.9312, 76.2673);
+            if (!silent) _isLocating = false;
+            _isLoadingLocation = false;
+          });
+          if (_mapReady && centerMap) {
+            debugPrint('🗺️ [Map] Falling back to Kochi center...');
+            _mapController.move(_userLatLng!, 13.0);
+            _findNearestStations();
+          }
+          if (!silent) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permission denied. Showing Kochi as fallback.')),
+            );
+          }
+        }.toJS,
+        web.PositionOptions(
+            enableHighAccuracy: true,
+            timeout: 10000,
         ),
       );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLocating = false;
+          _isLoadingLocation = false;
+        });
+      }
+    }
+  }
 
-      if (!mounted) return;
-      setState(() {
-        _userLatLng = LatLng(pos.latitude, pos.longitude);
-        if (!silent) _isLocating = false;
-      });
-      // Center map whenever we have fresh location AND the map is ready
-      if (_mapReady) {
-        _mapController.move(_userLatLng!, 13.0);
+  // ─── Reverse Geocode ───────────────────────────────────────────────────────
+  Future<String?> _reverseGeocode(double lat, double lng) async {
+    try {
+      final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng&zoom=18&addressdetails=1',
+      );
+      final resp = await http.get(url, headers: {'User-Agent': 'EVTaxiDemo/1.0'});
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return data['display_name'] as String?;
       }
     } catch (e) {
-      if (!silent && mounted) setState(() => _isLocating = false);
+      debugPrint('Reverse geocode error: $e');
     }
+    return null;
+  }
+
+  Future<void> _onGPSShortcutClicked() async {
+    if (_isLocating) return;
+    setState(() => _isLocating = true);
+
+    try {
+      web.window.navigator.geolocation.getCurrentPosition(
+        (web.GeolocationPosition pos) {
+          // Move async work to a separate method to avoid toJS issues with Future
+          _handleGPSCallback(pos);
+        }.toJS,
+        (web.GeolocationPositionError error) {
+          if (mounted) setState(() => _isLocating = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not get current location.')),
+          );
+        }.toJS,
+        web.PositionOptions(enableHighAccuracy: true, timeout: 5000),
+      );
+    } catch (_) {
+      if (mounted) setState(() => _isLocating = false);
+    }
+  }
+
+  Future<void> _handleGPSCallback(web.GeolocationPosition pos) async {
+    if (!mounted) return;
+    final lat = pos.coords.latitude;
+    final lng = pos.coords.longitude;
+    final latLng = LatLng(lat, lng);
+
+    // Update map and "You" dot
+    setState(() {
+      _userLatLng = latLng;
+      _isLocating = false;
+    });
+    _mapController.move(latLng, 14.0);
+
+    // Get human-readable address
+    final address = await _reverseGeocode(lat, lng);
+    if (mounted && address != null) {
+      setState(() {
+        _fromCtrl.text = address;
+        _fromLatLng = latLng;
+      });
+    }
+  }
+
+  // ─── Suggestions ────────────────────────────────────────────────────────────
+  Future<void> _fetchSuggestions(String query, bool isFrom) async {
+    if (query.length < 3) {
+      setState(() {
+        if (isFrom) {
+          _fromSuggestions = [];
+          _showFromSuggestions = false;
+        } else {
+          _toSuggestions = [];
+          _showToSuggestions = false;
+        }
+      });
+      return;
+    }
+
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        // We append "India" to the query and use Photon to get broad results
+        final url = Uri.parse('https://photon.komoot.io/api/?q=${Uri.encodeComponent('$query, India')}&limit=15');
+        final resp = await http.get(url);
+        if (resp.statusCode == 200) {
+          final data = jsonDecode(resp.body) as Map<String, dynamic>;
+          final features = data['features'] as List<dynamic>? ?? [];
+
+          final allowedStates = {'Kerala', 'Karnataka', 'Tamil Nadu', 'Puducherry', 'Pondicherry'};
+          final priorityCities = {
+            'Kochi', 'Trivandrum', 'Kollam', 'Thrissur', 'Palakkad', 'Alappuzha', 'Kottayam', 'Kannur', 'Kozhikode', 'Malappuram', 'Kasargod',
+            'Bangalore', 'Mysore', 'Mangalore', 'Hubli', 'Belgaum',
+            'Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Trichy', 'Tirunelveli',
+            'Puducherry', 'Karaikal', 'Yanam', 'Mahe'
+          };
+          
+          final List<Map<String, dynamic>> suggestions = [];
+
+          for (final f in features) {
+            final geom = f['geometry'] as Map<String, dynamic>;
+            final props = f['properties'] as Map<String, dynamic>;
+            final coords = geom['coordinates'] as List<dynamic>;
+            
+            final lat = (coords[1] as num).toDouble();
+            final lng = (coords[0] as num).toDouble();
+            
+            final String name = props['name'] ?? '';
+            final String state = props['state'] ?? '';
+            final String city = props['city'] ?? props['district'] ?? '';
+
+            // Regional Filter: Must be in south india states
+            if (!allowedStates.contains(state)) continue;
+
+            String display = state.isNotEmpty ? '$name, $state' : name;
+            
+            // Prioritization: boost score if it matches priority cities
+            bool isPriority = priorityCities.contains(name) || priorityCities.contains(city);
+
+            suggestions.add({
+              'display': display,
+              'lat': lat,
+              'lng': lng,
+              'priority': isPriority ? 1 : 0,
+            });
+          }
+
+          // Sort by priority, then by length (shorter names often more relevant)
+          suggestions.sort((a, b) {
+            if (a['priority'] != b['priority']) return (b['priority'] as int).compareTo(a['priority'] as int);
+            return (a['display'] as String).length.compareTo((b['display'] as String).length);
+          });
+
+          final finalResults = suggestions.take(8).toList();
+
+          if (mounted) {
+            setState(() {
+              if (isFrom) {
+                _fromSuggestions = finalResults;
+                _showFromSuggestions = true;
+              } else {
+                _toSuggestions = finalResults;
+                _showToSuggestions = true;
+              }
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint('Suggestion error: $e');
+      }
+    });
+  }
+
+  void _hideAllSuggestions() {
+    if (_showFromSuggestions || _showToSuggestions) {
+      debugPrint('🙈 [UI] Hiding suggestions...');
+      setState(() {
+        _showFromSuggestions = false;
+        _showToSuggestions = false;
+      });
+    }
+  }
+
+  /// Custom map control button — premium styled, text-based (no icon font needed).
+  Widget _mapControlBtn({
+    required String label,
+    required String tooltip,
+    VoidCallback? onTap,
+    Color color = const Color(0xFF1D4ED8),
+    Widget? child,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFFFFFF), Color(0xFFF0F4FF)],
+            ),
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFFE0E7FF), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1D4ED8).withValues(alpha: 0.18),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.8),
+                blurRadius: 4,
+                offset: const Offset(0, -1),
+              ),
+            ],
+          ),
+          child: child ??
+              Center(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                    height: 1.0,
+                  ),
+                ),
+              ),
+        ),
+      ),
+    );
   }
 
   // ─── External Navigation ────────────────────────────────────────────────────
@@ -270,20 +545,37 @@ class _EVMapPageState extends State<EVMapPage> {
           final m = item as Map<String, dynamic>;
           final al = m['AddressInfo'] as Map<String, dynamic>?;
           if (al == null) continue;
-          // API returns both Latitude/Longitude (full) and Lat/Lng (compact)
-          final sLat = (al['Latitude'] ?? al['Lat']) as num?;
-          final sLng = (al['Longitude'] ?? al['Lng']) as num?;
-          if (sLat == null || sLng == null) continue;
-          final title =
-              (al['Title'] ?? al['T']) as String? ?? 'EV Charging Station';
-          final addr = (al['AddressLine1'] ?? al['A1'] ?? '') as String;
-          stations.add(
-            _Station(
-              name: title,
-              address: addr,
-              position: LatLng(sLat.toDouble(), sLng.toDouble()),
-            ),
-          );
+          final title = al['Title'] as String? ?? 'EV Station';
+          final line1 = al['AddressLine1'] as String? ?? '';
+          final town = al['Town'] as String? ?? '';
+          final latNum = al['Latitude'] as num?;
+          final lngNum = al['Longitude'] as num?;
+
+          String? chargerType;
+          final connections = m['Connections'] as List<dynamic>?;
+          if (connections != null && connections.isNotEmpty) {
+            final firstConn = connections.first as Map<String, dynamic>;
+            final connType = firstConn['ConnectionType']?['Title'] as String?;
+            final level = firstConn['Level']?['Title'] as String?;
+            final power = firstConn['PowerKW'] as num?;
+            if (connType != null) {
+              chargerType = connType;
+              if (power != null) chargerType += ' ($power kW)';
+            } else if (level != null) {
+              chargerType = level;
+            }
+          }
+
+          if (latNum != null && lngNum != null) {
+            stations.add(
+              _Station(
+                name: title,
+                address: [line1, town].where((s) => s.isNotEmpty).join(', '),
+                position: LatLng(latNum.toDouble(), lngNum.toDouble()),
+                chargerType: chargerType,
+              ),
+            );
+          }
         } catch (_) {
           continue;
         }
@@ -346,11 +638,24 @@ class _EVMapPageState extends State<EVMapPage> {
           tags['addr:street'],
           tags['addr:city'],
         ].where((v) => v != null).join(', ');
+        
+        String? chargerType;
+        if (tags['socket:type2:output'] != null) {
+          chargerType = 'Type 2 (${tags['socket:type2:output']})';
+        } else if (tags['socket:ccs:output'] != null) {
+          chargerType = 'CCS (${tags['socket:ccs:output']})';
+        } else if (tags['socket:chademo'] != null) {
+          chargerType = 'CHAdeMO';
+        } else if (tags['capacity'] != null) {
+          chargerType = '${tags['capacity']} stations';
+        }
+
         stations.add(
           _Station(
             name: name,
             address: addr,
             position: LatLng(sLat.toDouble(), sLng.toDouble()),
+            chargerType: chargerType,
           ),
         );
       }
@@ -385,11 +690,11 @@ class _EVMapPageState extends State<EVMapPage> {
       _fromLatLng = null;
       _toLatLng = null;
       _viaLatLng = null;
-      _routeInfo = '';
     });
 
     final lat = _userLatLng!.latitude;
     final lng = _userLatLng!.longitude;
+    debugPrint('🔍 [Stations] Finding nearest stations around $lat, $lng...');
 
     // Try OSM Overpass first – has rich India EV station data
     List<_Station> found = await _fetchOverpassStations(
@@ -398,15 +703,20 @@ class _EVMapPageState extends State<EVMapPage> {
       radiusM: 30000,
     );
     if (found.isEmpty) {
+      debugPrint('ℹ️ [Stations] No stations in 30km, expanding to 100km...');
       found = await _fetchOverpassStations(lat: lat, lng: lng, radiusM: 100000);
     }
     // Fallback to OpenChargeMap
-    if (found.isEmpty) found = await _fetchOpenChargeMap(lat, lng, 150);
+    if (found.isEmpty) {
+      debugPrint('ℹ️ [Stations] Trying fallback API (OpenChargeMap)...');
+      found = await _fetchOpenChargeMap(lat, lng, 150);
+    }
     if (found.isEmpty) {
       found = await _fetchOpenChargeMap(lat, lng, 300, maxResults: 50);
     }
 
     if (mounted) {
+      debugPrint('✨ [Stations] Found ${found.length} stations in total.');
       setState(() {
         _stationList = found.take(15).toList();
         _isRouting = false;
@@ -456,7 +766,7 @@ class _EVMapPageState extends State<EVMapPage> {
       _fromLatLng = null;
       _toLatLng = null;
       _viaLatLng = null;
-      _routeInfo = '';
+      _routeAlternatives = [];
     });
 
     // Geocode
@@ -496,42 +806,54 @@ class _EVMapPageState extends State<EVMapPage> {
 
     // EV stations along route using Overpass (Bounding Box + Polyline Buffer)
     final effectivePts = routePts.length >= 2 ? routePts : waypoints;
-    final lats = effectivePts.map((p) => p.latitude).toList();
-    final lngs = effectivePts.map((p) => p.longitude).toList();
+    _fitMap(effectivePts);
+    await _fetchStationsForRoute(effectivePts);
+  }
 
-    // Calculate bounding box with a ~15km buffer (0.15 degrees)
-    final minLat = lats.reduce(math.min) - 0.15;
-    final maxLat = lats.reduce(math.max) + 0.15;
-    final minLng = lngs.reduce(math.min) - 0.15;
-    final maxLng = lngs.reduce(math.max) + 0.15;
-
-    final allStations = await _fetchOverpassStations(
-      minLat: minLat,
-      minLng: minLng,
-      maxLat: maxLat,
-      maxLng: maxLng,
-    );
-
-    final filtered = allStations
-        .where(
-          (s) =>
-              _distToRoutePoly(
-                s.position.latitude,
-                s.position.longitude,
-                effectivePts,
-              ) <=
-              2.5,
-        )
-        .toList();
-
-    if (mounted) {
-      setState(() {
-        _stationList = filtered;
-        _isRouting = false;
-      });
+  Future<void> _fetchStationsForRoute(List<LatLng> effectivePts) async {
+    if (!mounted || effectivePts.isEmpty) {
+      if (mounted) setState(() => _isRouting = false);
+      return;
     }
 
-    _fitMap(effectivePts);
+    try {
+      final lats = effectivePts.map((p) => p.latitude).toList();
+      final lngs = effectivePts.map((p) => p.longitude).toList();
+
+      final minLat = lats.reduce(math.min) - 0.15;
+      final maxLat = lats.reduce(math.max) + 0.15;
+      final minLng = lngs.reduce(math.min) - 0.15;
+      final maxLng = lngs.reduce(math.max) + 0.15;
+
+      final allStations = await _fetchOverpassStations(
+        minLat: minLat,
+        minLng: minLng,
+        maxLat: maxLat,
+        maxLng: maxLng,
+      );
+
+      final filtered = allStations
+          .where(
+            (s) =>
+                _distToRoutePoly(
+                  s.position.latitude,
+                  s.position.longitude,
+                  effectivePts,
+                ) <=
+                2.5,
+          )
+          .toList();
+
+      if (mounted) {
+        setState(() {
+          _stationList = filtered;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRouting = false);
+      }
+    }
   }
 
   // ─── OSRM Directions ───────────────────────────────────────────────────────
@@ -541,7 +863,7 @@ class _EVMapPageState extends State<EVMapPage> {
           .map((p) => '${p.longitude},${p.latitude}')
           .join(';');
       final url = Uri.parse(
-        'https://router.project-osrm.org/route/v1/driving/$coordsStr?overview=full&geometries=geojson',
+        'https://router.project-osrm.org/route/v1/driving/$coordsStr?overview=full&geometries=geojson&alternatives=true',
       );
 
       final resp = await http.get(url).timeout(const Duration(seconds: 20));
@@ -550,17 +872,13 @@ class _EVMapPageState extends State<EVMapPage> {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         final routes = data['routes'] as List<dynamic>?;
         if (routes != null && routes.isNotEmpty) {
-          final route = routes.first as Map<String, dynamic>;
-          final distM = route['distance'] as num? ?? 0;
-          final durS = route['duration'] as num? ?? 0;
-
           if (mounted) {
-            setState(
-              () => _routeInfo =
-                  '${(distM / 1000).toStringAsFixed(1)} km  •  ${(durS / 60).toStringAsFixed(0)} min',
-            );
+            setState(() {
+              _routeAlternatives = routes.map((e) => e as Map<String, dynamic>).toList();
+            });
           }
 
+          final route = routes[_selectedRouteIndex];
           final geom = route['geometry'] as Map<String, dynamic>?;
           if (geom != null) {
             final coordList = geom['coordinates'] as List<dynamic>? ?? [];
@@ -811,15 +1129,18 @@ class _EVMapPageState extends State<EVMapPage> {
         ? 40.0
         : 80.0;
 
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFFF9FAFB),
-      padding: EdgeInsets.symmetric(
-        vertical: isMobile ? 60 : 100,
-        horizontal: hPad,
-      ),
-      child: Column(
-        children: [
+    return GestureDetector(
+      onTap: _hideAllSuggestions,
+      behavior: HitTestBehavior.translucent,
+      child: Container(
+        width: double.infinity,
+        color: const Color(0xFFF9FAFB),
+        padding: EdgeInsets.symmetric(
+          vertical: isMobile ? 60 : 100,
+          horizontal: hPad,
+        ),
+        child: Column(
+          children: [
           // ── Header ──────────────────────────────────────────────────────────
           Text(
             'CHARGING NETWORK',
@@ -870,28 +1191,28 @@ class _EVMapPageState extends State<EVMapPage> {
               _statCard(
                 '50+',
                 'Active Stations',
-                FontAwesomeIcons.chargingStation,
+                Icons.ev_station, // Replaced FontAwesomeIcons.chargingStation
                 activeGreen,
                 isMobile,
               ),
               _statCard(
                 '4',
                 'States Covered',
-                FontAwesomeIcons.mapLocationDot,
+                Icons.map, // Replaced FontAwesomeIcons.mapLocationDot
                 activeAmber,
                 isMobile,
               ),
               _statCard(
                 '24/7',
                 'Availability',
-                FontAwesomeIcons.clock,
+                Icons.access_time, // Replaced FontAwesomeIcons.clock
                 const Color(0xFF3B82F6),
                 isMobile,
               ),
               _statCard(
                 '100%',
                 'Green Energy',
-                FontAwesomeIcons.leaf,
+                Icons.eco, // Replaced FontAwesomeIcons.leaf
                 const Color(0xFF10B981),
                 isMobile,
               ),
@@ -931,8 +1252,9 @@ class _EVMapPageState extends State<EVMapPage> {
                 ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ─── Map Widget ──────────────────────────────────────────────────────────────
   Widget _buildMap(bool isMobile, Color activeGreen) {
@@ -1049,29 +1371,61 @@ class _EVMapPageState extends State<EVMapPage> {
               ),
             ),
 
-            // ── My Location button ──────────────────────────────────────────
+            // ── Map Controls ────────────────────────────────────────────────
             Positioned(
               bottom: 20,
               right: 20,
-              child: FloatingActionButton.small(
-                onPressed: _isLocating
-                    ? null
-                    : () => _fetchUserLocation(centerMap: true),
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF1D4ED8),
-                elevation: 4,
-                child: _isLocating
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const FaIcon(FontAwesomeIcons.crosshairs, size: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _mapControlBtn(
+                    label: '+',
+                    tooltip: 'Zoom In',
+                    onTap: () {
+                      final z = _mapController.camera.zoom;
+                      _mapController.move(_mapController.camera.center, z + 1);
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _mapControlBtn(
+                    label: '−',
+                    tooltip: 'Zoom Out',
+                    onTap: () {
+                      final z = _mapController.camera.zoom;
+                      _mapController.move(_mapController.camera.center, z - 1);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _mapControlBtn(
+                    label: '⊕',
+                    tooltip: 'My Location',
+                    color: const Color(0xFF1D4ED8),
+                    onTap: _isLocating ? null : () => _fetchUserLocation(centerMap: true),
+                    child: _isLocating
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CustomPaint(
+                                painter: _CrosshairPainter(
+                                  color: const Color(0xFF1D4ED8),
+                                  strokeWidth: 2.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+                ],
               ),
             ),
 
             // ── Loading overlay ─────────────────────────────────────────────
-            if (_isRouting)
+            if (_isRouting || _isLoadingLocation)
               Positioned.fill(
                 child: Container(
                   color: Colors.black.withValues(alpha: 0.18),
@@ -1104,9 +1458,11 @@ class _EVMapPageState extends State<EVMapPage> {
                           ),
                           const SizedBox(width: 14),
                           Text(
-                            _mode == _MapMode.nearest
-                                ? 'Finding Stations...'
-                                : 'Planning Route...',
+                            _isLoadingLocation
+                                ? 'Getting your location...'
+                                : (_mode == _MapMode.nearest
+                                    ? 'Finding Stations...'
+                                    : 'Planning Route...'),
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -1138,228 +1494,577 @@ class _EVMapPageState extends State<EVMapPage> {
     Color green,
     Color amber,
   ) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // The Pill Toggle
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildTabButton('Find Nearest', _mode == _MapMode.nearest, () {
+                    setState(() => _mode = _MapMode.nearest);
+                  }),
+                  _buildTabButton('Plan Route', _mode == _MapMode.route || _mode == _MapMode.idle, () {
+                    setState(() => _mode = _MapMode.route);
+                  }),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          
+          if (_mode == _MapMode.nearest) 
+            _buildNearestView() // Restore nearest simple logic
+          else
+            _buildRouteView(), // The main thing user wants
+
+          const SizedBox(height: 20),
+
+          // ── Legend info ───────────────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFBBF7D0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: Color(0xFF16A34A),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Green dots = EV stations  •  Blue dot = You  •  Indigo line = Route  •  Powered by OpenStreetMap',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11.5,
+                      color: const Color(0xFF166534),
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNearestView() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Option 1 ──────────────────────────────────────────────────────────
-        _SectionCard(
-          isActive: _mode == _MapMode.nearest,
-          badgeColor: green,
-          badgeLabel: 'Option 1',
-          icon: FontAwesomeIcons.locationCrosshairs,
-          iconColor: green,
-          title: 'Find Nearest Stations',
-          subtitle:
-              'Show the closest EV charging stations to your current location using OpenChargeMap.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: (_isLocating || _isRouting)
-                      ? null
-                      : _findNearestStations,
-                  icon:
-                      (_isLocating || (_isRouting && _mode == _MapMode.nearest))
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const FaIcon(FontAwesomeIcons.boltLightning, size: 16),
-                  label: Text(
-                    'Find Nearest Charging',
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: (_isLocating || _isRouting)
+                ? null
+                : _findNearestStations,
+            icon:
+                (_isLocating || (_isRouting && _mode == _MapMode.nearest))
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.bolt, size: 18),
+            label: Text(
+              'Find Nearest Charging',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF16A34A),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+        if (_mode == _MapMode.nearest && _stationList.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          _buildStationList(const Color(0xFF16A34A)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildRouteView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Plan Your Journey',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF111827),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Calculate the best route with optimized charging stops along the way.',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: const Color(0xFF6B7280),
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 24),
+        
+        // Input Fields
+        _buildInputField(
+          'Starting Point', 
+          _fromCtrl, 
+          'My Location',
+          isFrom: true,
+          onGPSClick: _onGPSShortcutClicked,
+        ),
+        const SizedBox(height: 16),
+        _buildInputField(
+          'Destination', 
+          _toCtrl, 
+          'Kollam, Kerala',
+          isFrom: false,
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Calculate Route Button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: (_isLocating || _isRouting) ? null : () {
+              // ensure we reset index when planning a new route
+              _selectedRouteIndex = 0;
+              _planRoute();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB), // Blue color
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: _isRouting && _mode == _MapMode.route
+                ? const SizedBox(
+                    width: 20, height: 20, 
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : Text(
+                    'Calculate Route',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: green,
-                    foregroundColor: context.isYellowTheme
-                        ? Colors.black87
-                        : Colors.white,
-                    elevation: 3,
-                    shadowColor: green.withValues(alpha: 0.35),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        
+        if (_routeAlternatives.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Text(
+            'Select Alternative Path:',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: const Color(0xFF111827),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(_routeAlternatives.length, (index) {
+                final route = _routeAlternatives[index];
+                final distKm = (route['distance'] as num? ?? 0) / 1000;
+                final durMin = (route['duration'] as num? ?? 0) / 60;
+                final isSelected = _selectedRouteIndex == index;
+                
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedRouteIndex = index;
+                      });
+                      _replotRoute();
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFEEF2FF),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Alt ${index + 1}: ${distKm.toStringAsFixed(1)} km • ${durMin.toStringAsFixed(0)} min',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : const Color(0xFF3B82F6),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              if (_mode == _MapMode.nearest && _stationList.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                _buildStationList(green),
-              ],
-            ],
+                );
+              }),
+            ),
           ),
-        ),
+        ],
 
-        const SizedBox(height: 20),
-
-        // ── Option 2 ──────────────────────────────────────────────────────────
-        _SectionCard(
-          isActive: _mode == _MapMode.route,
-          badgeColor: const Color(0xFF4F46E5),
-          badgeLabel: 'Option 2',
-          icon: FontAwesomeIcons.route,
-          iconColor: const Color(0xFF4F46E5),
-          title: 'Plan Route with Chargers',
-          subtitle:
-              'Enter your journey and see the route with EV stations along the way powered by OpenRouteService.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _RouteField(
-                controller: _fromCtrl,
-                label: 'From',
-                hint: 'Enter origin',
-                icon: FontAwesomeIcons.locationArrow,
-                iconColor: const Color(0xFF4F46E5),
-                suffix: IconButton(
-                  tooltip: 'Use My Location',
-                  onPressed: () async {
-                    if (_userLatLng == null) {
-                      await _fetchUserLocation(silent: false);
-                    }
-                    if (_userLatLng != null) {
-                      setState(() {
-                        _fromCtrl.text = 'My Location';
-                      });
-                    }
-                  },
-                  icon: const FaIcon(
-                    FontAwesomeIcons.crosshairs,
-                    size: 14,
-                    color: Color(0xFF4F46E5),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _RouteField(
-                controller: _viaCtrl,
-                label: 'Via (optional)',
-                hint: 'e.g. Coimbatore',
-                icon: FontAwesomeIcons.circleHalfStroke,
-                iconColor: const Color(0xFFD97706),
-              ),
-              const SizedBox(height: 10),
-              _RouteField(
-                controller: _toCtrl,
-                label: 'To',
-                hint: 'e.g. Bangalore',
-                icon: FontAwesomeIcons.flagCheckered,
-                iconColor: const Color(0xFFDC2626),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: (_isLocating || _isRouting) ? null : _planRoute,
-                icon: _isRouting && _mode == _MapMode.route
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const FaIcon(FontAwesomeIcons.route, size: 16),
-                label: Text(
-                  'Show Route & Stations',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4F46E5),
-                  foregroundColor: Colors.white,
-                  elevation: 3,
-                  shadowColor: const Color(0xFF4F46E5).withValues(alpha: 0.35),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-              if (_routeInfo.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      const FaIcon(
-                        FontAwesomeIcons.route,
-                        size: 14,
-                        color: Color(0xFF4F46E5),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _routeInfo,
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF4F46E5),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              if (_mode == _MapMode.route && _stationList.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                _buildStationList(const Color(0xFF4F46E5)),
-              ],
-            ],
+        if (_stationList.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Text(
+            '${_stationList.length} stations found',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF2563EB),
+            ),
           ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // ── Legend info ───────────────────────────────────────────────────────
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF0FDF4),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFBBF7D0)),
-          ),
-          child: Row(
-            children: [
-              const FaIcon(
-                FontAwesomeIcons.circleInfo,
-                size: 15,
-                color: Color(0xFF16A34A),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Green dots = EV stations  •  Blue dot = You  •  Indigo line = Route  •  Powered by OpenStreetMap',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11.5,
-                    color: const Color(0xFF166534),
-                    height: 1.5,
-                  ),
+          const SizedBox(height: 12),
+          ...(_stationList.take(5).map((s) => _buildUIStationCard(s))),
+          if (_stationList.length > 5)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                '+ ${_stationList.length - 5} more on map',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: const Color(0xFF9CA3AF),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+        ],
       ],
     );
   }
+
+  void _replotRoute() {
+    if (_routeAlternatives.isEmpty || _selectedRouteIndex >= _routeAlternatives.length) return;
+    
+    final route = _routeAlternatives[_selectedRouteIndex];
+    final geom = route['geometry'] as Map<String, dynamic>?;
+    if (geom != null) {
+      final coordList = geom['coordinates'] as List<dynamic>? ?? [];
+      final newPts = coordList.map((c) {
+        final pair = c as List<dynamic>;
+        return LatLng(
+          (pair[1] as num).toDouble(),
+          (pair[0] as num).toDouble(),
+        );
+      }).toList();
+      
+      final effectivePts = newPts.length >= 2 ? newPts : _routePoints;
+      setState(() {
+        _routePoints = effectivePts;
+        _stationList = []; // Clear while fetching
+      });
+      _fitMap(effectivePts);
+      _fetchStationsForRoute(effectivePts);
+    }
+  }
+
+  Widget _buildTabButton(String title, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                  )
+                ]
+              : null,
+        ),
+        child: Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? const Color(0xFF111827) : const Color(0xFF6B7280),
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputField(
+    String label, 
+    TextEditingController controller, 
+    String hint, {
+    bool isFrom = false,
+    VoidCallback? onGPSClick,
+  }) {
+    final suggestions = isFrom ? _fromSuggestions : _toSuggestions;
+    final showSuggestions = isFrom ? _showFromSuggestions : _showToSuggestions;
+
+    return Column(
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: TextField(
+                controller: controller,
+                onChanged: (val) => _fetchSuggestions(val, isFrom),
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: const Color(0xFF111827),
+                ),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: GoogleFonts.poppins(color: const Color(0xFF9CA3AF)),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  prefixIcon: const Icon(Icons.location_on, size: 18, color: Color(0xFF9CA3AF)),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isFrom)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: onGPSClick,
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [Color(0xFF16A34A), Color(0xFF10B981)],
+                                ),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF16A34A).withValues(alpha: 0.35),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CustomPaint(
+                                    painter: _CrosshairPainter(
+                                      color: Colors.white,
+                                      strokeWidth: 2.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (controller.text.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20, color: Colors.black87),
+                          onPressed: () {
+                            controller.clear();
+                            setState(() {
+                              if (isFrom) {
+                                _fromLatLng = null;
+                                _fromSuggestions = [];
+                                _showFromSuggestions = false;
+                              } else {
+                                _toLatLng = null;
+                                _toSuggestions = [];
+                                _showToSuggestions = false;
+                              }
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 12,
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (showSuggestions && suggestions.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            constraints: const BoxConstraints(maxHeight: 250),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+              border: Border.all(color: const Color(0xFFF3F4F6)),
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: suggestions.length,
+              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              itemBuilder: (context, index) {
+                final item = suggestions[index];
+                return ListTile(
+                  dense: true,
+                  title: Text(
+                    item['display'],
+                    style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF374151)),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      controller.text = item['display'];
+                      if (isFrom) {
+                        _fromLatLng = LatLng(item['lat'], item['lng']);
+                        _showFromSuggestions = false;
+                      } else {
+                        _toLatLng = LatLng(item['lat'], item['lng']);
+                        _showToSuggestions = false;
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildUIStationCard(_Station station) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFFECFDF5),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  station.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111827),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF6B7280)),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Near by location',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildStationList(Color accentColor) {
     return Column(
@@ -1422,7 +2127,7 @@ class _EVMapPageState extends State<EVMapPage> {
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: FaIcon(icon, color: color, size: 20),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 16),
           Column(
@@ -1562,169 +2267,3 @@ class _StationTile extends StatelessWidget {
   }
 }
 
-// ─── Section Card ─────────────────────────────────────────────────────────────
-class _SectionCard extends StatelessWidget {
-  final bool isActive;
-  final Color badgeColor;
-  final String badgeLabel;
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final Widget child;
-
-  const _SectionCard({
-    required this.isActive,
-    required this.badgeColor,
-    required this.badgeLabel,
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isActive
-              ? badgeColor.withValues(alpha: 0.5)
-              : Colors.black.withValues(alpha: 0.06),
-          width: isActive ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isActive
-                ? badgeColor.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.04),
-            blurRadius: isActive ? 20 : 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: badgeColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  badgeLabel,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: badgeColor,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              FaIcon(icon, size: 18, color: iconColor),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF111827),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: GoogleFonts.poppins(
-              fontSize: 12.5,
-              color: const Color(0xFF6B7280),
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 18),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Route Field ──────────────────────────────────────────────────────────────
-class _RouteField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final IconData icon;
-  final Color iconColor;
-  final Widget? suffix;
-
-  const _RouteField({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    required this.icon,
-    required this.iconColor,
-    this.suffix,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF111827)),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        hintStyle: GoogleFonts.poppins(
-          fontSize: 13,
-          color: const Color(0xFFD1D5DB),
-        ),
-        labelStyle: GoogleFonts.poppins(
-          fontSize: 13,
-          color: const Color(0xFF6B7280),
-          fontWeight: FontWeight.w500,
-        ),
-        prefixIcon: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: FaIcon(icon, size: 16, color: iconColor),
-        ),
-        prefixIconConstraints: const BoxConstraints(minWidth: 44),
-        suffixIcon: suffix,
-        suffixIconConstraints: const BoxConstraints(
-          minWidth: 44,
-          minHeight: 44,
-        ),
-        filled: true,
-        fillColor: const Color(0xFFF9FAFB),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
-        ),
-      ),
-    );
-  }
-}

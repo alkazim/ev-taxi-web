@@ -108,32 +108,81 @@ class _FranchiseRegistrationSectionState
           ),
           const SizedBox(height: 60),
 
-          // ── Premium Tab Bar ──
-          Container(
+          // ── Premium Tab Bar with Glow Effect ──
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 500),
             constraints: const BoxConstraints(maxWidth: 700),
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: const Color(0xFFF3F4F6),
               borderRadius: BorderRadius.circular(50),
+              boxShadow: [
+                BoxShadow(
+                  color: (_currentIndex == 0
+                          ? green
+                          : _currentIndex == 1
+                              ? amber
+                              : const Color(0xFF3B82F6))
+                      .withValues(alpha: 0.15),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: (_currentIndex == 0
+                          ? green
+                          : _currentIndex == 1
+                              ? amber
+                              : const Color(0xFF3B82F6))
+                      .withValues(alpha: 0.1),
+                  blurRadius: 40,
+                  spreadRadius: -5,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
             child: TabBar(
               controller: _tabController,
               // isScrollable prevents overflow on very narrow phones
               isScrollable: isMobile,
               tabAlignment: isMobile ? TabAlignment.center : TabAlignment.fill,
+              onTap: (index) {
+                String type = '';
+                if (index == 0) {
+                  type = 'Mega Franchise';
+                } else if (index == 1) {
+                  type = 'Master Franchise';
+                } else {
+                  type = 'Super Franchise';
+                }
+                showDialog(
+                  context: context,
+                  builder: (context) =>
+                      FranchiseApplicationDialog(franchiseType: type),
+                );
+              },
               indicator: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(40),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 12,
+                    color: (_currentIndex == 0
+                            ? green
+                            : _currentIndex == 1
+                                ? amber
+                                : const Color(0xFF3B82F6))
+                        .withValues(alpha: 0.12),
+                    blurRadius: 15,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
               indicatorSize: TabBarIndicatorSize.tab,
-              labelColor: context.isYellowTheme ? amber : green,
+              labelColor: _currentIndex == 0
+                  ? green
+                  : _currentIndex == 1
+                      ? amber
+                      : const Color(0xFF3B82F6),
               unselectedLabelColor: const Color(0xFF6B7280),
               labelStyle: GoogleFonts.poppins(
                 fontWeight: FontWeight.w700,
@@ -154,32 +203,7 @@ class _FranchiseRegistrationSectionState
           ),
           const SizedBox(height: 50),
 
-          // ── Quick Franchise Application Row ──
-          Text(
-            'QUICK APPLY',
-            style: GoogleFonts.poppins(
-              color: const Color(0xFF6B7280),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.5,
-            ),
-          ),
           const SizedBox(height: 20),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            alignment: WrapAlignment.center,
-            children: [
-              _buildSimpleApplyButton('Mega', green, context),
-              _buildSimpleApplyButton('Master', amber, context),
-              _buildSimpleApplyButton(
-                'Super',
-                const Color(0xFF3B82F6),
-                context,
-              ),
-            ],
-          ),
-          const SizedBox(height: 60),
 
           // ── Content Card with Fade/Slide ──
           // Tab content: use LayoutBuilder for adaptive height
@@ -622,51 +646,6 @@ class _FranchiseRegistrationSectionState
     );
   }
 
-  Widget _buildSimpleApplyButton(
-    String title,
-    Color color,
-    BuildContext context,
-  ) {
-    return InkWell(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) =>
-              FranchiseApplicationDialog(franchiseType: '$title Franchise'),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Apply $title',
-              style: GoogleFonts.poppins(
-                color: color,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(Icons.arrow_forward_ios_rounded, size: 12, color: color),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ─────────────────────────────────────────────────────────────────
   // CLASSIC FALLBACK (Simplified slightly, but mostly kept for safety)
