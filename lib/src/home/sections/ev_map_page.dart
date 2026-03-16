@@ -15,54 +15,38 @@ import '../../theme/app_theme.dart';
 
 // ─── Known Cities ─────────────────────────────────────────────────────────────
 const _kCities = <String, LatLng>{
+  // --- Ernakulam Hubs & Aliases ---
+  'vyttila': LatLng(9.9708, 76.3218),
+  'vytilla': LatLng(9.9708, 76.3218),
+  'tripunithura': LatLng(9.9482, 76.3476),
+  'thripunithura': LatLng(9.9482, 76.3476),
+  'thrippunithura': LatLng(9.9482, 76.3476),
+  'thripunitra': LatLng(9.9482, 76.3476),
+  'trippunithura': LatLng(9.9482, 76.3476),
+  'edappally': LatLng(10.0244, 76.3079),
+  'palarivattom': LatLng(10.0036, 76.3060),
+  'kakkanad': LatLng(10.0159, 76.3418),
   'ernakulam': LatLng(9.9816, 76.2999),
   'kochi': LatLng(9.9312, 76.2673),
-  'cochin': LatLng(9.9312, 76.2673),
+  // --- Other Major Districts ---
   'trivandrum': LatLng(8.4875, 76.9492),
-  'thiruvananthapuram': LatLng(8.4875, 76.9492),
-  'calicut': LatLng(11.2588, 75.7804),
   'kozhikode': LatLng(11.2588, 75.7804),
   'thrissur': LatLng(10.5276, 76.2144),
-  'trichur': LatLng(10.5276, 76.2144),
+  'kottayam': LatLng(9.5916, 76.5221),
   'palakkad': LatLng(10.7867, 76.6547),
-  'palghat': LatLng(10.7867, 76.6547),
-  'coimbatore': LatLng(11.0168, 76.9558),
-  'cbe': LatLng(11.0168, 76.9558),
-  'bangalore': LatLng(12.9716, 77.5946),
-  'bengaluru': LatLng(12.9716, 77.5946),
-  'banglore': LatLng(12.9716, 77.5946),
-  'bengalore': LatLng(12.9716, 77.5946),
-  'blr': LatLng(12.9716, 77.5946),
-  'mysuru': LatLng(12.2958, 76.6394),
-  'mysore': LatLng(12.2958, 76.6394),
-  'chennai': LatLng(13.0827, 80.2707),
-  'madras': LatLng(13.0827, 80.2707),
-  'madurai': LatLng(9.9252, 78.1198),
-  'mangalore': LatLng(12.9141, 74.8560),
-  'mangaluru': LatLng(12.9141, 74.8560),
-  'salem': LatLng(11.6643, 78.1460),
-  'hubli': LatLng(15.3647, 75.1240),
-  'huballi': LatLng(15.3647, 75.1240),
-  'dharwad': LatLng(15.4589, 75.0078),
-  'tiruppur': LatLng(11.1085, 77.3411),
-  'tirupur': LatLng(11.1085, 77.3411),
-  'hosur': LatLng(12.7409, 77.8253),
-  'kollam': LatLng(8.8832, 76.5940),
-  'quilon': LatLng(8.8832, 76.5940),
-  'kannur': LatLng(11.8745, 75.3704),
-  'cannanore': LatLng(11.8745, 75.3704),
-  'delhi': LatLng(28.6139, 77.2090),
-  'new delhi': LatLng(28.6139, 77.2090),
-  'mumbai': LatLng(19.0760, 72.8777),
-  'bombay': LatLng(19.0760, 72.8777),
-  'pune': LatLng(18.5204, 73.8567),
-  'poona': LatLng(18.5204, 73.8567),
-  'hyderabad': LatLng(17.3850, 78.4867),
-  'ahmedabad': LatLng(23.0225, 72.5714),
-  'vikkadu': LatLng(8.1833, 77.4167),
-  'varkala': LatLng(8.7323, 76.7160),
   'alappuzha': LatLng(9.4981, 76.3388),
-  'alleppey': LatLng(9.4981, 76.3388),
+  'kollam': LatLng(8.8832, 76.5940),
+  'kannur': LatLng(11.8745, 75.3704),
+  'malappuram': LatLng(11.0735, 76.0740),
+  'kasaragod': LatLng(12.4996, 74.9869),
+  'pathanamthitta': LatLng(9.2644, 76.7870),
+  'idukki': LatLng(9.8490, 76.9658),
+  'wayanad': LatLng(11.6854, 76.1320),
+  'bangalore': LatLng(12.9716, 77.5946),
+  'chennai': LatLng(13.0827, 80.2707),
+  'coimbatore': LatLng(11.0168, 76.9558),
+  'mangalore': LatLng(12.9141, 74.8560),
+  'mysore': LatLng(12.2958, 76.6394),
 };
 
 // ─── Mode ─────────────────────────────────────────────────────────────────────
@@ -137,6 +121,7 @@ class _EVMapPageState extends State<EVMapPage> {
   bool _isLocating = false;
   bool _isRouting = false;
   bool _isLoadingLocation = true; // Tracks the initial GPS load
+  int? _watchId;
 
   Timer? _debounceTimer;
   List<Map<String, dynamic>> _fromSuggestions = [];
@@ -157,9 +142,6 @@ class _EVMapPageState extends State<EVMapPage> {
   int _selectedRouteIndex = 0;
   List<Map<String, dynamic>> _routeAlternatives = [];
 
-  static const _kDefaultCenter = LatLng(10.8505, 76.2711);
-  static const _kDefaultZoom = 6.5;
-
   // ─── Lifecycle ──────────────────────────────────────────────────────────────
   @override
   void initState() {
@@ -176,6 +158,9 @@ class _EVMapPageState extends State<EVMapPage> {
     _fromCtrl.dispose();
     _viaCtrl.dispose();
     _toCtrl.dispose();
+    if (_watchId != null) {
+      web.window.navigator.geolocation.clearWatch(_watchId!);
+    }
     super.dispose();
   }
 
@@ -183,55 +168,60 @@ class _EVMapPageState extends State<EVMapPage> {
   // ─── Map Ready ──────────────────────────────────────────────────────────────
   void _onMapReady() {
     setState(() => _mapReady = true);
-    // Initial center is handled by _fetchUserLocation once finished
+    if (_userLatLng != null) {
+      _findNearestStations();
+    }
   }
 
   Future<void> _fetchUserLocation({
     bool centerMap = false,
     bool silent = false,
   }) async {
-    if (_isLocating) return;
+    if (_isLocating && _watchId == null) return;
     debugPrint('📍 [Location] Requesting real-time GPS position...');
     if (!silent) setState(() => _isLocating = true);
 
+    if (_watchId != null) {
+      web.window.navigator.geolocation.clearWatch(_watchId!);
+    }
+
     try {
-      web.window.navigator.geolocation.getCurrentPosition(
+      _watchId = web.window.navigator.geolocation.watchPosition(
         (web.GeolocationPosition pos) {
           if (!mounted) return;
           final lat = pos.coords.latitude;
           final lng = pos.coords.longitude;
           final accuracy = pos.coords.accuracy;
           debugPrint('✅ [Location] Received coordinates: $lat, $lng (accuracy: ${accuracy.toStringAsFixed(0)}m)');
-          if (accuracy > 150) {
-            debugPrint('⚠️ [Location] Low accuracy (${accuracy.toStringAsFixed(0)}m) — result may be approximate');
-          }
+          
+          final bool wasLoading = _isLoadingLocation;
           setState(() {
             _userLatLng = LatLng(lat, lng);
             if (!silent) _isLocating = false;
             _isLoadingLocation = false;
           });
-          // Center map whenever we have fresh location AND the map is ready
-          if (_mapReady && centerMap) {
-            debugPrint('🗺️ [Map] Centering on user location...');
-            _mapController.move(_userLatLng!, 13.0);
-            _findNearestStations(); // Auto-load stations as per required flow
+          
+          if (_mapReady && centerMap && !wasLoading) {
+            _mapController.move(_userLatLng!, 14.0);
           }
         }.toJS,
         (web.GeolocationPositionError error) {
           if (!mounted) return;
           debugPrint('⚠️ [Location] Geolocation error or denied. Code: ${error.code}');
+          final bool wasLoading = _isLoadingLocation;
           setState(() {
             // Fallback to Kochi, India
             _userLatLng = const LatLng(9.9312, 76.2673);
             if (!silent) _isLocating = false;
             _isLoadingLocation = false;
           });
-          if (_mapReady && centerMap) {
-            debugPrint('🗺️ [Map] Falling back to Kochi center...');
-            _mapController.move(_userLatLng!, 13.0);
+          
+          if (_mapReady && centerMap && !wasLoading) {
+            _mapController.move(_userLatLng!, 14.0);
             _findNearestStations();
           }
-          if (!silent) {
+          
+          if (!silent || wasLoading) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Location permission denied. Showing Kochi as fallback.')),
             );
@@ -239,8 +229,8 @@ class _EVMapPageState extends State<EVMapPage> {
         }.toJS,
         web.PositionOptions(
           enableHighAccuracy: true,
-          timeout: 15000,     // 15s gives GPS time to get satellite fix
-          maximumAge: 0,      // Always request a FRESH position, never use cache
+          timeout: 15000,
+          maximumAge: 0,
         ),
       );
     } catch (e) {
@@ -271,48 +261,18 @@ class _EVMapPageState extends State<EVMapPage> {
   }
 
   Future<void> _onGPSShortcutClicked() async {
-    if (_isLocating) return;
-    setState(() => _isLocating = true);
-
-    try {
-      web.window.navigator.geolocation.getCurrentPosition(
-        (web.GeolocationPosition pos) {
-          // Move async work to a separate method to avoid toJS issues with Future
-          _handleGPSCallback(pos);
-        }.toJS,
-        (web.GeolocationPositionError error) {
-          if (mounted) setState(() => _isLocating = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not get current location.')),
-          );
-        }.toJS,
-        web.PositionOptions(enableHighAccuracy: true, timeout: 15000, maximumAge: 0),
-      );
-    } catch (_) {
-      if (mounted) setState(() => _isLocating = false);
-    }
-  }
-
-  Future<void> _handleGPSCallback(web.GeolocationPosition pos) async {
-    if (!mounted) return;
-    final lat = pos.coords.latitude;
-    final lng = pos.coords.longitude;
-    final latLng = LatLng(lat, lng);
-
-    // Update map and "You" dot
-    setState(() {
-      _userLatLng = latLng;
-      _isLocating = false;
-    });
-    _mapController.move(latLng, 14.0);
-
-    // Get human-readable address
-    final address = await _reverseGeocode(lat, lng);
-    if (mounted && address != null) {
-      setState(() {
-        _fromCtrl.text = address;
-        _fromLatLng = latLng;
-      });
+    if (_userLatLng != null && _mapReady) {
+      _mapController.move(_userLatLng!, 15.0);
+      
+      final address = await _reverseGeocode(_userLatLng!.latitude, _userLatLng!.longitude);
+      if (mounted && address != null) {
+        setState(() {
+          _fromCtrl.text = address;
+          _fromLatLng = _userLatLng;
+        });
+      }
+    } else {
+      _fetchUserLocation(centerMap: true, silent: false);
     }
   }
 
@@ -334,70 +294,97 @@ class _EVMapPageState extends State<EVMapPage> {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
       try {
-        // We append "India" to the query and use Photon to get broad results
-        final url = Uri.parse('https://photon.komoot.io/api/?q=${Uri.encodeComponent('$query, India')}&limit=15');
-        final resp = await http.get(url);
+        final List<Map<String, dynamic>> suggestions = [];
+        final Set<String> seen = {};
+
+        // 1. Local Cache Matching (Fast fallback for primary cities/hubs)
+        final lowQuery = query.toLowerCase().trim();
+        _kCities.forEach((key, pos) {
+          if (key.startsWith(lowQuery) || key.contains(lowQuery)) {
+            final displayName = "${key[0].toUpperCase()}${key.substring(1)}, Kerala";
+            if (seen.add(displayName)) {
+              suggestions.add({
+                'display': displayName,
+                'lat': pos.latitude,
+                'lng': pos.longitude,
+                'priority': key.startsWith(lowQuery) ? 2 : 1,
+              });
+            }
+          }
+        });
+
+        // 2. Nominatim API Call (Comprehensive Place Search)
+        // We use featuretype=settlement to find cities/towns/villages across all of South India
+        // viewbox=74.5,8.0,80.5,15.5 covers Kerala, TN, Karnataka, Pondicherry
+        final encodedQuery = Uri.encodeComponent(query);
+        final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/search?'
+          'q=$encodedQuery&format=json&addressdetails=1&'
+          'limit=15&featuretype=settlement&countrycodes=in&'
+          'viewbox=74.5,15.5,80.5,8.0&bounded=0',
+        );
+
+        final resp = await http.get(url, headers: {'User-Agent': 'EVTaxiDemo/1.0'});
         if (resp.statusCode == 200) {
-          final data = jsonDecode(resp.body) as Map<String, dynamic>;
-          final features = data['features'] as List<dynamic>? ?? [];
-
-          final allowedStates = {'Kerala', 'Karnataka', 'Tamil Nadu', 'Puducherry', 'Pondicherry'};
-          final priorityCities = {
-            'Kochi', 'Trivandrum', 'Kollam', 'Thrissur', 'Palakkad', 'Alappuzha', 'Kottayam', 'Kannur', 'Kozhikode', 'Malappuram', 'Kasargod',
-            'Bangalore', 'Mysore', 'Mangalore', 'Hubli', 'Belgaum',
-            'Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Trichy', 'Tirunelveli',
-            'Puducherry', 'Karaikal', 'Yanam', 'Mahe'
-          };
+          final List<dynamic> data = jsonDecode(resp.body);
           
-          final List<Map<String, dynamic>> suggestions = [];
-
-          for (final f in features) {
-            final geom = f['geometry'] as Map<String, dynamic>;
-            final props = f['properties'] as Map<String, dynamic>;
-            final coords = geom['coordinates'] as List<dynamic>;
+          for (final item in data) {
+            final lat = double.parse(item['lat']);
+            final lng = double.parse(item['lon']);
             
-            final lat = (coords[1] as num).toDouble();
-            final lng = (coords[0] as num).toDouble();
+            // 2a. Strict Place Class Filtering
+            // We only want 'place' or 'boundary' results. This excludes 'amenity' (temples/banks).
+            final String cls = item['class'] ?? '';
+            final String type = item['type'] ?? '';
+            if (cls != 'place' && cls != 'boundary') continue;
             
-            final String name = props['name'] ?? '';
-            final String state = props['state'] ?? '';
-            final String city = props['city'] ?? props['district'] ?? '';
+            // Also ignore generic 'square' or small features if they somehow creep in
+            if (type == 'house' || type == 'building') continue;
 
-            // Regional Filter: Must be in south india states
-            if (!allowedStates.contains(state)) continue;
+            final addr = item['address'] as Map<String, dynamic>? ?? {};
+            final String name = addr['suburb'] ?? addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['hamlet'] ?? '';
+            final String district = addr['district'] ?? addr['county'] ?? addr['state_district'] ?? '';
+            final String state = addr['state'] ?? '';
 
-            String display = state.isNotEmpty ? '$name, $state' : name;
+            // Build a cleaner display string: "Name, District, State"
+            final List<String> parts = [];
+            if (name.isNotEmpty) parts.add(name);
+            if (district.isNotEmpty && district != name) parts.add(district);
+            if (state.isNotEmpty) parts.add(state);
             
-            // Prioritization: boost score if it matches priority cities
-            bool isPriority = priorityCities.contains(name) || priorityCities.contains(city);
+            final String display = parts.join(', ');
+            if (display.isEmpty || seen.contains(display)) continue;
+            seen.add(display);
 
             suggestions.add({
               'display': display,
               'lat': lat,
               'lng': lng,
-              'priority': isPriority ? 1 : 0,
+              'priority': 0,
             });
           }
+        }
 
-          // Sort by priority, then by length (shorter names often more relevant)
-          suggestions.sort((a, b) {
-            if (a['priority'] != b['priority']) return (b['priority'] as int).compareTo(a['priority'] as int);
-            return (a['display'] as String).length.compareTo((b['display'] as String).length);
+        // 3. Final Sorting
+        suggestions.sort((a, b) {
+          // Priority first
+          if (a['priority'] != b['priority']) {
+            return (b['priority'] as int).compareTo(a['priority'] as int);
+          }
+          // Alphabetical for equal priority
+          return (a['display'] as String).toLowerCase().compareTo((b['display'] as String).toLowerCase());
+        });
+
+        if (mounted) {
+          setState(() {
+            if (isFrom) {
+              _fromSuggestions = suggestions.take(8).toList();
+              _showFromSuggestions = _fromSuggestions.isNotEmpty;
+            } else {
+              _toSuggestions = suggestions.take(8).toList();
+              _showToSuggestions = _toSuggestions.isNotEmpty;
+            }
           });
-
-          final finalResults = suggestions.take(8).toList();
-
-          if (mounted) {
-            setState(() {
-              if (isFrom) {
-                _fromSuggestions = finalResults;
-                _showFromSuggestions = true;
-              } else {
-                _toSuggestions = finalResults;
-                _showToSuggestions = true;
-              }
-            });
-          }
         }
       } catch (e) {
         debugPrint('Suggestion error: $e');
@@ -619,7 +606,7 @@ class _EVMapPageState extends State<EVMapPage> {
           '[out:json][timeout:30];'
           '(node["amenity"="charging_station"]$spatialFilter;'
           ' way["amenity"="charging_station"]$spatialFilter;);'
-          'out center 150;';
+          'out center 600;';
       final url = Uri.parse('https://overpass-api.de/api/interpreter');
       final resp = await http
           .post(url, body: 'data=${Uri.encodeComponent(query)}')
@@ -695,6 +682,8 @@ class _EVMapPageState extends State<EVMapPage> {
       _fromLatLng = null;
       _toLatLng = null;
       _viaLatLng = null;
+      _routeAlternatives = [];
+      _selectedRouteIndex = 0;
     });
 
     final lat = _userLatLng!.latitude;
@@ -796,8 +785,15 @@ class _EVMapPageState extends State<EVMapPage> {
       _routeAlternatives = [];
     });
 
-    // Geocode
-    final fromLL = await _geocode(from);
+    // Geocode or use Current Location
+    LatLng? fromLL;
+    if (from.toLowerCase().trim() == 'my location' || from == 'My Location') {
+      // Ensure we have a fresh location if possible, otherwise use last known
+      fromLL = _userLatLng;
+    } else {
+      fromLL = await _geocode(from);
+    }
+    
     final toLL = await _geocode(to);
     LatLng? viaLL;
     if (via.isNotEmpty) viaLL = await _geocode(via);
@@ -844,22 +840,61 @@ class _EVMapPageState extends State<EVMapPage> {
     }
 
     try {
-      final lats = effectivePts.map((p) => p.latitude).toList();
-      final lngs = effectivePts.map((p) => p.longitude).toList();
+      // 1. Calculate approximate total distance
+      double totalDist = 0;
+      for (int i = 0; i < effectivePts.length - 1; i++) {
+        totalDist += _distKm(
+          effectivePts[i].latitude,
+          effectivePts[i].longitude,
+          effectivePts[i + 1].latitude,
+          effectivePts[i + 1].longitude,
+        );
+      }
 
-      final minLat = lats.reduce(math.min) - 0.05;
-      final maxLat = lats.reduce(math.max) + 0.05;
-      final minLng = lngs.reduce(math.min) - 0.05;
-      final maxLng = lngs.reduce(math.max) + 0.05;
+      // 2. Segment route if it's long (over 200km)
+      final List<List<LatLng>> segments = [];
+      if (totalDist > 200) {
+        final int numSegments = (totalDist / 150).ceil();
+        final int ptsPerSeg = (effectivePts.length / numSegments).ceil();
+        for (int i = 0; i < effectivePts.length; i += ptsPerSeg) {
+          final endIdx = math.min(i + ptsPerSeg + 1, effectivePts.length);
+          segments.add(effectivePts.sublist(i, endIdx));
+        }
+      } else {
+        segments.add(effectivePts);
+      }
 
-      final allStations = await _fetchOverpassStations(
-        minLat: minLat,
-        minLng: minLng,
-        maxLat: maxLat,
-        maxLng: maxLng,
-      );
+      debugPrint('🗺️ [Stations] Route distance: ${totalDist.toStringAsFixed(1)}km. Split into ${segments.length} segments.');
 
-      final filtered = allStations
+      // 3. Fetch stations for each segment
+      final List<_Station> allFound = [];
+      for (final segment in segments) {
+        final lats = segment.map((p) => p.latitude).toList();
+        final lngs = segment.map((p) => p.longitude).toList();
+
+        final minLat = lats.reduce(math.min) - 0.08;
+        final maxLat = lats.reduce(math.max) + 0.08;
+        final minLng = lngs.reduce(math.min) - 0.08;
+        final maxLng = lngs.reduce(math.max) + 0.08;
+
+        final stations = await _fetchOverpassStations(
+          minLat: minLat,
+          minLng: minLng,
+          maxLat: maxLat,
+          maxLng: maxLng,
+        );
+        allFound.addAll(stations);
+      }
+
+      // 4. Deduplicate (by location/name)
+      final uniqueMap = <String, _Station>{};
+      for (final s in allFound) {
+        final key = '${s.position.latitude.toStringAsFixed(5)}_${s.position.longitude.toStringAsFixed(5)}';
+        uniqueMap[key] = s;
+      }
+
+      // 5. Filter for distance to the ACTUAL route line
+      final filtered = uniqueMap.values
           .where(
             (s) =>
                 _distToRoutePoly(
@@ -867,11 +902,11 @@ class _EVMapPageState extends State<EVMapPage> {
                   s.position.longitude,
                   effectivePts,
                 ) <=
-                2.0, // stations within 2km corridor of the route
+                3.0, // increased to 3km for better highway coverage
           )
           .toList();
 
-      debugPrint('🔍 [Stations] ${allStations.length} raw → ${filtered.length} within 2km of route');
+      debugPrint('🔍 [Stations] Found ${uniqueMap.length} unique → ${filtered.length} within 3km of route');
       if (mounted) {
         setState(() {
           _stationList = filtered;
@@ -1062,28 +1097,35 @@ class _EVMapPageState extends State<EVMapPage> {
     }
 
     if (_fromLatLng != null) {
-      markers.add(
-        Marker(
-          point: _fromLatLng!,
-          width: 32,
-          height: 32,
-          child: Tooltip(
-            message: 'Start: ${_fromCtrl.text}',
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1D4ED8),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-              child: const Icon(
-                Icons.trip_origin,
-                color: Colors.white,
-                size: 16,
+      // Avoid showing the Start marker if it's identical to the You dot
+      final isStartAtUser = _userLatLng != null && 
+          (_userLatLng!.latitude - _fromLatLng!.latitude).abs() < 0.0001 &&
+          (_userLatLng!.longitude - _fromLatLng!.longitude).abs() < 0.0001;
+
+      if (!isStartAtUser) {
+        markers.add(
+          Marker(
+            point: _fromLatLng!,
+            width: 32,
+            height: 32,
+            child: Tooltip(
+              message: 'Start: ${_fromCtrl.text}',
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1D4ED8),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: const Icon(
+                  Icons.trip_origin,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
+      }
     }
 
     if (_viaLatLng != null) {
@@ -1317,16 +1359,17 @@ class _EVMapPageState extends State<EVMapPage> {
         child: Stack(
           children: [
             // ── FlutterMap ──────────────────────────────────────────────────
-            FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: _kDefaultCenter,
-                initialZoom: _kDefaultZoom,
-                onMapReady: _onMapReady,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all,
+            if (!_isLoadingLocation)
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _userLatLng ?? const LatLng(9.9312, 76.2673),
+                  initialZoom: 14.0,
+                  onMapReady: _onMapReady,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.all,
+                  ),
                 ),
-              ),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -1594,7 +1637,21 @@ class _EVMapPageState extends State<EVMapPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildTabButton('Find Nearest', _mode == _MapMode.nearest, () {
-                    setState(() => _mode = _MapMode.nearest);
+                    if (_mode != _MapMode.nearest) {
+                      setState(() {
+                        _mode = _MapMode.nearest;
+                        _routePoints = [];
+                        _routeAlternatives = [];
+                        _fromLatLng = null;
+                        _toLatLng = null;
+                        _viaLatLng = null;
+                        _stationList = [];
+                      });
+                      if (_userLatLng != null && _mapReady) {
+                        _mapController.move(_userLatLng!, 14.0);
+                      }
+                      _findNearestStations();
+                    }
                   }),
                   _buildTabButton('Plan Route', _mode == _MapMode.route || _mode == _MapMode.idle, () {
                     setState(() => _mode = _MapMode.route);
