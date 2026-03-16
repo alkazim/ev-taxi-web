@@ -41,7 +41,7 @@ _flutter.buildConfig = {"engineRevision":"18818009497c581ede5d8a3b8b833b81d00ceb
 // Providing onEntrypointLoaded skips the default progress bar.
 _flutter.loader.load({
   serviceWorkerSettings: {
-    serviceWorkerVersion: "724286530",
+    serviceWorkerVersion: "2329402540",
   },
   onEntrypointLoaded: async function (engineInitializer) {
     const appRunner = await engineInitializer.initializeEngine();
