@@ -6,8 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'form_persistence_state.dart';
 import '../../theme/app_theme.dart';
-import '../../services/firebase_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/supabase_service.dart';
 
 class DriverApplicationDialog extends StatefulWidget {
   final String? continuationId; // Pass this if opening specifically to continue
@@ -23,8 +22,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   bool _isLoading = false;
   String? _statusMessage; // shown under the spinner during long operations
   Timer? _loadingTimer;
-  String? _driverId;
-  bool _isContinuation = false;
+  String? _cachedDriverCode; // Locally generated ID for reference
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -134,6 +132,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         }
 
         _currentStep = state.driverCurrentStep;
+        _cachedDriverCode = state.driverCode;
 
         setState(() {});
       }
@@ -222,46 +221,8 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
   }
 
   Future<void> _checkExistingApplication() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedId = widget.continuationId ?? prefs.getString('driver_id');
-
-    if (savedId != null) {
-      setState(() => _isLoading = true);
-      try {
-        final data = await FirebaseService().getDriverByCode(savedId);
-        if (data != null) {
-          setState(() {
-            _driverId = savedId;
-            _isContinuation = true;
-            _currentStep = 1;
-
-            _firstNameController.text = data['first_name'] ?? '';
-            _middleNameController.text = data['middle_name'] ?? '';
-            _lastNameController.text = data['last_name'] ?? '';
-            _selectedState = data['state'];
-            _selectedDistrict = data['district'];
-            _villageController.text = data['village'] ?? '';
-            _addressController.text = data['address'] ?? '';
-            _pinController.text = data['pin'] ?? '';
-            _landmarkController.text = data['landmark'] ?? '';
-            _mobile1Controller.text = data['mobile1'] ?? '';
-            _dobController.text = data['dob'] ?? '';
-            _bloodGroup = data['blood_group'];
-            _emailController.text = data['email'] ?? '';
-            _licenseNoController.text = data['license_no'] ?? '';
-            _licenseIssueDateController.text = data['license_issue_date'] ?? '';
-            _licenseExpiryDateController.text =
-                data['license_expiry_date'] ?? '';
-          });
-        }
-      } catch (e) {
-        // Silently ignore errors when loading existing draft — user can
-        // still fill in the form manually.
-        debugPrint('Could not load existing application: $e');
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
-      }
-    }
+    // Single-hit architecture: No database check needed on startup.
+    // Local persistence of form state is handled by FormPersistenceState provider.
   }
 
   // ─── Loading timer helpers ──────────────────────────────────────────────────
@@ -1628,8 +1589,8 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                         return;
                       }
                       if (_currentStep < 5) {
-                        if (_currentStep == 0 && !_isContinuation) {
-                          _submitInitialApplication();
+                        if (_currentStep == 0) {
+                          _generateAndShowId();
                         } else {
                           setState(() {
                             _currentStep++;
@@ -1644,17 +1605,11 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                   icon: Icon(
                     isLastStep
                         ? Icons.check_circle_rounded
-                        : (_currentStep == 0 && !_isContinuation
-                              ? Icons.save_rounded
-                              : Icons.arrow_forward_rounded),
+                        : Icons.arrow_forward_rounded,
                     size: 18,
                   ),
                   label: Text(
-                    isLastStep
-                        ? 'Submit'
-                        : (_currentStep == 0 && !_isContinuation
-                              ? 'Submit & Continue'
-                              : 'Continue'),
+                    isLastStep ? 'Submit' : 'Continue',
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isLastStep
@@ -1718,63 +1673,12 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     );
   }
 
-  Future<void> _submitInitialApplication() async {
-    setState(() {
-      _isLoading = true;
-      _statusMessage = null;
-    });
-    _startLoadingTimer();
-
-    try {
-      final Map<String, dynamic> driverData = {
-        'first_name': _firstNameController.text.trim(),
-        'middle_name': _middleNameController.text.trim(),
-        'last_name': _lastNameController.text.trim(),
-        'state': _selectedState,
-        'district': _selectedDistrict,
-        'village': _villageController.text.trim(),
-        'address': _addressController.text.trim(),
-        'pin': _pinController.text.trim(),
-        'landmark': _landmarkController.text.trim(),
-        'dob': _dobController.text.trim(),
-        'blood_group': _bloodGroup,
-        'mobile1': _mobile1Controller.text.trim(),
-        'email': _emailController.text.trim(),
-        'license_no': _licenseNoController.text.trim().toUpperCase(),
-        'license_issue_date': _licenseIssueDateController.text.trim(),
-        'license_expiry_date': _licenseExpiryDateController.text.trim(),
-      };
-
-      final id = await FirebaseService().registerDriver(driverData);
-
-      // Persist driver ID locally so user can continue later.
-      SharedPreferences.getInstance().then(
-        (prefs) => prefs.setString('driver_id', id),
-      );
-
-      if (!mounted) return;
-      setState(() {
-        _driverId = id;
-        _isContinuation = true;
-      });
-      _showPhase1SuccessDialog(id);
-    } catch (e) {
-      if (!mounted) return;
-      final isAppEx = e is FirebaseAppException;
-      _showErrorDialog(
-        title: 'Submission Failed',
-        message: isAppEx
-            ? e.userMessage
-            : 'Unable to save your information.\n\nPlease check your internet connection and try again.',
-        onRetry: _submitInitialApplication,
-      );
-    } finally {
-      _stopLoadingTimer();
-      if (mounted) setState(() => _isLoading = false);
+  void _generateAndShowId() {
+    if (_cachedDriverCode == null) {
+      _cachedDriverCode = SupabaseService().generateDriverCode();
+      _updatePersistedField('driver_code', _cachedDriverCode!);
     }
-  }
 
-  void _showPhase1SuccessDialog(String id) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1792,7 +1696,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Your basic information has been saved successfully. Your unique Driver ID is:',
+              'Your information is ready. Your unique Driver ID is:',
               style: TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 16),
@@ -1803,54 +1707,44 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                 color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SelectableText(
-                      id,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.copy, size: 20),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: id));
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        const SnackBar(content: Text('ID copied to clipboard')),
-                      );
-                    },
-                  ),
-                ],
+              child: SelectableText(
+                _cachedDriverCode!,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.robotoMono(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.primaryColor,
+                  letterSpacing: 1.1,
+                ),
               ),
             ),
             const SizedBox(height: 12),
             const Text(
-              'Please save this ID. You can use it to complete your application at any time.',
-              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+              'Please complete the remaining steps. Your information will be saved on final submit.',
+              style: TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {
+                _currentStep = 1;
+                _updatePersistedStep(_currentStep);
+              });
+            },
             child: const Text('Continue to Next Step'),
           ),
         ],
       ),
-    ).then((_) {
-      if (mounted) setState(() => _currentStep = 1);
-    });
+    );
   }
 
   Future<void> _submitApplication() async {
-    if (_driverId == null) return;
     setState(() {
       _isLoading = true;
       _statusMessage = null;
@@ -1858,30 +1752,40 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     _startLoadingTimer();
 
     try {
+      // Consolidate ALL fields from Steps 1-6
       final Map<String, dynamic> driverData = {
-        // Driving License
-        'license_no': _licenseNoController.text.trim().toUpperCase(),
-        'license_issue_date': _licenseIssueDateController.text.trim(),
-        'license_expiry_date': _licenseExpiryDateController.text.trim(),
+        // Step 1: Basic Information
+        'first_name': _firstNameController.text.trim().toUpperCase(),
+        'middle_name': _middleNameController.text.trim().toUpperCase(),
+        'last_name': _lastNameController.text.trim().toUpperCase(),
+        'state': _selectedState,
+        'district': _selectedDistrict,
+        'village': _villageController.text.trim().toUpperCase(),
+        'address': _addressController.text.trim().toUpperCase(),
+        'pin': _pinController.text.trim(),
+        'landmark': _landmarkController.text.trim().toUpperCase(),
+        'dob': _parseDateForDB(_dobController.text.trim()),
+        'age': int.tryParse(_ageController.text.trim()) ?? 0,
+        'blood_group': _bloodGroup,
+        'mobile1': _mobile1Controller.text.trim(),
+        'email': _emailController.text.trim().toLowerCase(),
 
-        // Identity Documents
+        // Step 1 continued (handled in later steps but collected here)
+        'license_no': _licenseNoController.text.trim().toUpperCase(),
+        'license_issue_date': _parseDateForDB(_licenseIssueDateController.text.trim()),
+        'license_expiry_date': _parseDateForDB(_licenseExpiryDateController.text.trim()),
+        'driver_code': _cachedDriverCode,
+
+        // Step 2-5: Family, Bank, Documents, Experience
         'aadhaar': _aadhaarController.text.replaceAll(' ', ''),
         'pan': _panController.text.trim().toUpperCase(),
-
-        // Contact
         'mobile2': _mobile2Controller.text.trim(),
-        'dob': _dobController.text.trim(),
-        'age': _ageController.text.trim(),
-
-        // Bank Details
         'bank1_name': _bank1NameController.text.trim(),
         'bank1_acc': _bank1AccController.text.trim(),
         'bank1_ifsc': _bank1IfscController.text.trim().toUpperCase(),
         'bank2_name': _bank2NameController.text.trim(),
         'bank2_acc': _bank2AccController.text.trim(),
         'bank2_ifsc': _bank2IfscController.text.trim().toUpperCase(),
-
-        // Family Details
         'father_name': _fatherNameController.text.trim(),
         'father_mobile': _fatherMobileController.text.trim(),
         'mother_name': _motherNameController.text.trim(),
@@ -1889,7 +1793,6 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
         'spouse_name': _spouseNameController.text.trim(),
         'spouse_mobile': _spouseMobileController.text.trim(),
 
-        // JSON Data
         'education_json': {
           'sslc': {'status': _sslcStatus, 'year': _sslcYear},
           'plus_two': {'status': _plusTwoStatus, 'year': _plusTwoYear},
@@ -1920,31 +1823,23 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             )
             .toList(),
 
-        // Legal & Insurance
         'has_insurance': _hasInsurance,
         'insurance_company': _insuranceCompanyController.text.trim(),
         'policy_no': _policyNoController.text.trim(),
         'sum_insured': _sumInsuredController.text.trim(),
-        'policy_end_date': _policyEndDateController.text.trim(),
+        'policy_end_date': _parseDateForDB(_policyEndDateController.text.trim()),
         'has_police_case': _hasPoliceCase,
         'case_details': _caseDetailsController.text.trim(),
         'verified_city': _verifiedCityController.text.trim().toUpperCase(),
-        'verified_date': _verifiedDateController.text.trim(),
+        'verified_date': _parseDateForDB(_verifiedDateController.text.trim()),
         'declaration_accepted': _declarationAccepted,
       };
 
-      // Run DB update and local prefs removal in parallel for speed.
-      await Future.wait([
-        FirebaseService().updateDriverByCode(_driverId!, driverData),
-        SharedPreferences.getInstance().then(
-          (prefs) => prefs.remove('driver_id'),
-        ),
-      ]);
+      // Perform single-hit insert
+      await SupabaseService().registerDriver(driverData);
 
       if (!mounted) return;
       Provider.of<FormPersistenceState>(context, listen: false).clearDriver();
-
-      if (!mounted) return;
 
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1953,7 +1848,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
             children: [
               Icon(Icons.check_circle, color: Colors.white),
               SizedBox(width: 12),
-              Text('Full Application Submitted Successfully!'),
+              Text('Registration Submitted Successfully!'),
             ],
           ),
           backgroundColor: AppTheme.primaryColor,
@@ -1965,12 +1860,9 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
       );
     } catch (e) {
       if (!mounted) return;
-      final isAppEx = e is FirebaseAppException;
       _showErrorDialog(
         title: 'Submission Failed',
-        message: isAppEx
-            ? e.userMessage
-            : 'Unable to submit your application.\n\nPlease check your internet connection and try again.',
+        message: e.toString(),
         onRetry: _submitApplication,
       );
     } finally {
@@ -2061,6 +1953,13 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
     final y = int.tryParse(parts[2]);
     if (d == null || m == null || y == null) return null;
     return DateTime(y, m, d);
+  }
+
+  String _parseDateForDB(String text) {
+    if (text.isEmpty) return DateTime.now().toIso8601String().split('T')[0];
+    final parts = text.trim().split('/');
+    if (parts.length != 3) return text;
+    return '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
   }
 
   /// Lays children out in a Row on desktop, stacked Column on mobile

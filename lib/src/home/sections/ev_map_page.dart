@@ -9,45 +9,10 @@ import 'package:web/web.dart' as web;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import '../../services/location_service.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../theme/app_theme.dart';
-
-// ─── Known Cities ─────────────────────────────────────────────────────────────
-const _kCities = <String, LatLng>{
-  // --- Ernakulam Hubs & Aliases ---
-  'vyttila': LatLng(9.9708, 76.3218),
-  'vytilla': LatLng(9.9708, 76.3218),
-  'tripunithura': LatLng(9.9482, 76.3476),
-  'thripunithura': LatLng(9.9482, 76.3476),
-  'thrippunithura': LatLng(9.9482, 76.3476),
-  'thripunitra': LatLng(9.9482, 76.3476),
-  'trippunithura': LatLng(9.9482, 76.3476),
-  'edappally': LatLng(10.0244, 76.3079),
-  'palarivattom': LatLng(10.0036, 76.3060),
-  'kakkanad': LatLng(10.0159, 76.3418),
-  'ernakulam': LatLng(9.9816, 76.2999),
-  'kochi': LatLng(9.9312, 76.2673),
-  // --- Other Major Districts ---
-  'trivandrum': LatLng(8.4875, 76.9492),
-  'kozhikode': LatLng(11.2588, 75.7804),
-  'thrissur': LatLng(10.5276, 76.2144),
-  'kottayam': LatLng(9.5916, 76.5221),
-  'palakkad': LatLng(10.7867, 76.6547),
-  'alappuzha': LatLng(9.4981, 76.3388),
-  'kollam': LatLng(8.8832, 76.5940),
-  'kannur': LatLng(11.8745, 75.3704),
-  'malappuram': LatLng(11.0735, 76.0740),
-  'kasaragod': LatLng(12.4996, 74.9869),
-  'pathanamthitta': LatLng(9.2644, 76.7870),
-  'idukki': LatLng(9.8490, 76.9658),
-  'wayanad': LatLng(11.6854, 76.1320),
-  'bangalore': LatLng(12.9716, 77.5946),
-  'chennai': LatLng(13.0827, 80.2707),
-  'coimbatore': LatLng(11.0168, 76.9558),
-  'mangalore': LatLng(12.9141, 74.8560),
-  'mysore': LatLng(12.2958, 76.6394),
-};
 
 // ─── Mode ─────────────────────────────────────────────────────────────────────
 enum _MapMode { idle, nearest, route }
@@ -123,7 +88,6 @@ class _EVMapPageState extends State<EVMapPage> {
   bool _isLoadingLocation = true; // Tracks the initial GPS load
   int? _watchId;
 
-  Timer? _debounceTimer;
   List<Map<String, dynamic>> _fromSuggestions = [];
   List<Map<String, dynamic>> _toSuggestions = [];
   bool _showFromSuggestions = false;
@@ -150,6 +114,10 @@ class _EVMapPageState extends State<EVMapPage> {
     // By the time _onMapReady fires, location may already be available.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchUserLocation(centerMap: true, silent: true);
+      // Pre-fill "From" with "My Location" to make it easier for the user
+      setState(() {
+        _fromCtrl.text = 'My Location';
+      });
     });
   }
 
@@ -169,6 +137,7 @@ class _EVMapPageState extends State<EVMapPage> {
   void _onMapReady() {
     setState(() => _mapReady = true);
     if (_userLatLng != null) {
+      _mapController.move(_userLatLng!, 14.0);
       _findNearestStations();
     }
   }
@@ -186,51 +155,77 @@ class _EVMapPageState extends State<EVMapPage> {
     }
 
     try {
+      // ── First: get an immediate fix via getCurrentPosition ──────────────
+      web.window.navigator.geolocation.getCurrentPosition(
+        (web.GeolocationPosition pos) {
+          if (!mounted) return;
+          final lat = pos.coords.latitude;
+          final lng = pos.coords.longitude;
+          debugPrint('✅ [Location] Initial fix: $lat, $lng');
+          setState(() {
+            _userLatLng = LatLng(lat, lng);
+            _isLocating = false;
+            _isLoadingLocation = false;
+            if (_fromCtrl.text == 'My Location') {
+              _fromLatLng = _userLatLng;
+            }
+          });
+          if (_mapReady && centerMap) {
+            _mapController.move(_userLatLng!, 14.0);
+            if (silent) _findNearestStations();
+          }
+        }.toJS,
+        (web.GeolocationPositionError error) {
+          if (!mounted) return;
+          debugPrint('⚠️ [Location] Initial fix failed. Code: ${error.code}');
+          // Silent initial load: do NOT apply any fallback.
+          // No blue dot is better than a wrong blue dot.
+          if (!silent) {
+            setState(() {
+              _userLatLng = const LatLng(9.9312, 76.2673); // Fallback: Kochi
+              _isLocating = false;
+              _isLoadingLocation = false;
+            });
+            if (_mapReady && centerMap) {
+              _mapController.move(_userLatLng!, 14.0);
+              _findNearestStations();
+            }
+            String msg = 'Could not get location. Showing Kochi as fallback.';
+            if (error.code == 1) msg = 'Location permission denied. Tap the locate button to retry.';
+            if (error.code == 3) msg = 'Location timed out. Tap the locate button to retry.';
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+          } else {
+            setState(() => _isLoadingLocation = false);
+          }
+        }.toJS,
+        web.PositionOptions(
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        ),
+      );
+
+      // ── Then: keep tracking with watchPosition ───────────────────────────
       _watchId = web.window.navigator.geolocation.watchPosition(
         (web.GeolocationPosition pos) {
           if (!mounted) return;
           final lat = pos.coords.latitude;
           final lng = pos.coords.longitude;
-          final accuracy = pos.coords.accuracy;
-          debugPrint('✅ [Location] Received coordinates: $lat, $lng (accuracy: ${accuracy.toStringAsFixed(0)}m)');
-          
-          final bool wasLoading = _isLoadingLocation;
+          debugPrint('📡 [Location] Watch update: $lat, $lng');
           setState(() {
             _userLatLng = LatLng(lat, lng);
-            if (!silent) _isLocating = false;
+            _isLocating = false;
             _isLoadingLocation = false;
+            if (_fromCtrl.text == 'My Location') {
+              _fromLatLng = _userLatLng;
+            }
           });
-          
-          if (_mapReady && centerMap && !wasLoading) {
-            _mapController.move(_userLatLng!, 14.0);
-          }
         }.toJS,
-        (web.GeolocationPositionError error) {
-          if (!mounted) return;
-          debugPrint('⚠️ [Location] Geolocation error or denied. Code: ${error.code}');
-          final bool wasLoading = _isLoadingLocation;
-          setState(() {
-            // Fallback to Kochi, India
-            _userLatLng = const LatLng(9.9312, 76.2673);
-            if (!silent) _isLocating = false;
-            _isLoadingLocation = false;
-          });
-          
-          if (_mapReady && centerMap && !wasLoading) {
-            _mapController.move(_userLatLng!, 14.0);
-            _findNearestStations();
-          }
-          
-          if (!silent || wasLoading) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Location permission denied. Showing Kochi as fallback.')),
-            );
-          }
-        }.toJS,
+        (web.GeolocationPositionError _) {}.toJS,
         web.PositionOptions(
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0,
+          enableHighAccuracy: false,
+          timeout: 30000,
+          maximumAge: 60000,
         ),
       );
     } catch (e) {
@@ -245,19 +240,8 @@ class _EVMapPageState extends State<EVMapPage> {
 
   // ─── Reverse Geocode ───────────────────────────────────────────────────────
   Future<String?> _reverseGeocode(double lat, double lng) async {
-    try {
-      final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng&zoom=18&addressdetails=1',
-      );
-      final resp = await http.get(url, headers: {'User-Agent': 'EVTaxiDemo/1.0'});
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body) as Map<String, dynamic>;
-        return data['display_name'] as String?;
-      }
-    } catch (e) {
-      debugPrint('Reverse geocode error: $e');
-    }
-    return null;
+    // Fully Offline: For now, return "My Location" as we don't have a local reverse geocoding engine
+    return "My Location";
   }
 
   Future<void> _onGPSShortcutClicked() async {
@@ -278,7 +262,10 @@ class _EVMapPageState extends State<EVMapPage> {
 
   // ─── Suggestions ────────────────────────────────────────────────────────────
   Future<void> _fetchSuggestions(String query, bool isFrom) async {
-    if (query.length < 3) {
+    // Guard: never search for the pre-filled sentinel or very short queries
+    if (query.isEmpty ||
+        query.toLowerCase() == 'my location' ||
+        query.trim().length < 2) {
       setState(() {
         if (isFrom) {
           _fromSuggestions = [];
@@ -291,105 +278,25 @@ class _EVMapPageState extends State<EVMapPage> {
       return;
     }
 
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
-      try {
-        final List<Map<String, dynamic>> suggestions = [];
-        final Set<String> seen = {};
+    // Fully Offline: Using LocationService modular logic
+    final suggestions = LocationService().search(query).map((s) => {
+      'display': "$s",
+      'lat': s.position?.latitude,
+      'lng': s.position?.longitude,
+      'priority': 0,
+    }).toList();
 
-        // 1. Local Cache Matching (Fast fallback for primary cities/hubs)
-        final lowQuery = query.toLowerCase().trim();
-        _kCities.forEach((key, pos) {
-          if (key.startsWith(lowQuery) || key.contains(lowQuery)) {
-            final displayName = "${key[0].toUpperCase()}${key.substring(1)}, Kerala";
-            if (seen.add(displayName)) {
-              suggestions.add({
-                'display': displayName,
-                'lat': pos.latitude,
-                'lng': pos.longitude,
-                'priority': key.startsWith(lowQuery) ? 2 : 1,
-              });
-            }
-          }
-        });
-
-        // 2. Nominatim API Call (Comprehensive Place Search)
-        // We use featuretype=settlement to find cities/towns/villages across all of South India
-        // viewbox=74.5,8.0,80.5,15.5 covers Kerala, TN, Karnataka, Pondicherry
-        final encodedQuery = Uri.encodeComponent(query);
-        final url = Uri.parse(
-          'https://nominatim.openstreetmap.org/search?'
-          'q=$encodedQuery&format=json&addressdetails=1&'
-          'limit=15&featuretype=settlement&countrycodes=in&'
-          'viewbox=74.5,15.5,80.5,8.0&bounded=0',
-        );
-
-        final resp = await http.get(url, headers: {'User-Agent': 'EVTaxiDemo/1.0'});
-        if (resp.statusCode == 200) {
-          final List<dynamic> data = jsonDecode(resp.body);
-          
-          for (final item in data) {
-            final lat = double.parse(item['lat']);
-            final lng = double.parse(item['lon']);
-            
-            // 2a. Strict Place Class Filtering
-            // We only want 'place' or 'boundary' results. This excludes 'amenity' (temples/banks).
-            final String cls = item['class'] ?? '';
-            final String type = item['type'] ?? '';
-            if (cls != 'place' && cls != 'boundary') continue;
-            
-            // Also ignore generic 'square' or small features if they somehow creep in
-            if (type == 'house' || type == 'building') continue;
-
-            final addr = item['address'] as Map<String, dynamic>? ?? {};
-            final String name = addr['suburb'] ?? addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['hamlet'] ?? '';
-            final String district = addr['district'] ?? addr['county'] ?? addr['state_district'] ?? '';
-            final String state = addr['state'] ?? '';
-
-            // Build a cleaner display string: "Name, District, State"
-            final List<String> parts = [];
-            if (name.isNotEmpty) parts.add(name);
-            if (district.isNotEmpty && district != name) parts.add(district);
-            if (state.isNotEmpty) parts.add(state);
-            
-            final String display = parts.join(', ');
-            if (display.isEmpty || seen.contains(display)) continue;
-            seen.add(display);
-
-            suggestions.add({
-              'display': display,
-              'lat': lat,
-              'lng': lng,
-              'priority': 0,
-            });
-          }
+    if (mounted) {
+      setState(() {
+        if (isFrom) {
+          _fromSuggestions = suggestions;
+          _showFromSuggestions = _fromSuggestions.isNotEmpty;
+        } else {
+          _toSuggestions = suggestions;
+          _showToSuggestions = _toSuggestions.isNotEmpty;
         }
-
-        // 3. Final Sorting
-        suggestions.sort((a, b) {
-          // Priority first
-          if (a['priority'] != b['priority']) {
-            return (b['priority'] as int).compareTo(a['priority'] as int);
-          }
-          // Alphabetical for equal priority
-          return (a['display'] as String).toLowerCase().compareTo((b['display'] as String).toLowerCase());
-        });
-
-        if (mounted) {
-          setState(() {
-            if (isFrom) {
-              _fromSuggestions = suggestions.take(8).toList();
-              _showFromSuggestions = _fromSuggestions.isNotEmpty;
-            } else {
-              _toSuggestions = suggestions.take(8).toList();
-              _showToSuggestions = _toSuggestions.isNotEmpty;
-            }
-          });
-        }
-      } catch (e) {
-        debugPrint('Suggestion error: $e');
-      }
-    });
+      });
+    }
   }
 
   void _hideAllSuggestions() {
@@ -476,34 +383,9 @@ class _EVMapPageState extends State<EVMapPage> {
   Future<LatLng?> _geocode(String place) async {
     final key = place.toLowerCase().trim();
     if (key == 'my location') return _userLatLng;
-    if (_kCities.containsKey(key)) return _kCities[key];
 
-    try {
-      final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/search'
-        '?q=${Uri.encodeComponent(place)}&format=json&limit=1',
-      );
-      final resp = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'EVTaxiDemo/1.0',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (resp.statusCode == 200) {
-        final list = jsonDecode(resp.body) as List<dynamic>;
-        if (list.isNotEmpty) {
-          final first = list.first as Map<String, dynamic>;
-          final lat = double.tryParse(first['lat'] as String? ?? '');
-          final lng = double.tryParse(first['lon'] as String? ?? '');
-          if (lat != null && lng != null) return LatLng(lat, lng);
-        }
-      }
-    } catch (_) {}
-    return null;
+    // Fully Offline: Lookup in LocationService
+    return LocationService().getCoordinates(place);
   }
 
   // ─── OpenChargeMap API ────────────────────────────────────────────────────
@@ -785,18 +667,33 @@ class _EVMapPageState extends State<EVMapPage> {
       _routeAlternatives = [];
     });
 
-    // Geocode or use Current Location
+    // 1. Resolve From
     LatLng? fromLL;
-    if (from.toLowerCase().trim() == 'my location' || from == 'My Location') {
-      // Ensure we have a fresh location if possible, otherwise use last known
+    if (from.toLowerCase() == 'my location') {
       fromLL = _userLatLng;
+    } else if (_fromLatLng != null && _fromCtrl.text == from) {
+      fromLL = _fromLatLng;
     } else {
       fromLL = await _geocode(from);
     }
-    
-    final toLL = await _geocode(to);
+
+    // 2. Resolve To
+    LatLng? toLL;
+    if (_toLatLng != null && _toCtrl.text == to) {
+      toLL = _toLatLng;
+    } else {
+      toLL = await _geocode(to);
+    }
+
+    // 3. Resolve Via
     LatLng? viaLL;
-    if (via.isNotEmpty) viaLL = await _geocode(via);
+    if (via.isNotEmpty) {
+      if (_viaLatLng != null && _viaCtrl.text == via) {
+        viaLL = _viaLatLng;
+      } else {
+        viaLL = await _geocode(via);
+      }
+    }
 
     if (fromLL == null || toLL == null) {
       if (!mounted) return;
@@ -2075,13 +1972,15 @@ class _EVMapPageState extends State<EVMapPage> {
                     style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF374151)),
                   ),
                   onTap: () {
+                    final lat = item['lat'];
+                    final lng = item['lng'];
                     setState(() {
                       controller.text = item['display'];
                       if (isFrom) {
-                        _fromLatLng = LatLng(item['lat'], item['lng']);
+                        _fromLatLng = (lat != null && lng != null) ? LatLng(lat, lng) : null;
                         _showFromSuggestions = false;
                       } else {
-                        _toLatLng = LatLng(item['lat'], item['lng']);
+                        _toLatLng = (lat != null && lng != null) ? LatLng(lat, lng) : null;
                         _showToSuggestions = false;
                       }
                     });

@@ -4,6 +4,7 @@ import 'src/theme/app_theme.dart';
 import 'src/home/home_page.dart';
 import 'src/home/forms/form_persistence_state.dart';
 import 'src/services/firebase_service.dart';
+import 'src/services/supabase_service.dart';
 
 /// Global notifier — true = V2 theme (green primary + yellow accent), false = Classic theme.
 final ValueNotifier<bool> useV2Theme = ValueNotifier(true);
@@ -14,9 +15,13 @@ final ValueNotifier<bool> useYellowTheme = ValueNotifier(false);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase in the background.
+  // Initialize Firebase and Supabase in the background.
   FirebaseService().initialize().catchError(
     (e) => debugPrint('Firebase init failed: $e'),
+  );
+  
+  SupabaseService().initialize().catchError(
+    (e) => debugPrint('Supabase init failed: $e'),
   );
 
   runApp(

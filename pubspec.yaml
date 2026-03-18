@@ -33,7 +33,7 @@ dependencies:
   google_fonts: ^6.1.0
   font_awesome_flutter: ^10.6.0
   url_launcher: ^6.2.1
-  # supabase_flutter: ^2.3.0 # Removed in favor of Firebase
+  supabase_flutter: ^2.8.1
   firebase_core: ^3.1.0
   cloud_firestore: ^5.0.0
   firebase_auth: ^5.1.0
