@@ -147,21 +147,6 @@ class _FranchiseRegistrationSectionState
               // isScrollable prevents overflow on very narrow phones
               isScrollable: isMobile,
               tabAlignment: isMobile ? TabAlignment.center : TabAlignment.fill,
-              onTap: (index) {
-                String type = '';
-                if (index == 0) {
-                  type = AppLocalizations.of(context)?.megaFranchise ?? 'Mega Franchise';
-                } else if (index == 1) {
-                  type = AppLocalizations.of(context)?.masterFranchise ?? 'Master Franchise';
-                } else {
-                  type = AppLocalizations.of(context)?.superFranchise ?? 'Super Franchise';
-                }
-                showDialog(
-                  context: context,
-                  builder: (context) =>
-                      FranchiseApplicationDialog(franchiseType: type),
-                );
-              },
               indicator: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(40),

@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
 import 'package:taxi_demo/l10n/app_localizations.dart';
+import '../forms/franchise_application_dialog.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class HeroSection extends StatefulWidget {
   const HeroSection({super.key});
@@ -49,43 +51,47 @@ class _HeroSectionState extends State<HeroSection>
     // ── Classic theme: keep the original gradient look ──
     if (!isModern) return _buildClassicHero(context, isDesktop);
 
-    // ── V2: Full-bleed image hero ──
-    // Clamp height: desktop 700–900, mobile uses screen height (580–720)
+    // Clamp height: desktop 800–1000, mobile uses screen height (680–850)
     final heroHeight = isDesktop
-        ? screenHeight.clamp(700.0, 900.0)
-        : screenHeight.clamp(580.0, 720.0);
+        ? screenHeight.clamp(800.0, 1000.0)
+        : screenHeight.clamp(680.0, 850.0);
 
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: heroHeight,
+      constraints: BoxConstraints(minHeight: heroHeight),
       child: Stack(
-        fit: StackFit.expand,
+        fit: StackFit.loose,
+        alignment: Alignment.centerLeft,
         children: [
-          Image.asset(
-            context.isYellowTheme
-                ? 'assets/images/cars/yellow_taxi_homescreen.webp'
-                : 'assets/images/cars/green_taxi_homescreen.webp',
-            fit: BoxFit.cover,
-            alignment: Alignment.centerRight,
-            // Limit GPU decode resolution — no screen needs more than 1600px wide
-            cacheWidth: 1600,
-            errorBuilder: (_, __, ___) =>
-                Container(color: const Color(0xFF0A1628)),
+          Positioned.fill(
+            child: Image.asset(
+              context.isYellowTheme
+                  ? 'assets/images/cars/yellow_taxi_homescreen.webp'
+                  : 'assets/images/cars/green_taxi_homescreen.webp',
+              fit: BoxFit.cover,
+              alignment: Alignment.centerRight,
+              // Limit GPU decode resolution — no screen needs more than 1600px wide
+              cacheWidth: 1600,
+              errorBuilder: (_, __, ___) =>
+                  Container(color: const Color(0xFF0A1628)),
+            ),
           ),
 
           // ── Gradient overlay: dark on left, transparent on right ──
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                stops: [0.0, 0.55, 0.85, 1.0],
-                colors: [
-                  Color(0xE8050F1A), // very dark left
-                  Color(0xCC0A1628), // dark mid-left
-                  Color(0x660A1628), // semi-transparent mid-right
-                  Color(0x220A1628), // almost transparent right
-                ],
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  stops: [0.0, 0.55, 0.85, 1.0],
+                  colors: [
+                    Color(0xE8050F1A), // very dark left
+                    Color(0xCC0A1628), // dark mid-left
+                    Color(0x660A1628), // semi-transparent mid-right
+                    Color(0x220A1628), // almost transparent right
+                  ],
+                ),
               ),
             ),
           ),
@@ -108,14 +114,14 @@ class _HeroSectionState extends State<HeroSection>
           ),
 
           // ── Content ──
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 80 : 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: isDesktop ? 130 : 110),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: isDesktop ? 80 : 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                  SizedBox(height: isDesktop ? 100 : 80),
 
                   // Small label
                   FadeTransition(
@@ -135,7 +141,7 @@ class _HeroSectionState extends State<HeroSection>
                       child: _buildHeadline(isDesktop),
                     ),
                   ),
-                  SizedBox(height: isDesktop ? 20 : 14),
+                  SizedBox(height: isDesktop ? 12 : 8),
 
                   // Subtext
                   FadeTransition(
@@ -145,7 +151,7 @@ class _HeroSectionState extends State<HeroSection>
                       child: _buildSubtext(isDesktop),
                     ),
                   ),
-                  SizedBox(height: isDesktop ? 36 : 28),
+                  SizedBox(height: isDesktop ? 24 : 16),
 
                   // CTA Buttons
                   FadeTransition(
@@ -155,8 +161,18 @@ class _HeroSectionState extends State<HeroSection>
                       child: _buildCTAButtons(isDesktop),
                     ),
                   ),
+                  SizedBox(height: isDesktop ? 30 : 20),
 
-                  const Spacer(),
+                  // Franchise Shortcuts
+                  FadeTransition(
+                    opacity: _fadeAnim,
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: _buildFranchiseShortcuts(isDesktop),
+                    ),
+                  ),
+
+                  SizedBox(height: isDesktop ? 60 : 40),
 
                   // Stats row pinned to bottom
                   FadeTransition(
@@ -167,9 +183,8 @@ class _HeroSectionState extends State<HeroSection>
                 ],
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
     );
   }
 
@@ -278,6 +293,64 @@ class _HeroSectionState extends State<HeroSection>
       ],
     );
   }
+
+  Widget _buildFranchiseShortcuts(bool isDesktop) {
+    final title = AppLocalizations.of(context)?.franchiseOpportunities ?? 'Franchise Opportunities';
+    final green = const Color(0xFF16A34A);
+    final amber = const Color(0xFFF59E0B);
+    final blue = const Color(0xFF3B82F6);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: GoogleFonts.poppins(
+            color: Colors.white.withValues(alpha: 0.6),
+            fontSize: isDesktop ? 12 : 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 2,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: [
+            _FranchiseButton(
+              label: AppLocalizations.of(context)?.megaFranchise ?? 'Mega Franchise',
+              icon: FontAwesomeIcons.buildingColumns,
+              color: green,
+              isDesktop: isDesktop,
+              onTap: () => _openFranchiseDialog(AppLocalizations.of(context)?.megaFranchise ?? 'Mega Franchise'),
+            ),
+            _FranchiseButton(
+              label: AppLocalizations.of(context)?.masterFranchise ?? 'Master Franchise',
+              icon: FontAwesomeIcons.mapLocationDot,
+              color: amber,
+              isDesktop: isDesktop,
+              onTap: () => _openFranchiseDialog(AppLocalizations.of(context)?.masterFranchise ?? 'Master Franchise'),
+            ),
+            _FranchiseButton(
+              label: AppLocalizations.of(context)?.superFranchise ?? 'Super Franchise',
+              icon: FontAwesomeIcons.carSide,
+              color: blue,
+              isDesktop: isDesktop,
+              onTap: () => _openFranchiseDialog(AppLocalizations.of(context)?.superFranchise ?? 'Super Franchise'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _openFranchiseDialog(String type) {
+    showDialog(
+      context: context,
+      builder: (context) => FranchiseApplicationDialog(franchiseType: type),
+    );
+  }
+
 
   Widget _buildStatsRow(bool isDesktop) {
     final stats = [
@@ -737,6 +810,87 @@ class _HoverButtonState extends State<_HoverButton> {
                 const SizedBox(width: 8),
                 Icon(widget.icon, color: widget.textColor, size: 18),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FranchiseButton extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool isDesktop;
+  final VoidCallback onTap;
+
+  const _FranchiseButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.isDesktop,
+    required this.onTap,
+  });
+
+  @override
+  State<_FranchiseButton> createState() => _FranchiseButtonState();
+}
+
+class _FranchiseButtonState extends State<_FranchiseButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.isDesktop ? 20 : 16,
+            vertical: 12,
+          ),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? widget.color.withValues(alpha: 0.15)
+                : Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _hovered
+                  ? widget.color.withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.15),
+              width: 1.5,
+            ),
+            boxShadow: _hovered
+                ? [
+                    BoxShadow(
+                      color: widget.color.withValues(alpha: 0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FaIcon(
+                widget.icon,
+                color: _hovered ? widget.color : Colors.white.withValues(alpha: 0.8),
+                size: widget.isDesktop ? 18 : 16,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                widget.label,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: widget.isDesktop ? 14 : 12,
+                ),
+              ),
             ],
           ),
         ),
