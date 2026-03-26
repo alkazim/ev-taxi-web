@@ -1,0 +1,79 @@
+﻿d2074f1 HEAD@{0}: checkout: moving from main to d2074f1
+46f534c HEAD@{1}: checkout: moving from d2074f1134a7902b9651ade183f2018118385280 to main
+d2074f1 HEAD@{2}: checkout: moving from main to d2074f1
+46f534c HEAD@{3}: reset: moving to HEAD
+46f534c HEAD@{4}: commit: Complete Offline Kerala Dataset integration, search UX fixes, and precise geocoding implementation
+d2074f1 HEAD@{5}: commit: Fix map tabs: center map logic added
+b7aec23 HEAD@{6}: commit: Project health check: Fix deprecations and cleanup temporary files
+965f037 HEAD@{7}: commit: fix: prevent stale cached GPS positions causing wrong location
+dd3c8e9 HEAD@{8}: commit: feat: milestone - map icon fixes, regional autocomplete & UI polish
+7087cd6 HEAD@{9}: commit: Build: Updated release version for GitHub
+f9d56bf HEAD@{10}: commit: Optimize EV map performance and fix route station visibility
+cdad504 HEAD@{11}: commit: Refine Franchise and Driver forms with DOB age calculation, mobile 10-digit lock, and capitalization improvements. Update hosted web release.
+ee7aff4 HEAD@{12}: commit: Update Contact Us: real HQ address, 4 state office cards, simplified district finder
+9a60c75 HEAD@{13}: commit: Fix: remove loading screen via custom flutter_bootstrap.js template with onEntrypointLoaded
+fe6a9d9 HEAD@{14}: commit: Remove loading screen: use custom flutter loader in index.html
+31cf3d5 HEAD@{15}: checkout: moving from gh-pages to main
+ba4309b HEAD@{16}: commit: Deploy: performance optimizations ÔÇö faster hero load + dark loading screen
+de5a75c HEAD@{17}: checkout: moving from main to gh-pages
+31cf3d5 HEAD@{18}: commit: perf: preload hero images, dark loading screen, precacheImage, cacheWidth hint
+96e7727 HEAD@{19}: checkout: moving from gh-pages to main
+de5a75c HEAD@{20}: commit: Deploy: full uppercase for all name/village/landmark fields
+58a7b28 HEAD@{21}: checkout: moving from main to gh-pages
+96e7727 HEAD@{22}: commit: fix: change name/village/landmark fields to full uppercase (all caps)
+a16236c HEAD@{23}: checkout: moving from main to main
+a16236c HEAD@{24}: checkout: moving from main to main
+a16236c HEAD@{25}: checkout: moving from main to main
+a16236c HEAD@{26}: commit: Deploy: auto-capitalize fields + Supabase anonymous auth fix [2026-02-26 18:01]
+9878cb8 HEAD@{27}: commit: feat: auto-capitalize name fields, license number uppercase, Supabase anonymous auth for driver registration
+1c23e14 HEAD@{28}: checkout: moving from gh-pages to main
+58a7b28 HEAD@{29}: checkout: moving from main to gh-pages
+1c23e14 HEAD@{30}: reset: moving to HEAD
+1c23e14 HEAD@{31}: reset: moving to HEAD~1
+b0d6cc2 HEAD@{32}: commit: Deployment: Updated build for franchise form EV hint and fixed date
+1c23e14 HEAD@{33}: commit: UI: Update EV charging hint and set fixed today's date in franchise form
+b996cdd HEAD@{34}: reset: moving to HEAD~1
+c41ebb6 HEAD@{35}: commit: Deployment: Updated build for franchise form fixes
+b996cdd HEAD@{36}: commit: UI: Bold highway label and rename town road in franchise form - FINAL FIX
+5771ca0 HEAD@{37}: reset: moving to HEAD~1
+3e8164d HEAD@{38}: commit: UI: Bold highway label and rename town road in franchise form
+5771ca0 HEAD@{39}: reset: moving to HEAD~1
+a9d9294 HEAD@{40}: commit: Final Deploy: White theme for franchise form and optimized assets
+5771ca0 HEAD@{41}: commit: UI: Change FranchiseApplicationDialog background to white
+bf0cac5 HEAD@{42}: reset: moving to HEAD~1
+f83e1ad HEAD@{43}: commit: Deploying WebP assets and 30s timeout fix
+bf0cac5 HEAD@{44}: checkout: moving from gh-pages to main
+58a7b28 HEAD@{45}: checkout: moving from main to gh-pages
+bf0cac5 HEAD@{46}: commit: Fix: include both car images in build for hero section
+dba5736 HEAD@{47}: commit: Update: optimized hero images, DOB range (1970-current), auto-capitalization, and increased Supabase timeout to 30s
+e408943 HEAD@{48}: commit: fix: Replace broken WhatsApp custom painter with FontAwesomeIcons.whatsapp
+43f52ac HEAD@{49}: commit: chore: Update schema - replace nearest_highway with 10 highway type columns
+fef0e5e HEAD@{50}: commit: feat: Replace single highway field with 5 typed highway rows (name + km each)
+45e67df HEAD@{51}: commit: feat: Add Contact Us V2 section with state/district office finder
+e8d5296 HEAD@{52}: commit: Remove auto-swipe in franchise section
+18db192 HEAD@{53}: commit: Deploy: force-add WebP image assets to build/web for gh-pages
+3119159 HEAD@{54}: commit: Deploy: rebuild with all WebP asset files included
+aa97a07 HEAD@{55}: commit: Perf: convert car images to WebP, remove unused PNG bundles, optimize Supabase save, add preconnect hints
+8d27da7 HEAD@{56}: reset: moving to origin/main
+e477a08 HEAD@{57}: checkout: moving from main to main
+e477a08 HEAD@{58}: reset: moving to HEAD~1
+8d27da7 HEAD@{59}: reset: moving to HEAD~1
+75b86f5 HEAD@{60}: commit: Deployment artifacts
+8d27da7 HEAD@{61}: reset: moving to origin/main
+e477a08 HEAD@{62}: reset: moving to HEAD~1
+ad72fb6 HEAD@{63}: commit: Deploy to GitHub Pages
+e477a08 HEAD@{64}: checkout: moving from gh-pages to main
+58a7b28 HEAD@{65}: checkout: moving from main to gh-pages
+e477a08 HEAD@{66}: reset: moving to HEAD~1
+8d27da7 HEAD@{67}: reset: moving to HEAD~1
+f7fa453 HEAD@{68}: commit: Release build for GitHub Pages
+8d27da7 HEAD@{69}: commit: Implement two-phase driver registration with mutual exclusive buttons
+e477a08 HEAD@{70}: commit: perf: convert large PNG images to WebP (hero 8MBÔåÆ124KB, driver 8MBÔåÆ59KB, places ~2.8MBÔåÆ150-290KB each) for mobile loading performance
+8d89741 HEAD@{71}: commit: Update: theme color purity fixes, EV fleet full theme support, driver application form fixes (mandatory stars, mobile field, last name/landmark optional, 10-digit mobile & 6-digit PIN validation, year picker fix)
+8ee286f HEAD@{72}: commit: Update: Driver Registration Visuals & Overflow Fix
+0d1bed0 HEAD@{73}: commit: Update: Centered Section Subtitles
+5fbb52a HEAD@{74}: commit: Update: Mobile Menu Redesign and Deployment
+32ee1d8 HEAD@{75}: commit: Add build/web for gh-pages deploy
+1e8ad33 HEAD@{76}: checkout: moving from gh-pages to main
+1e8ad33 HEAD@{77}: Branch: renamed refs/heads/master to refs/heads/main
+1e8ad33 HEAD@{79}: commit (initial): Initial commit: EV Taxi premium landing page

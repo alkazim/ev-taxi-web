@@ -1,0 +1,18 @@
+﻿Analyzing taxi_demo...                                          
+
+  error - Target of URI doesn't exist: 'package:flutter_gen/gen_l10n/app_localizations.dart' - lib\main.dart:9:8 - uri_does_not_exist
+  error - The values in a const list literal must be constants - lib\main.dart:63:21 - non_constant_list_element
+  error - Undefined name 'AppLocalizations' - lib\main.dart:63:21 - undefined_identifier
+  error - Target of URI doesn't exist: 'package:flutter_gen/gen_l10n/app_localizations.dart' - lib\src\home\sections\hero_section.dart:5:8 - uri_does_not_exist
+  error - Undefined name 'AppLocalizations' - lib\src\home\sections\hero_section.dart:203:11 - undefined_identifier
+  error - Undefined name 'AppLocalizations' - lib\src\home\sections\hero_section.dart:244:9 - undefined_identifier
+  error - Target of URI doesn't exist: 'package:flutter_gen/gen_l10n/app_localizations.dart' - lib\src\widgets\nav_bar.dart:3:8 - uri_does_not_exist
+  error - Undefined name 'AppLocalizations' - lib\src\widgets\nav_bar.dart:111:39 - undefined_identifier
+  error - Undefined name 'AppLocalizations' - lib\src\widgets\nav_bar.dart:113:39 - undefined_identifier
+  error - Undefined name 'AppLocalizations' - lib\src\widgets\nav_bar.dart:115:39 - undefined_identifier
+  error - Undefined name 'AppLocalizations' - lib\src\widgets\nav_bar.dart:117:39 - undefined_identifier
+  error - Undefined name 'AppLocalizations' - lib\src\widgets\nav_bar.dart:119:39 - undefined_identifier
+  error - Undefined name 'AppLocalizations' - lib\src\widgets\nav_bar.dart:121:39 - undefined_identifier
+  error - Undefined name 'AppLocalizations' - lib\src\widgets\nav_bar.dart:333:38 - undefined_identifier
+  error - Undefined name 'AppLocalizations' - lib\src\widgets\nav_bar.dart:441:13 - undefined_identifier
+
