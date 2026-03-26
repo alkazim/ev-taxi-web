@@ -1,0 +1,37 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Web build artifacts in root
+main.dart.js*
+flutter_service_worker.js
+flutter.js
+flutter_bootstrap.js
+manifest.json
+favicon.png
+version.json
+index.html
+_redirects
+canvaskit/
+icons/
+
+# Logs and debug files
+*.txt
+analyze.txt
+analyze_utf8.txt
+git_log.txt
+git_reflog_utf8.txt
+reflog.txt
+reflog_utf8.txt
+
+# Firebase
+.firebase/
+
+# IDE files
+.idea/
+*.iws
+*.iml
+.vscode/

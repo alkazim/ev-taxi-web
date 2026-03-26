@@ -1,7 +1,7 @@
 {
   "hosting": {
     "site": "e-cabbz-taxi-web",
-    "public": "build/web",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",

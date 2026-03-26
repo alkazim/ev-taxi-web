@@ -12,7 +12,6 @@ class FormPersistenceState extends ChangeNotifier {
   Map<String, String> get franchiseData => _franchiseData;
   Map<String, String> get driverData => _driverData;
   int get driverCurrentStep => _driverCurrentStep;
-  String? get driverCode => _driverData['driver_code'];
 
   FormPersistenceState() {
     _loadFromDisk();

@@ -5,6 +5,7 @@ import '../../widgets/responsive_widget.dart';
 import '../forms/driver_application_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 
 class DriverRegistrationSection extends StatefulWidget {
   const DriverRegistrationSection({super.key});
@@ -178,7 +179,7 @@ class _DriverRegistrationSectionState extends State<DriverRegistrationSection> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'NOW HIRING',
+                      AppLocalizations.of(context)?.nowHiring ?? 'NOW HIRING',
                       style: GoogleFonts.poppins(
                         color: context.isYellowTheme
                             ? const Color(0xFFFBBF24)
@@ -247,16 +248,16 @@ class _DriverRegistrationSectionState extends State<DriverRegistrationSection> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildStatItem('₹40K+', 'Monthly Avg', context, isDesktop),
+                    _buildStatItem('₹40K+', AppLocalizations.of(context)?.monthlyAvg ?? 'Monthly Avg', context, isDesktop),
                     _buildDivider(isDesktop),
                     _buildStatItem(
                       '500+',
-                      'Active Drivers',
+                      AppLocalizations.of(context)?.activeDrivers ?? 'Active Drivers',
                       context,
                       isDesktop,
                     ),
                     _buildDivider(isDesktop),
-                    _buildStatItem('4.8★', 'Avg Rating', context, isDesktop),
+                    _buildStatItem('4.8★', AppLocalizations.of(context)?.avgRating ?? 'Avg Rating', context, isDesktop),
                   ],
                 ),
               ),
@@ -326,7 +327,7 @@ class _DriverRegistrationSectionState extends State<DriverRegistrationSection> {
             ),
             const SizedBox(width: 10),
             Text(
-              'DRIVER PARTNER PROGRAM',
+              AppLocalizations.of(context)?.driverProgram ?? 'DRIVER PARTNER PROGRAM',
               style: GoogleFonts.poppins(
                 color: context.isYellowTheme ? const Color(0xFFF59E0B) : _green,
                 fontSize: 12,
@@ -349,22 +350,14 @@ class _DriverRegistrationSectionState extends State<DriverRegistrationSection> {
               color: const Color(0xFF111827),
             ),
             children: [
-              const TextSpan(text: 'Drive. Earn.\n'),
-              TextSpan(
-                text: 'Grow with us.',
-                style: TextStyle(
-                  color: context.isYellowTheme
-                      ? const Color(0xFFFBBF24)
-                      : _green,
-                ),
-              ),
+              TextSpan(text: '${AppLocalizations.of(context)?.driveEarnGrow ?? 'Drive. Earn.\nGrow with us.'}'),
             ],
           ),
         ),
         SizedBox(height: isDesktop ? 16 : 12),
 
         Text(
-          'Join E-CABBZ\'s fastest-growing taxi network. Flexible hours, guaranteed income, and full support from day one.',
+          AppLocalizations.of(context)?.joinNetwork ?? 'Join E-CABBZ\'s fastest-growing taxi network. Flexible hours, guaranteed income, and full support from day one.',
           style: GoogleFonts.poppins(
             color: const Color(0xFF6B7280),
             fontSize: isDesktop ? 15 : 13,
@@ -387,23 +380,23 @@ class _DriverRegistrationSectionState extends State<DriverRegistrationSection> {
     final benefits = [
       _Benefit(
         FontAwesomeIcons.wallet,
-        'Weekly Payouts',
-        'Get paid every week directly to your bank.',
+        AppLocalizations.of(context)?.weeklyPayouts ?? 'Weekly Payouts',
+        AppLocalizations.of(context)?.weeklyPayoutsDesc ?? 'Get paid every week directly to your bank.',
       ),
       _Benefit(
         FontAwesomeIcons.clock,
-        'Flexible Hours',
-        'Work on your own schedule, any time.',
+        AppLocalizations.of(context)?.flexibleHours ?? 'Flexible Hours',
+        AppLocalizations.of(context)?.flexibleHoursDesc ?? 'Work on your own schedule, any time.',
       ),
       _Benefit(
         FontAwesomeIcons.headset,
-        '24/7 Support',
-        'Dedicated driver support team always on call.',
+        AppLocalizations.of(context)?.support247 ?? '24/7 Support',
+        AppLocalizations.of(context)?.support247Desc ?? 'Dedicated driver support team always on call.',
       ),
       _Benefit(
         FontAwesomeIcons.chargingStation,
-        'EV Provided',
-        'Drive a company EV or bring your own.',
+        AppLocalizations.of(context)?.evProvided ?? 'EV Provided',
+        AppLocalizations.of(context)?.evProvidedDesc ?? 'Drive a company EV or bring your own.',
       ),
     ];
 
@@ -781,7 +774,7 @@ class _DriverApplyButtonState extends State<_DriverApplyButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Apply as Driver',
+                AppLocalizations.of(context)?.applyAsDriver ?? 'Apply as Driver',
                 style: GoogleFonts.poppins(
                   color: fgColor,
                   fontWeight: FontWeight.w700,

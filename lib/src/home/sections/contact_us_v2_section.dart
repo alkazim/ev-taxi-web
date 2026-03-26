@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 
 import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
@@ -1303,7 +1304,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
                     Expanded(
                       child: _detailRow(
                         Icons.location_on_rounded,
-                        'Address',
+                        AppLocalizations.of(context)?.address ?? 'Address',
                         office.address,
                         accent,
                       ),
@@ -1314,14 +1315,14 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
                         children: [
                           _detailRow(
                             Icons.phone_rounded,
-                            'Phone',
+                            AppLocalizations.of(context)?.phone ?? 'Phone',
                             office.phone,
                             accent,
                           ),
                           const SizedBox(height: 14),
                           _detailRow(
                             Icons.email_rounded,
-                            'Email',
+                            AppLocalizations.of(context)?.email ?? 'Email',
                             office.email,
                             accent,
                           ),
@@ -1329,7 +1330,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
                             const SizedBox(height: 14),
                             _detailRow(
                               Icons.chat_rounded,
-                              'WhatsApp',
+                              AppLocalizations.of(context)?.whatsApp ?? 'WhatsApp',
                               office.whatsapp!,
                               accent,
                             ),
@@ -1500,22 +1501,22 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
     final items = [
       _ContactItem(
         icon: Icons.phone_rounded,
-        label: 'Call Us',
+        label: AppLocalizations.of(context)?.callUs ?? 'Call Us',
         value: '1800-XXX-XXXX',
       ),
       _ContactItem(
         icon: Icons.email_rounded,
-        label: 'Email Us',
+        label: AppLocalizations.of(context)?.emailUs ?? 'Email Us',
         value: 'support@ecabbz.in',
       ),
       _ContactItem(
         icon: Icons.chat_rounded,
-        label: 'WhatsApp',
+        label: AppLocalizations.of(context)?.whatsApp ?? 'WhatsApp',
         value: '+91 98765 43210',
       ),
       _ContactItem(
         icon: Icons.headset_mic_rounded,
-        label: 'Live Support',
+        label: AppLocalizations.of(context)?.liveSupport ?? 'Live Support',
         value: 'Mon–Sat, 9 AM – 8 PM',
       ),
     ];

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 
 // ─── Office Type Enum ─────────────────────────────────────────────────────────
 enum _OfficeType { regional, state, district, zonal }
@@ -254,7 +255,7 @@ class _ContactUsSectionState extends State<ContactUsSection> {
               ),
               const SizedBox(width: 8),
               Text(
-                'OUR OFFICES',
+                AppLocalizations.of(context)?.ourOffices ?? 'OUR OFFICES',
                 style: GoogleFonts.poppins(
                   color: context.isYellowTheme ? _amber : _green,
                   fontSize: 12,
@@ -277,18 +278,15 @@ class _ContactUsSectionState extends State<ContactUsSection> {
               color: const Color(0xFF111827),
             ),
             children: [
-              const TextSpan(text: 'Get in '),
               TextSpan(
-                text: 'Touch',
-                style: TextStyle(color: context.isYellowTheme ? _amber : green),
+                text: AppLocalizations.of(context)?.getInTouch ?? 'Get in Touch With Us',
               ),
-              const TextSpan(text: ' With Us'),
             ],
           ),
         ),
         const SizedBox(height: 12),
         Text(
-          'We are spread across South India to serve you better.\nFind your nearest office or contact us directly.',
+          AppLocalizations.of(context)?.spreadAcrossSouthIndia ?? 'We are spread across South India to serve you better.\nFind your nearest office or contact us directly.',
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
             color: const Color(0xFF6B7280),
@@ -368,7 +366,7 @@ class _ContactUsSectionState extends State<ContactUsSection> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'HEADQUARTERS',
+                  AppLocalizations.of(context)?.headquarters ?? 'HEADQUARTERS',
                   style: GoogleFonts.poppins(
                     color: _amber,
                     fontSize: 10,
@@ -403,21 +401,21 @@ class _ContactUsSectionState extends State<ContactUsSection> {
           context,
           Icons.phone_rounded,
           '+91 44 6789 0123',
-          'Main Hotline',
+          AppLocalizations.of(context)?.mainHotline ?? 'Main Hotline',
         ),
         const SizedBox(width: 32),
         _buildHQStat(
           context,
           Icons.email_rounded,
           'hello@ecabbz.in',
-          'General Enquiry',
+          AppLocalizations.of(context)?.generalEnquiry ?? 'General Enquiry',
         ),
         const SizedBox(width: 32),
         _buildHQStat(
           context,
           Icons.access_time_filled_rounded,
           'Mon–Sat: 9 AM – 7 PM',
-          'Working Hours',
+          AppLocalizations.of(context)?.workingHours ?? 'Working Hours',
         ),
       ],
     );
@@ -456,7 +454,7 @@ class _ContactUsSectionState extends State<ContactUsSection> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    'HEADQUARTERS',
+                    AppLocalizations.of(context)?.headquarters ?? 'HEADQUARTERS',
                     style: GoogleFonts.poppins(
                       color: _amber,
                       fontSize: 9,
@@ -498,19 +496,19 @@ class _ContactUsSectionState extends State<ContactUsSection> {
               context,
               Icons.phone_rounded,
               '+91 44 6789 0123',
-              'Main Hotline',
+              AppLocalizations.of(context)?.mainHotline ?? 'Main Hotline',
             ),
             _buildHQStat(
               context,
               Icons.email_rounded,
               'hello@ecabbz.in',
-              'General Enquiry',
+              AppLocalizations.of(context)?.generalEnquiry ?? 'General Enquiry',
             ),
             _buildHQStat(
               context,
               Icons.access_time_filled_rounded,
-              'Mon–Sat: 9 AM – 7 PM',
-              'Working Hours',
+              AppLocalizations.of(context)?.workingHoursDesc ?? 'Mon–Sat: 9 AM – 7 PM',
+              AppLocalizations.of(context)?.workingHours ?? 'Working Hours',
             ),
           ],
         ),
@@ -636,7 +634,7 @@ class _ContactUsSectionState extends State<ContactUsSection> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 40),
         child: Text(
-          'No offices in this category yet.',
+          AppLocalizations.of(context)?.noOfficesFound ?? 'No offices in this category yet.',
           style: GoogleFonts.poppins(
             color: const Color(0xFF9CA3AF),
             fontSize: 14,
@@ -736,27 +734,27 @@ class _ContactUsSectionState extends State<ContactUsSection> {
   List<Widget> _contactItems(BuildContext context, bool isDesktop) => [
     _ContactChip(
       icon: Icons.phone_rounded,
-      label: 'Call Us',
+      label: AppLocalizations.of(context)?.callUs ?? 'Call Us',
       value: '1800-XXX-XXXX',
       isDesktop: isDesktop,
     ),
     _ContactChip(
       icon: FontAwesomeIcons.envelope,
-      label: 'Email Us',
+      label: AppLocalizations.of(context)?.emailUs ?? 'Email Us',
       value: 'support@ecabbz.in',
       isDesktop: isDesktop,
       isFontAwesome: true,
     ),
     _ContactChip(
       icon: FontAwesomeIcons.whatsapp,
-      label: 'WhatsApp',
+      label: AppLocalizations.of(context)?.whatsApp ?? 'WhatsApp',
       value: '+91 98765 43210',
       isDesktop: isDesktop,
       isFontAwesome: true,
     ),
     _ContactChip(
       icon: FontAwesomeIcons.headset,
-      label: 'Live Support',
+      label: AppLocalizations.of(context)?.liveSupport ?? 'Live Support',
       value: 'Mon–Sat, 9 AM – 8 PM',
       isDesktop: isDesktop,
       isFontAwesome: true,

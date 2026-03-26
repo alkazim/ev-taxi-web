@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'form_persistence_state.dart';
-import '../../services/supabase_service.dart';
+import '../../services/firebase_service.dart';
 
 // ─── Colour palette (consistent with driver dialog) ─────────────────────────
 const _green = Color(0xFF16A34A);
@@ -408,13 +409,14 @@ class _FranchiseApplicationDialogState
     );
   }
 
-  String _parseDateForDB(String text) {
-    if (text.isEmpty) return DateTime.now().toIso8601String().split('T')[0];
-    final parts = text.trim().split('/');
-    if (parts.length != 3) return text;
-    return '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+  /// Converts the form's "DD/MM/YYYY" date to "YYYY-MM-DD" for Firestore DATE representation.
+  String? _parseDateForDB(String raw) {
+    final parts = raw.trim().split('/');
+    if (parts.length != 3) return null;
+    return '${parts[2]}-${parts[1]}-${parts[0]}';
   }
 
+  // ── Submission ────────────────────────────────────────────────────────────
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
@@ -427,17 +429,17 @@ class _FranchiseApplicationDialogState
       final data = <String, dynamic>{
         'full_name': _fullNameCtrl.text.trim().toUpperCase(),
         'spouse_name': _spouseNameCtrl.text.trim().toUpperCase(),
-        'dob': _parseDateForDB(_dobCtrl.text.trim()),
+        'dob': _dobCtrl.text.trim(),
         'age': int.tryParse(_ageCtrl.text.trim()) ?? 0,
         'company_name': _companyNameCtrl.text.trim().toUpperCase(),
-        'ownership_type': _ownershipType ?? '',
+        'ownership_type': _ownershipType,
         'mobile1': _mobile1Ctrl.text.trim(),
         'mobile2': _mobile2Ctrl.text.trim(),
         'email': _emailCtrl.text.trim(),
         'pan': _panCtrl.text.trim().toUpperCase(),
         'aadhaar': _aadhaarCtrl.text.replaceAll(' ', ''),
-        'state': _selectedState ?? '',
-        'district': _selectedDistrict ?? '',
+        'state': _selectedState,
+        'district': _selectedDistrict,
         'town': _townCtrl.text.trim(),
         'address': _addressCtrl.text.trim(),
         'pin': _pinCtrl.text.trim(),
@@ -488,27 +490,17 @@ class _FranchiseApplicationDialogState
               ? '${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year}'
               : _verifiedDateCtrl.text.trim(),
         ),
+        'status': 'pending',
       };
-
-      // Add debug logging
-      debugPrint('DEBUG: Submitting Franchise Application');
-      debugPrint('DEBUG: Franchise Type: ${widget.franchiseType}');
-      debugPrint('DEBUG: Payload: $data');
-
-      // Final validation before Supabase call
-      if (data['full_name'] == null || data['full_name'].toString().isEmpty) {
-        throw Exception('Full Name is required and cannot be empty.');
-      }
-
 
       // Route to the correct collection
       final String code;
       if (isMaster) {
-        code = await SupabaseService().registerMasterFranchise(data);
+        code = await FirebaseService().insertMasterFranchise(data);
       } else if (isMega) {
-        code = await SupabaseService().registerMegaFranchise(data);
+        code = await FirebaseService().insertMegaFranchise(data);
       } else {
-        code = await SupabaseService().registerSuperFranchise(data);
+        code = await FirebaseService().insertSuperFranchise(data);
       }
 
       if (!mounted) return;
@@ -525,9 +517,10 @@ class _FranchiseApplicationDialogState
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
+      final isAppEx = e is FirebaseAppException;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Submission failed: $e'),
+          content: Text(isAppEx ? e.userMessage : 'Submission failed: $e'),
           backgroundColor: _red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -538,121 +531,138 @@ class _FranchiseApplicationDialogState
   }
 
   void _showSuccessDialog(String code) {
+    final name = _fullNameCtrl.text.trim();
+    final mobile = _mobile1Ctrl.text.trim();
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
-        title: Column(
+        title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _green.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_circle, color: _green, size: 60),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Submitted Successfully!',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w800,
-                fontSize: 22,
-                color: _green,
+            const Icon(Icons.check_circle, color: _green, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Application Submitted!',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
               ),
             ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Your ${widget.franchiseType} application has been received.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                color: Colors.grey[800],
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
+              'Your ${widget.franchiseType} application has been received successfully.',
+              style: GoogleFonts.poppins(fontSize: 13, color: Colors.black54),
             ),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: const Color(0xFFF0FDF4),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFBBF7D0)),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'FRANCHISE CODE',
+                    name,
                     style: GoogleFonts.poppins(
-                      fontSize: 10,
-                      letterSpacing: 1.5,
+                      color: _darkGreen,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: _darkGreen.withOpacity(0.6),
                     ),
                   ),
                   const SizedBox(height: 4),
+                  Text(
+                    mobile,
+                    style: GoogleFonts.robotoMono(
+                      color: _darkGreen,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(color: Color(0xFFBBF7D0)),
+                  const SizedBox(height: 12),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SelectableText(
-                        code,
-                        style: GoogleFonts.robotoMono(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: _darkGreen,
-                          letterSpacing: 1,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'YOUR FRANCHISE CODE',
+                              style: GoogleFonts.poppins(
+                                color: _darkGreen.withValues(alpha: 0.6),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            SelectableText(
+                              code,
+                              style: GoogleFonts.robotoMono(
+                                color: _darkGreen,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       IconButton(
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: code));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Code copied!')),
+                            const SnackBar(
+                              content: Text('Code copied to clipboard'),
+                              duration: Duration(seconds: 2),
+                            ),
                           );
                         },
-                        icon: const Icon(Icons.copy, size: 18, color: _darkGreen),
+                        icon: const Icon(
+                          Icons.copy_rounded,
+                          size: 18,
+                          color: _darkGreen,
+                        ),
+                        tooltip: 'Copy Code',
                       ),
                     ],
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Please save this code for your reference. Our team will contact you shortly.',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.black45,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           ],
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8.0, left: 16.0, right: 16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.check, color: Colors.white),
-                label: Text(
-                  'DONE',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1,
-                    color: Colors.white,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _green,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context);
+            },
+            child: Text(
+              'Done',
+              style: GoogleFonts.poppins(
+                color: _green,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -934,7 +944,7 @@ class _FranchiseApplicationDialogState
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            '${widget.franchiseType} Application',
+                            '${widget.franchiseType} ${AppLocalizations.of(context)?.application ?? 'Application'}',
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -961,7 +971,7 @@ class _FranchiseApplicationDialogState
                     // ╔═══════════════════════════════════════════╗
                     // ║  SECTION 1 — PERSONAL / OWNER DETAILS     ║
                     // ╚═══════════════════════════════════════════╝
-                    _section('1. Personal / Owner Details'),
+                    _section('1. ${AppLocalizations.of(context)?.personalInfo ?? 'Personal / Owner Details'}'),
                     _field(
                       'Full Name',
                       _fullNameCtrl,
@@ -1641,7 +1651,7 @@ class _FranchiseApplicationDialogState
                                 ),
                               )
                             : Text(
-                                'Submit Application',
+                                AppLocalizations.of(context)?.submitApplication ?? 'Submit Application',
                                 style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15,

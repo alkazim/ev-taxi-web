@@ -4,7 +4,9 @@ import 'src/theme/app_theme.dart';
 import 'src/home/home_page.dart';
 import 'src/home/forms/form_persistence_state.dart';
 import 'src/services/firebase_service.dart';
-import 'src/services/supabase_service.dart';
+import 'src/services/locale_provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 
 /// Global notifier — true = V2 theme (green primary + yellow accent), false = Classic theme.
 final ValueNotifier<bool> useV2Theme = ValueNotifier(true);
@@ -15,19 +17,16 @@ final ValueNotifier<bool> useYellowTheme = ValueNotifier(false);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase and Supabase in the background.
+  // Initialize Firebase in the background.
   FirebaseService().initialize().catchError(
     (e) => debugPrint('Firebase init failed: $e'),
-  );
-  
-  SupabaseService().initialize().catchError(
-    (e) => debugPrint('Supabase init failed: $e'),
   );
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => FormPersistenceState()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
       child: const MyApp(),
     ),
@@ -53,11 +52,27 @@ class MyApp extends StatelessWidget {
             } else {
               activeTheme = AppTheme.lightTheme;
             }
-            return MaterialApp(
-              title: 'E-CABBZ TAXI',
-              debugShowCheckedModeBanner: false,
-              theme: activeTheme,
-              home: const HomePage(),
+            return Consumer<LocaleProvider>(
+              builder: (context, localeProvider, _) {
+                return MaterialApp(
+                  title: 'E-CABBZ TAXI',
+                  debugShowCheckedModeBanner: false,
+                  theme: activeTheme,
+                  locale: localeProvider.locale,
+                  localizationsDelegates: const [
+                    AppLocalizations.delegate,
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                  ],
+                  supportedLocales: const [
+                    Locale('en'), // English
+                    Locale('hi'), // Hindi
+                    Locale('ml'), // Malayalam
+                  ],
+                  home: const HomePage(),
+                );
+              },
             );
           },
         );

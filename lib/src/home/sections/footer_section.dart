@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 
 class FooterSection extends StatelessWidget {
@@ -54,7 +55,7 @@ class FooterSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Driving the Future of Mobility',
+            AppLocalizations.of(context)?.drivingFuture ?? 'Driving the Future of Mobility',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.5),
               fontSize: 14,
@@ -96,7 +97,7 @@ class FooterSection extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            '© 2025 E-CABBZ PRIVATE LIMITED. All rights reserved.',
+            AppLocalizations.of(context)?.copyright ?? '© 2025 E-CABBZ PRIVATE LIMITED. All rights reserved.',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.3),
               fontSize: 11,
