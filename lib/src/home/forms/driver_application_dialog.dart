@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'form_persistence_state.dart';
@@ -1507,7 +1508,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'SIGNATURE',
+                            AppLocalizations.of(context)?.signature ?? 'SIGNATURE',
                             style: GoogleFonts.poppins(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -1535,7 +1536,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'DATE',
+                          AppLocalizations.of(context)?.dateLabel ?? 'DATE',
                           style: GoogleFonts.poppins(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
@@ -1595,7 +1596,7 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                       });
                     },
                     icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                    label: Text(isMobile ? 'Back' : 'Previous Step'),
+                    label: Text(isMobile ? (AppLocalizations.of(context)?.back ?? 'Back') : (AppLocalizations.of(context)?.previousStep ?? 'Previous Step')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.secondaryTextColor,
                       padding: EdgeInsets.symmetric(
@@ -1651,10 +1652,10 @@ class _DriverApplicationDialogState extends State<DriverApplicationDialog> {
                   ),
                   label: Text(
                     isLastStep
-                        ? 'Submit'
+                        ? (AppLocalizations.of(context)?.submit ?? 'Submit')
                         : (_currentStep == 0 && !_isContinuation
-                              ? 'Submit & Continue'
-                              : 'Continue'),
+                              ? (AppLocalizations.of(context)?.submitAndContinue ?? 'Submit & Continue')
+                              : (AppLocalizations.of(context)?.continueLabel ?? 'Continue')),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isLastStep

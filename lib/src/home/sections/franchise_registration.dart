@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../widgets/responsive_widget.dart';
 import '../../theme/app_theme.dart';
 import '../forms/franchise_application_dialog.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 
 class FranchiseRegistrationSection extends StatefulWidget {
   const FranchiseRegistrationSection({super.key});
@@ -73,7 +74,7 @@ class _FranchiseRegistrationSectionState
         children: [
           // ── Header ──
           Text(
-            'PARTNER WITH US',
+            AppLocalizations.of(context)?.partnerWithUs ?? 'PARTNER WITH US',
             style: GoogleFonts.poppins(
               color: context.isYellowTheme ? amber : green,
               fontSize: 13,
@@ -83,7 +84,7 @@ class _FranchiseRegistrationSectionState
           ),
           const SizedBox(height: 12),
           Text(
-            'Franchise Opportunities',
+            AppLocalizations.of(context)?.franchiseOpportunities ?? 'Franchise Opportunities',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               fontSize: isMobile ? 28 : 48,
@@ -97,7 +98,7 @@ class _FranchiseRegistrationSectionState
           SizedBox(
             width: isMobile ? double.infinity : 600,
             child: Text(
-              'Join the EV revolution. Choose your investment level and grow with India\'s premier electric mobility network.',
+              AppLocalizations.of(context)?.joinEVRevolution ?? 'Join the EV revolution. Choose your investment level and grow with India\'s premier electric mobility network.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: const Color(0xFF6B7280),
@@ -149,11 +150,11 @@ class _FranchiseRegistrationSectionState
               onTap: (index) {
                 String type = '';
                 if (index == 0) {
-                  type = 'Mega Franchise';
+                  type = AppLocalizations.of(context)?.megaFranchise ?? 'Mega Franchise';
                 } else if (index == 1) {
-                  type = 'Master Franchise';
+                  type = AppLocalizations.of(context)?.masterFranchise ?? 'Master Franchise';
                 } else {
-                  type = 'Super Franchise';
+                  type = AppLocalizations.of(context)?.superFranchise ?? 'Super Franchise';
                 }
                 showDialog(
                   context: context,
@@ -195,9 +196,9 @@ class _FranchiseRegistrationSectionState
               dividerColor: Colors.transparent,
               overlayColor: WidgetStateProperty.all(Colors.transparent),
               tabs: [
-                Tab(text: isMobile ? 'Mega' : 'Mega Franchise'),
-                Tab(text: isMobile ? 'Master' : 'Master Franchise'),
-                Tab(text: isMobile ? 'Super' : 'Super Franchise'),
+                Tab(text: isMobile ? 'Mega' : (AppLocalizations.of(context)?.megaFranchise ?? 'Mega Franchise')),
+                Tab(text: isMobile ? 'Master' : (AppLocalizations.of(context)?.masterFranchise ?? 'Master Franchise')),
+                Tab(text: isMobile ? 'Super' : (AppLocalizations.of(context)?.superFranchise ?? 'Super Franchise')),
               ],
             ),
           ),
@@ -211,10 +212,10 @@ class _FranchiseRegistrationSectionState
             builder: (ctx, box) {
               // Narrow phones need more height (content stacks vertically)
               final contentH = box.maxWidth < 400
-                  ? 760.0
+                  ? 920.0
                   : isMobile
-                  ? 680.0
-                  : 500.0;
+                  ? 820.0
+                  : 600.0;
               return SizedBox(
                 height: contentH,
                 child: Stack(
@@ -222,15 +223,15 @@ class _FranchiseRegistrationSectionState
                   children: [
                     _buildTabContent(
                       index: 0,
-                      title: 'Mega Franchise',
-                      subtitle: 'STATE LEVEL OPERATIONS',
-                      role: 'Orchestrate the entire state\'s EV ecosystem.',
-                      investment: 'High Investment  •  High ROI',
+                      title: AppLocalizations.of(context)?.megaFranchise ?? 'Mega Franchise',
+                      subtitle: AppLocalizations.of(context)?.stateLevelOps ?? 'STATE LEVEL OPERATIONS',
+                      role: AppLocalizations.of(context)?.megaRole ?? 'Orchestrate the entire state\'s EV ecosystem.',
+                      investment: AppLocalizations.of(context)?.megaInvestment ?? 'High Investment  •  High ROI',
                       features: [
-                        'Manage Master Franchises across districts',
-                        'Establish State Headquarters & Infrastructure',
-                        'Direct liaison with State Transport Ministry',
-                        'Revenue share from ALL state operations',
+                        AppLocalizations.of(context)?.megaFeature1 ?? 'Manage Master Franchises across districts',
+                        AppLocalizations.of(context)?.megaFeature2 ?? 'Establish State Headquarters & Infrastructure',
+                        AppLocalizations.of(context)?.megaFeature3 ?? 'Direct liaison with State Transport Ministry',
+                        AppLocalizations.of(context)?.megaFeature4 ?? 'Revenue share from ALL state operations',
                       ],
                       icon: FontAwesomeIcons.buildingColumns,
                       bgGradient: LinearGradient(
@@ -243,15 +244,15 @@ class _FranchiseRegistrationSectionState
                     ),
                     _buildTabContent(
                       index: 1,
-                      title: 'Master Franchise',
-                      subtitle: 'DISTRICT GROUP OPERATIONS',
-                      role: 'Lead operations across 2-5 key districts.',
-                      investment: 'Medium Investment  •  Steady Growth',
+                      title: AppLocalizations.of(context)?.masterFranchise ?? 'Master Franchise',
+                      subtitle: AppLocalizations.of(context)?.districtGroupOps ?? 'DISTRICT GROUP OPERATIONS',
+                      role: AppLocalizations.of(context)?.masterRole ?? 'Lead operations across 2-5 key districts.',
+                      investment: AppLocalizations.of(context)?.masterInvestment ?? 'Medium Investment  •  Steady Growth',
                       features: [
-                        'Oversee multiple Super Franchises',
-                        'Manage District Offices & Hubs',
-                        'Fleet monitoring & performance tracking',
-                        'Driver recruitment & training coordination',
+                        AppLocalizations.of(context)?.masterFeature1 ?? 'Oversee multiple Super Franchises',
+                        AppLocalizations.of(context)?.masterFeature2 ?? 'Manage District Offices & Hubs',
+                        AppLocalizations.of(context)?.masterFeature3 ?? 'Fleet monitoring & performance tracking',
+                        AppLocalizations.of(context)?.masterFeature4 ?? 'Driver recruitment & training coordination',
                       ],
                       icon: FontAwesomeIcons.mapLocationDot,
                       bgGradient: LinearGradient(
@@ -264,15 +265,15 @@ class _FranchiseRegistrationSectionState
                     ),
                     _buildTabContent(
                       index: 2,
-                      title: 'Super Franchise',
-                      subtitle: 'FLEET MANAGEMENT',
-                      role: 'Own and maximize returns on a fleet of 10-30 EVs.',
-                      investment: 'ROI: 18-25%  •  Break-even: 24-36 Mo',
+                      title: AppLocalizations.of(context)?.superFranchise ?? 'Super Franchise',
+                      subtitle: AppLocalizations.of(context)?.fleetManagement ?? 'FLEET MANAGEMENT',
+                      role: AppLocalizations.of(context)?.superRole ?? 'Own and maximize returns on a fleet of 10-30 EVs.',
+                      investment: AppLocalizations.of(context)?.superInvestment ?? 'ROI: 18-25%  •  Break-even: 24-36 Mo',
                       features: [
-                        'Direct Fleet Ownership & Asset Management',
-                        'Requires 500-1500 sq ft Office + Parking',
-                        'Vehicle Maintenance (Battery/Cooling)',
-                        'Charge point installation (Level 2/3)',
+                        AppLocalizations.of(context)?.superFeature1 ?? 'Direct Fleet Ownership & Asset Management',
+                        AppLocalizations.of(context)?.superFeature2 ?? 'Requires 500-1500 sq ft Office + Parking',
+                        AppLocalizations.of(context)?.superFeature3 ?? 'Vehicle Maintenance (Battery/Cooling)',
+                        AppLocalizations.of(context)?.superFeature4 ?? 'Charge point installation (Level 2/3)',
                       ],
                       icon: FontAwesomeIcons.carSide,
                       bgGradient: LinearGradient(
@@ -631,7 +632,7 @@ class _FranchiseRegistrationSectionState
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Apply Now',
+              AppLocalizations.of(context)?.applyNow ?? 'Apply Now',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w700,
                 fontSize: 15,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
 import '../../widgets/fade_slide_in.dart';
@@ -103,7 +104,7 @@ class EVFleetSection extends StatelessWidget {
           FadeSlideIn(
             delay: const Duration(milliseconds: 300),
             child: Text(
-              'OUR EV FLEET',
+              AppLocalizations.of(context)?.ourEVFleet ?? 'OUR EV FLEET',
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
@@ -117,7 +118,7 @@ class EVFleetSection extends StatelessWidget {
           FadeSlideIn(
             delay: const Duration(milliseconds: 400),
             child: Text(
-              'Premium electric vehicles powering your journey',
+              AppLocalizations.of(context)?.fleetSubtitle ?? 'Premium electric vehicles powering your journey',
               style: TextStyle(
                 color: isModern
                     ? const Color(0xFF6B7280)
@@ -321,7 +322,7 @@ class _EVCarCardState extends State<_EVCarCard> {
                 ),
               ),
               child: Text(
-                widget.car['category']!,
+                _getLocalizedCategory(context, widget.car['category']!),
                 style: TextStyle(
                   color: activeColor,
                   fontSize: 10,
@@ -434,7 +435,7 @@ class _EVCarCardState extends State<_EVCarCard> {
               Expanded(
                 child: _buildSpecTile(
                   Icons.flash_on,
-                  'Power',
+                  AppLocalizations.of(context)?.powerLabel ?? 'Power',
                   widget.car['power']!,
                   isV2,
                   activeColor,
@@ -445,7 +446,7 @@ class _EVCarCardState extends State<_EVCarCard> {
               Expanded(
                 child: _buildSpecTile(
                   Icons.battery_charging_full,
-                  'Battery',
+                  AppLocalizations.of(context)?.batteryLabel ?? 'Battery',
                   widget.car['battery']!,
                   isV2,
                   activeColor,
@@ -460,7 +461,7 @@ class _EVCarCardState extends State<_EVCarCard> {
               Expanded(
                 child: _buildSpecTile(
                   Icons.speed,
-                  'Top Speed',
+                  AppLocalizations.of(context)?.topSpeedLabel ?? 'Top Speed',
                   widget.car['topSpeed']!,
                   isV2,
                   activeColor,
@@ -471,7 +472,7 @@ class _EVCarCardState extends State<_EVCarCard> {
               Expanded(
                 child: _buildSpecTile(
                   Icons.ev_station,
-                  'Charge',
+                  AppLocalizations.of(context)?.chargeLabel ?? 'Charge',
                   widget.car['charge']!,
                   isV2,
                   activeColor,
@@ -555,5 +556,25 @@ class _EVCarCardState extends State<_EVCarCard> {
         ],
       ),
     );
+  }
+
+  String _getLocalizedCategory(BuildContext context, String category) {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return category;
+
+    switch (category) {
+      case 'COMPACT SUV':
+        return l10n.compactSUV;
+      case 'MID-SIZE SUV':
+        return l10n.midSizeSUV;
+      case 'MPV':
+        return l10n.mpv;
+      case 'PREMIUM CROSSOVER':
+        return l10n.premiumCrossover;
+      case 'HATCHBACK':
+        return l10n.hatchback;
+      default:
+        return category;
+    }
   }
 }

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
+import '../services/locale_provider.dart';
 import '../theme/app_theme.dart';
 
 class NavBar extends StatelessWidget {
@@ -105,18 +108,20 @@ class NavBar extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _NavLink(title: 'Home', onTap: onHomeTap),
+                      _NavLink(title: AppLocalizations.of(context)?.home ?? 'Home', onTap: onHomeTap),
                       const SizedBox(width: 4),
-                      _NavLink(title: 'Drivers', onTap: onDriversTap),
+                      _NavLink(title: AppLocalizations.of(context)?.drivers ?? 'Drivers', onTap: onDriversTap),
                       const SizedBox(width: 4),
-                      _NavLink(title: 'Fleets', onTap: onFleetsTap),
+                      _NavLink(title: AppLocalizations.of(context)?.fleets ?? 'Fleets', onTap: onFleetsTap),
                       const SizedBox(width: 4),
-                      _NavLink(title: 'Franchise', onTap: onFranchiseTap),
+                      _NavLink(title: AppLocalizations.of(context)?.franchise ?? 'Franchise', onTap: onFranchiseTap),
                       const SizedBox(width: 4),
-                      _NavLink(title: 'EV Stations', onTap: onEvStationsTap),
+                      _NavLink(title: AppLocalizations.of(context)?.evStations ?? 'EV Stations', onTap: onEvStationsTap),
                       const SizedBox(width: 4),
-                      _NavLink(title: 'Contact Us', onTap: onContactTap),
+                      _NavLink(title: AppLocalizations.of(context)?.contactUs ?? 'Contact Us', onTap: onContactTap),
                       const SizedBox(width: 20),
+                      const _LanguageSwitcher(),
+                      const SizedBox(width: 12),
                       _BookNowButton(isV2: isV2, onTap: onHomeTap),
                     ],
                   )
@@ -325,7 +330,7 @@ class NavBar extends StatelessWidget {
                             animation: animation,
                             index: 5,
                             child: _MobileMenuItem(
-                              title: 'Contact Us',
+                              title: AppLocalizations.of(context)?.contactUs ?? 'Contact Us',
                               isV2: isV2,
                               onTap: () {
                                 Navigator.pop(context);
@@ -333,6 +338,8 @@ class NavBar extends StatelessWidget {
                               },
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          const _LanguageSwitcher(),
                           const SizedBox(height: 30),
                         ],
                       ),
@@ -431,7 +438,7 @@ class _BookNowButtonState extends State<_BookNowButton> {
                 : [],
           ),
           child: Text(
-            'Book Now',
+            AppLocalizations.of(context)?.bookNow ?? 'Book Now',
             style: TextStyle(
               color: isYellow ? Colors.black87 : Colors.white,
               fontWeight: FontWeight.bold,
@@ -545,6 +552,114 @@ class _NavLinkState extends State<_NavLink> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LanguageSwitcher extends StatelessWidget {
+  const _LanguageSwitcher();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<LocaleProvider>(context);
+    final currentCode = provider.locale?.languageCode ?? 'en';
+
+    final languages = [
+      {'code': 'en', 'label': 'English', 'short': 'EN'},
+      {'code': 'hi', 'label': 'हिन्दी', 'short': 'हि'},
+      {'code': 'ml', 'label': 'മലയാളം', 'short': 'മ'},
+    ];
+
+    return PopupMenuButton<String>(
+      onSelected: (code) {
+        provider.setLocale(Locale(code));
+      },
+      offset: const Offset(0, 45),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      color: Colors.white,
+      elevation: 10,
+      shadowColor: Colors.black.withValues(alpha: 0.3),
+      tooltip: 'Select Language',
+      // Trigger Button
+      child: Container(
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.language, size: 20, color: Color(0xFF6B7280)),
+            const SizedBox(width: 10),
+            Text(
+              currentCode.toUpperCase(),
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: Color(0xFF374151),
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF9CA3AF)),
+          ],
+        ),
+      ),
+      itemBuilder: (context) {
+        return languages.map((lang) {
+          final isSelected = currentCode == lang['code'];
+          return PopupMenuItem<String>(
+            value: lang['code']!,
+            height: 64,
+            child: Row(
+              children: [
+                // Icon Box (Lead)
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFFE8F5E9) // Light green for active
+                        : const Color(0xFFF3F4F6), // Light grey for inactive
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    lang['short']!,
+                    style: TextStyle(
+                      color: isSelected ? const Color(0xFF16A34A) : const Color(0xFF4B5563),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Label
+                Expanded(
+                  child: Text(
+                    lang['label']!,
+                    style: TextStyle(
+                      color: isSelected ? const Color(0xFF16A34A) : const Color(0xFF111827),
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                // Checkmark
+                if (isSelected)
+                  const Icon(
+                    Icons.check_rounded,
+                    color: Color(0xFF16A34A),
+                    size: 20,
+                  ),
+              ],
+            ),
+          );
+        }).toList();
+      },
     );
   }
 }

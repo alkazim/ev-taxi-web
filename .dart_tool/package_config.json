@@ -170,6 +170,12 @@
       "languageVersion": "3.5"
     },
     {
+      "name": "flutter_localizations",
+      "rootUri": "file:///C:/src/flutter/packages/flutter_localizations",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
       "name": "flutter_map",
       "rootUri": "file:///C:/Users/muham/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_map-7.0.2",
       "packageUri": "lib/",

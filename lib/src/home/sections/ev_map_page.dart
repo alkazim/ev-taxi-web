@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
@@ -1212,7 +1213,7 @@ class _EVMapPageState extends State<EVMapPage> {
         child: Column(
           children: [
           Text(
-            'CHARGING NETWORK',
+            AppLocalizations.of(context)?.chargingNetwork ?? 'CHARGING NETWORK',
             style: GoogleFonts.poppins(
               color: activeGreen,
               fontSize: isMobile ? 12 : 14,
@@ -1222,7 +1223,7 @@ class _EVMapPageState extends State<EVMapPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Explore South India',
+            AppLocalizations.of(context)?.exploreSouthIndia ?? 'Explore South India',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               fontSize: isMobile ? 32 : isTablet ? 42 : 56,
@@ -1236,7 +1237,7 @@ class _EVMapPageState extends State<EVMapPage> {
           ConstrainedBox(
             constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 700),
             child: Text(
-              'Find the nearest charging stations or plan your journey with optimized stops. High-speed charging at your fingertips.',
+              AppLocalizations.of(context)?.chargingNetworkDescription ?? 'Find the nearest charging stations or plan your journey with optimized stops. High-speed charging at your fingertips.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: const Color(0xFF6B7280),
@@ -1255,7 +1256,7 @@ class _EVMapPageState extends State<EVMapPage> {
             children: [
               _statCard(
                 '50+',
-                'Stations',
+                AppLocalizations.of(context)?.stations ?? 'Stations',
                 Icons.ev_station,
                 activeGreen,
                 isMobile,
@@ -1263,7 +1264,7 @@ class _EVMapPageState extends State<EVMapPage> {
               ),
               _statCard(
                 '4',
-                'States',
+                AppLocalizations.of(context)?.states ?? 'States',
                 Icons.map,
                 activeAmber,
                 isMobile,
@@ -1271,7 +1272,7 @@ class _EVMapPageState extends State<EVMapPage> {
               ),
               _statCard(
                 '24/7',
-                'Availability',
+                AppLocalizations.of(context)?.availability ?? 'Availability',
                 Icons.access_time,
                 const Color(0xFF3B82F6),
                 isMobile,
@@ -1279,7 +1280,7 @@ class _EVMapPageState extends State<EVMapPage> {
               ),
               _statCard(
                 '100%',
-                'Reliable',
+                AppLocalizations.of(context)?.reliable ?? 'Reliable',
                 Icons.verified_user_outlined,
                 const Color(0xFF10B981),
                 isMobile,
@@ -1450,7 +1451,7 @@ class _EVMapPageState extends State<EVMapPage> {
                     _legendDot(const Color(0xFF1D4ED8)),
                     const SizedBox(width: 6),
                     Text(
-                      'You',
+                      AppLocalizations.of(context)?.youLegend ?? 'You',
                       style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -1461,7 +1462,7 @@ class _EVMapPageState extends State<EVMapPage> {
                     _legendDot(const Color(0xFF16A34A)),
                     const SizedBox(width: 6),
                     Text(
-                      'Station',
+                      AppLocalizations.of(context)?.stationLegend ?? 'Station',
                       style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -1473,7 +1474,7 @@ class _EVMapPageState extends State<EVMapPage> {
                       _legendDot(const Color(0xFF4F46E5), size: 10),
                       const SizedBox(width: 6),
                       Text(
-                        'Route',
+                        AppLocalizations.of(context)?.routeLegend ?? 'Route',
                         style: GoogleFonts.poppins(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1495,7 +1496,7 @@ class _EVMapPageState extends State<EVMapPage> {
                 children: [
                   _mapControlBtn(
                     label: '+',
-                    tooltip: 'Zoom In',
+                    tooltip: AppLocalizations.of(context)?.zoomIn ?? 'Zoom In',
                     onTap: () {
                       final z = _mapController.camera.zoom;
                       _mapController.move(_mapController.camera.center, z + 1);
@@ -1504,7 +1505,7 @@ class _EVMapPageState extends State<EVMapPage> {
                   const SizedBox(height: 8),
                   _mapControlBtn(
                     label: '−',
-                    tooltip: 'Zoom Out',
+                    tooltip: AppLocalizations.of(context)?.zoomOut ?? 'Zoom Out',
                     onTap: () {
                       final z = _mapController.camera.zoom;
                       _mapController.move(_mapController.camera.center, z - 1);
@@ -1513,7 +1514,7 @@ class _EVMapPageState extends State<EVMapPage> {
                   const SizedBox(height: 16),
                   _mapControlBtn(
                     label: '⊕',
-                    tooltip: 'My Location',
+                    tooltip: AppLocalizations.of(context)?.myLocation ?? 'My Location',
                     color: const Color(0xFF1D4ED8),
                     onTap: _isLocating ? null : () => _fetchUserLocation(centerMap: true),
                     child: _isLocating
@@ -1574,10 +1575,10 @@ class _EVMapPageState extends State<EVMapPage> {
                           const SizedBox(width: 14),
                           Text(
                             _isLoadingLocation
-                                ? 'Getting your location...'
+                                ? (AppLocalizations.of(context)?.gettingLocation ?? 'Getting your location...')
                                 : (_mode == _MapMode.nearest
-                                    ? 'Finding Stations...'
-                                    : 'Planning Route...'),
+                                    ? (AppLocalizations.of(context)?.findingStations ?? 'Finding Stations...')
+                                    : (AppLocalizations.of(context)?.planningRoute ?? 'Planning Route...')),
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -1633,30 +1634,33 @@ class _EVMapPageState extends State<EVMapPage> {
                 color: const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildTabButton('Find Nearest', _mode == _MapMode.nearest, () {
-                    if (_mode != _MapMode.nearest) {
-                      setState(() {
-                        _mode = _MapMode.nearest;
-                        _routePoints = [];
-                        _routeAlternatives = [];
-                        _fromLatLng = null;
-                        _toLatLng = null;
-                        _viaLatLng = null;
-                        _stationList = [];
-                      });
-                      if (_userLatLng != null && _mapReady) {
-                        _mapController.move(_userLatLng!, 14.0);
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildTabButton(AppLocalizations.of(context)?.findNearest ?? 'Find Nearest', _mode == _MapMode.nearest, () {
+                      if (_mode != _MapMode.nearest) {
+                        setState(() {
+                          _mode = _MapMode.nearest;
+                          _routePoints = [];
+                          _routeAlternatives = [];
+                          _fromLatLng = null;
+                          _toLatLng = null;
+                          _viaLatLng = null;
+                          _stationList = [];
+                        });
+                        if (_userLatLng != null && _mapReady) {
+                          _mapController.move(_userLatLng!, 14.0);
+                        }
+                        _findNearestStations();
                       }
-                      _findNearestStations();
-                    }
-                  }),
-                  _buildTabButton('Plan Route', _mode == _MapMode.route || _mode == _MapMode.idle, () {
-                    setState(() => _mode = _MapMode.route);
-                  }),
-                ],
+                    }),
+                    _buildTabButton(AppLocalizations.of(context)?.planRoute ?? 'Plan Route', _mode == _MapMode.route || _mode == _MapMode.idle, () {
+                      setState(() => _mode = _MapMode.route);
+                    }),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1900,28 +1904,35 @@ class _EVMapPageState extends State<EVMapPage> {
 
 
   Widget _buildTabButton(String title, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                  )
-                ]
-              : null,
-        ),
-        child: Text(
-          title,
-          style: GoogleFonts.poppins(
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? const Color(0xFF111827) : const Color(0xFF6B7280),
-            fontSize: 13,
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+              color: isSelected ? const Color(0xFF111827) : const Color(0xFF6B7280),
+              fontSize: 12.5,
+              height: 1.2,
+            ),
           ),
         ),
       ),

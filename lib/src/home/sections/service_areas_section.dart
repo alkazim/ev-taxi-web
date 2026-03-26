@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 
 /// Service Areas Section — swipeable PageView carousel.
 /// Each page: place image on the left, descriptive text on the right.
@@ -36,7 +37,8 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
         timer.cancel();
         return;
       }
-      if (_currentPage < _areas.length - 1) {
+      final areas = _getAreas(context);
+      if (_currentPage < areas.length - 1) {
         _pageController.nextPage(
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeInOut,
@@ -55,76 +57,79 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
     _startTimer();
   }
 
-  static const _areas = [
-    _AreaData(
-      name: 'Kerala',
-      tagline: "God's Own Country",
-      highlight: 'Kochi · Trivandrum · Kozhikode',
-      imageAsset: 'assets/images/places/Kerala.webp',
-      accentColor: Color(0xFF059669),
-      description:
-          'Experience the serene backwaters, lush greenery, and vibrant culture of Kerala. '
-          'Our EV taxis connect you seamlessly across Kochi, Trivandrum, and Kozhikode — '
-          'clean, quiet, and comfortable.',
-      features: [
-        'Backwater Routes',
-        'Airport Transfers',
-        'City Commutes',
-        'Hill Station Trips',
-      ],
-    ),
-    _AreaData(
-      name: 'Karnataka',
-      tagline: 'One State, Many Worlds',
-      highlight: 'Bangalore · Mysore · Mangalore',
-      imageAsset: 'assets/images/places/Karnataka.webp',
-      accentColor: Color(0xFF4338CA),
-      description:
-          'From the tech corridors of Bangalore to the royal heritage of Mysore, '
-          'Karnataka offers a world of contrasts. Our EVs navigate every corner '
-          'efficiently — zero emissions, zero compromise.',
-      features: [
-        'Tech Park Shuttles',
-        'Heritage Tours',
-        'Corporate Rides',
-        'Weekend Getaways',
-      ],
-    ),
-    _AreaData(
-      name: 'Tamil Nadu',
-      tagline: 'Land of Temples',
-      highlight: 'Chennai · Coimbatore · Madurai',
-      imageAsset: 'assets/images/places/Tamilnadu.webp',
-      accentColor: Color(0xFFEA580C),
-      description:
-          'Discover the ancient temples, bustling cities, and coastal beauty of Tamil Nadu. '
-          'Whether it\'s a pilgrimage to Madurai or a business trip to Chennai, '
-          'our EV fleet gets you there sustainably.',
-      features: [
-        'Temple Circuit Rides',
-        'Port City Transfers',
-        'IT Corridor Commutes',
-        'Coastal Drives',
-      ],
-    ),
-    _AreaData(
-      name: 'Puducherry',
-      tagline: 'The French Riviera of the East',
-      highlight: 'Pondicherry · Karaikal · Yanam',
-      imageAsset: 'assets/images/places/Puducherry.webp',
-      accentColor: Color(0xFF0284C7),
-      description:
-          'Stroll through French colonial streets, pristine beaches, and spiritual ashrams. '
-          'Puducherry\'s charm deserves a ride as elegant as the destination — '
-          'our silent EVs blend right in.',
-      features: [
-        'Beach Transfers',
-        'Heritage Town Tours',
-        'Ashram Visits',
-        'Scenic Coastal Rides',
-      ],
-    ),
-  ];
+  List<_AreaData> _getAreas(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return [
+      _AreaData(
+        name: l10n?.kerala ?? 'Kerala',
+        tagline: l10n?.godsOwnCountry ?? "God's Own Country",
+        highlight: l10n?.keralaHighlights ?? 'Kochi · Trivandrum · Kozhikode',
+        imageAsset: 'assets/images/places/Kerala.webp',
+        accentColor: const Color(0xFF059669),
+        description: l10n?.keralaDescription ??
+            'Experience the serene backwaters, lush greenery, and vibrant culture of Kerala. '
+            'Our EV taxis connect you seamlessly across Kochi, Trivandrum, and Kozhikode — '
+            'clean, quiet, and comfortable.',
+        features: [
+          l10n?.featureBackwater ?? 'Backwater Routes',
+          l10n?.featureAirport ?? 'Airport Transfers',
+          l10n?.featureCityCommute ?? 'City Commutes',
+          l10n?.featureHillStation ?? 'Hill Station Trips',
+        ],
+      ),
+      _AreaData(
+        name: l10n?.karnataka ?? 'Karnataka',
+        tagline: l10n?.oneStateManyWorlds ?? 'One State, Many Worlds',
+        highlight: l10n?.karnatakaHighlights ?? 'Bangalore · Mysore · Mangalore',
+        imageAsset: 'assets/images/places/Karnataka.webp',
+        accentColor: const Color(0xFF4338CA),
+        description: l10n?.karnatakaDescription ??
+            'From the tech corridors of Bangalore to the royal heritage of Mysore, '
+            'Karnataka offers a world of contrasts. Our EVs navigate every corner '
+            'efficiently — zero emissions, zero compromise.',
+        features: [
+          l10n?.featureTechPark ?? 'Tech Park Shuttles',
+          l10n?.featureHeritage ?? 'Heritage Tours',
+          l10n?.featureCorporate ?? 'Corporate Rides',
+          l10n?.featureWeekend ?? 'Weekend Getaways',
+        ],
+      ),
+      _AreaData(
+        name: l10n?.tamilNadu ?? 'Tamil Nadu',
+        tagline: l10n?.landOfTemples ?? 'Land of Temples',
+        highlight: l10n?.tamilNaduHighlights ?? 'Chennai · Coimbatore · Madurai',
+        imageAsset: 'assets/images/places/Tamilnadu.webp',
+        accentColor: const Color(0xFFEA580C),
+        description: l10n?.tamilNaduDescription ??
+            'Discover the ancient temples, bustling cities, and coastal beauty of Tamil Nadu. '
+            'Whether it\'s a pilgrimage to Madurai or a business trip to Chennai, '
+            'our EV fleet gets you there sustainably.',
+        features: [
+          l10n?.featureTemple ?? 'Temple Circuit Rides',
+          l10n?.featurePortCity ?? 'Port City Transfers',
+          l10n?.featureITCorridor ?? 'IT Corridor Commutes',
+          l10n?.featureCoastal ?? 'Coastal Drives',
+        ],
+      ),
+      _AreaData(
+        name: l10n?.puducherry ?? 'Puducherry',
+        tagline: l10n?.frenchRiviera ?? 'The French Riviera of the East',
+        highlight: l10n?.puducherryHighlights ?? 'Pondicherry · Karaikal · Yanam',
+        imageAsset: 'assets/images/places/Puducherry.webp',
+        accentColor: const Color(0xFF0284C7),
+        description: l10n?.puducherryDescription ??
+            'Stroll through French colonial streets, pristine beaches, and spiritual ashrams. '
+            'Puducherry\'s charm deserves a ride as elegant as the destination — '
+            'our silent EVs blend right in.',
+        features: [
+          l10n?.featureBeach ?? 'Beach Transfers',
+          l10n?.featureHeritageTownTours ?? 'Heritage Town Tours',
+          l10n?.featureAshram ?? 'Ashram Visits',
+          l10n?.featureScenic ?? 'Scenic Coastal Rides',
+        ],
+      ),
+    ];
+  }
 
   @override
   void dispose() {
@@ -196,13 +201,14 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
                             onPointerUp: (_) => _resetTimer(),
                             child: PageView.builder(
                               controller: _pageController,
-                              itemCount: _areas.length,
+                              itemCount: _getAreas(context).length,
                               onPageChanged: (i) =>
                                   setState(() => _currentPage = i),
                               itemBuilder: (context, index) {
+                                final areas = _getAreas(context);
                                 return RepaintBoundary(
                                   child: _AreaPage(
-                                    area: _areas[index],
+                                    area: areas[index],
                                     isDesktop: isDesktop,
                                     isV2: isModern,
                                   ),
@@ -228,7 +234,7 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
                           right: 0,
                           child: _ArrowButton(
                             icon: Icons.arrow_forward_ios_rounded,
-                            enabled: _currentPage < _areas.length - 1,
+                            enabled: _currentPage < _getAreas(context).length - 1,
                             onTap: () => _goTo(_currentPage + 1),
                             color: accent,
                           ),
@@ -243,7 +249,7 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
           const SizedBox(height: 28),
 
           // ── Controls: arrows + dots ──
-          _buildControls(isDesktop, accent),
+          _buildControls(isDesktop, accent, context),
         ],
       ),
     );
@@ -265,7 +271,7 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
               Icon(Icons.location_on_rounded, color: green, size: 15),
               const SizedBox(width: 6),
               Text(
-                'WHERE WE OPERATE',
+                AppLocalizations.of(context)?.whereWeOperate ?? 'WHERE WE OPERATE',
                 style: GoogleFonts.poppins(
                   color: green,
                   fontSize: 12,
@@ -288,19 +294,19 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
               color: const Color(0xFF111827),
             ),
             children: [
-              const TextSpan(text: 'Available Across '),
+              TextSpan(text: AppLocalizations.of(context)?.availableAcross ?? 'Available Across '),
               TextSpan(
-                text: '4 States',
+                text: AppLocalizations.of(context)?.fourStates ?? '4 States',
                 // amber in Yellow Theme, green in Green Theme
                 style: TextStyle(color: green),
               ),
-              const TextSpan(text: ' in South India'),
+              TextSpan(text: AppLocalizations.of(context)?.inSouthIndia ?? ' in South India'),
             ],
           ),
         ),
         const SizedBox(height: 12),
         Text(
-          'Expanding our clean mobility network to more cities every month.',
+          AppLocalizations.of(context)?.expandingNetwork ?? 'Expanding our clean mobility network to more cities every month.',
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
             color: const Color(0xFF6B7280),
@@ -313,13 +319,14 @@ class _ServiceAreasSectionState extends State<ServiceAreasSection> {
   }
 
   // Only shows dot indicators — arrows are in the Stack for desktop/tablet, hidden on mobile
-  Widget _buildControls(bool isDesktop, Color green) {
+  Widget _buildControls(bool isDesktop, Color green, BuildContext context) {
+    final areaCount = _getAreas(context).length;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
-          children: List.generate(_areas.length, (i) {
+          children: List.generate(areaCount, (i) {
             final active = i == _currentPage;
             return GestureDetector(
               onTap: () => _goTo(i),
@@ -650,7 +657,7 @@ class _AreaPage extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Available Now',
+                      AppLocalizations.of(context)?.availableNow ?? 'Available Now',
                       style: GoogleFonts.poppins(
                         color: _amber,
                         fontSize: 10,

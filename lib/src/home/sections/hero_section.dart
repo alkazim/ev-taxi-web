@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 
 class HeroSection extends StatefulWidget {
   const HeroSection({super.key});
@@ -182,7 +183,7 @@ class _HeroSectionState extends State<HeroSection>
         Container(width: 28, height: 2, color: accentColor),
         const SizedBox(width: 10),
         Text(
-          "India's Premier EV Service",
+          AppLocalizations.of(context)?.premierEVService ?? "India's Premier EV Service",
           style: GoogleFonts.poppins(
             color: accentColor,
             fontSize: isDesktop ? 14 : 12,
@@ -199,7 +200,7 @@ class _HeroSectionState extends State<HeroSection>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'E-CABBZ',
+          AppLocalizations.of(context)?.heroTitle ?? 'E-CABBZ',
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: isDesktop ? 64 : 38,
@@ -218,11 +219,7 @@ class _HeroSectionState extends State<HeroSection>
             ),
             children: [
               TextSpan(
-                text: 'Service ',
-                style: TextStyle(color: Colors.white),
-              ),
-              TextSpan(
-                text: 'in India',
+                text: '${AppLocalizations.of(context)?.serviceInIndia ?? 'Service in India'}',
                 style: TextStyle(
                   color: context.isYellowTheme
                       ? const Color(0xFFFBBF24)
@@ -240,7 +237,8 @@ class _HeroSectionState extends State<HeroSection>
     return SizedBox(
       width: isDesktop ? 440 : double.infinity,
       child: Text(
-        'Celebrating a new era of clean, comfortable, and affordable electric mobility across India.',
+        AppLocalizations.of(context)?.heroSubtitle ??
+            'Celebrating a new era of clean, comfortable, and affordable electric mobility across India.',
         style: GoogleFonts.poppins(
           color: Colors.white.withValues(alpha: 0.75),
           fontSize: isDesktop ? 16 : 13,
@@ -262,7 +260,7 @@ class _HeroSectionState extends State<HeroSection>
       children: [
         // Primary pill — matches active theme
         _HoverButton(
-          label: 'Book a Ride',
+          label: AppLocalizations.of(context)?.bookARide ?? 'Book a Ride',
           icon: Icons.arrow_forward_rounded,
           bgColor: primaryBg,
           textColor: primaryFg,
@@ -270,7 +268,7 @@ class _HeroSectionState extends State<HeroSection>
         ),
         // Ghost — white outline (text centred)
         _HoverButton(
-          label: 'Learn More',
+          label: AppLocalizations.of(context)?.learnMore ?? 'Learn More',
           icon: null,
           bgColor: Colors.transparent,
           textColor: Colors.white,
@@ -283,10 +281,10 @@ class _HeroSectionState extends State<HeroSection>
 
   Widget _buildStatsRow(bool isDesktop) {
     final stats = [
-      _StatItem(value: '1000+', label: 'Happy Riders'),
-      _StatItem(value: '50+', label: 'EV Cars'),
-      _StatItem(value: '4', label: 'States'),
-      _StatItem(value: '24/7', label: 'Service'),
+      _StatItem(value: '1000+', label: AppLocalizations.of(context)?.happyRiders ?? 'Happy Riders'),
+      _StatItem(value: '50+', label: AppLocalizations.of(context)?.evCars ?? 'EV Cars'),
+      _StatItem(value: '4', label: AppLocalizations.of(context)?.states ?? 'States'),
+      _StatItem(value: '24/7', label: AppLocalizations.of(context)?.service ?? 'Service'),
     ];
 
     return Container(
@@ -479,7 +477,7 @@ class _HeroSectionState extends State<HeroSection>
               Icon(Icons.bolt, color: AppTheme.primaryColor, size: 16),
               const SizedBox(width: 6),
               Text(
-                '100% ELECTRIC FLEET',
+                AppLocalizations.of(context)?.electricFleet ?? '100% ELECTRIC FLEET',
                 style: TextStyle(
                   color: AppTheme.primaryColor,
                   fontSize: 12,
@@ -492,7 +490,7 @@ class _HeroSectionState extends State<HeroSection>
         ),
         const SizedBox(height: 28),
         Text(
-          'PREMIUM TAXI\nSERVICE IN INDIA',
+          AppLocalizations.of(context)?.premiumTaxiService ?? 'PREMIUM TAXI\nSERVICE IN INDIA',
           textAlign: isDesktop ? TextAlign.left : TextAlign.center,
           style: TextStyle(
             color: AppTheme.textColor,
@@ -504,7 +502,7 @@ class _HeroSectionState extends State<HeroSection>
         ),
         const SizedBox(height: 18),
         Text(
-          'Experience luxury and comfort with our elite\nelectric vehicle fleet across India.',
+          AppLocalizations.of(context)?.classicHeroSubtitle ?? 'Experience luxury and comfort with our elite\nelectric vehicle fleet across India.',
           textAlign: isDesktop ? TextAlign.left : TextAlign.center,
           style: TextStyle(
             fontSize: isDesktop ? 17 : 14,
@@ -532,18 +530,18 @@ class _HeroSectionState extends State<HeroSection>
                 ),
                 elevation: 0,
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'BOOK A RIDE',
-                    style: TextStyle(
+                    AppLocalizations.of(context)?.bookARide.toUpperCase() ?? 'BOOK A RIDE',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1,
                     ),
                   ),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward_rounded, size: 18),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, size: 18),
                 ],
               ),
             ),
@@ -563,14 +561,14 @@ class _HeroSectionState extends State<HeroSection>
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.play_circle_outline, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.play_circle_outline, size: 20),
+                  const SizedBox(width: 8),
                   Text(
-                    'Watch Demo',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    AppLocalizations.of(context)?.watchDemo ?? 'Watch Demo',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -646,7 +644,7 @@ class _HeroSectionState extends State<HeroSection>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'E-CABBZ TAXI',
+                      AppLocalizations.of(context)?.ecabbzTaxi ?? 'E-CABBZ TAXI',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

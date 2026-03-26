@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:taxi_demo/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'form_persistence_state.dart';
 import '../../services/firebase_service.dart';
@@ -943,7 +944,7 @@ class _FranchiseApplicationDialogState
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            '${widget.franchiseType} Application',
+                            '${widget.franchiseType} ${AppLocalizations.of(context)?.application ?? 'Application'}',
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -970,7 +971,7 @@ class _FranchiseApplicationDialogState
                     // ╔═══════════════════════════════════════════╗
                     // ║  SECTION 1 — PERSONAL / OWNER DETAILS     ║
                     // ╚═══════════════════════════════════════════╝
-                    _section('1. Personal / Owner Details'),
+                    _section('1. ${AppLocalizations.of(context)?.personalInfo ?? 'Personal / Owner Details'}'),
                     _field(
                       'Full Name',
                       _fullNameCtrl,
@@ -1650,7 +1651,7 @@ class _FranchiseApplicationDialogState
                                 ),
                               )
                             : Text(
-                                'Submit Application',
+                                AppLocalizations.of(context)?.submitApplication ?? 'Submit Application',
                                 style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15,
