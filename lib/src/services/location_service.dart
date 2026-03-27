@@ -84,7 +84,9 @@ class LocationService {
       final lowPlace = s.place.toLowerCase();
       if (lowPlace.startsWith(q)) return false;
       
-      return lowPlace.contains(q) ||
+      final displayLow = s.displayName.toLowerCase();
+      return displayLow.contains(q) ||
+             lowPlace.contains(q) ||
              s.localBody.toLowerCase().contains(q) ||
              s.district.toLowerCase().contains(q) ||
              s.state.toLowerCase().contains(q);

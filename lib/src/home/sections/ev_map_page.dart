@@ -667,10 +667,24 @@ class _EVMapPageState extends State<EVMapPage> {
     if (fromLL == null) {
       if (from.toLowerCase().trim() == 'my location' || from == 'My Location') {
         fromLL = _userLatLng;
+      } else {
+        final matches = LocationService().search(from, limit: 1);
+        if (matches.isNotEmpty) {
+           fromLL = matches.first.latLng;
+           _fromLatLng = fromLL;
+        }
       }
     }
     
     LatLng? toLL = _toLatLng;
+    if (toLL == null) {
+      final matches = LocationService().search(to, limit: 1);
+      if (matches.isNotEmpty) {
+         toLL = matches.first.latLng;
+         _toLatLng = toLL;
+      }
+    }
+    
     LatLng? viaLL = _viaLatLng;
 
     if (fromLL == null || toLL == null) {
