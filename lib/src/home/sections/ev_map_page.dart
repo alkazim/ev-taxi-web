@@ -13,42 +13,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../theme/app_theme.dart';
-
-// ─── Known Cities ─────────────────────────────────────────────────────────────
-const _kCities = <String, LatLng>{
-  // --- Ernakulam Hubs & Aliases ---
-  'vyttila': LatLng(9.9708, 76.3218),
-  'vytilla': LatLng(9.9708, 76.3218),
-  'tripunithura': LatLng(9.9482, 76.3476),
-  'thripunithura': LatLng(9.9482, 76.3476),
-  'thrippunithura': LatLng(9.9482, 76.3476),
-  'thripunitra': LatLng(9.9482, 76.3476),
-  'trippunithura': LatLng(9.9482, 76.3476),
-  'edappally': LatLng(10.0244, 76.3079),
-  'palarivattom': LatLng(10.0036, 76.3060),
-  'kakkanad': LatLng(10.0159, 76.3418),
-  'ernakulam': LatLng(9.9816, 76.2999),
-  'kochi': LatLng(9.9312, 76.2673),
-  // --- Other Major Districts ---
-  'trivandrum': LatLng(8.4875, 76.9492),
-  'kozhikode': LatLng(11.2588, 75.7804),
-  'thrissur': LatLng(10.5276, 76.2144),
-  'kottayam': LatLng(9.5916, 76.5221),
-  'palakkad': LatLng(10.7867, 76.6547),
-  'alappuzha': LatLng(9.4981, 76.3388),
-  'kollam': LatLng(8.8832, 76.5940),
-  'kannur': LatLng(11.8745, 75.3704),
-  'malappuram': LatLng(11.0735, 76.0740),
-  'kasaragod': LatLng(12.4996, 74.9869),
-  'pathanamthitta': LatLng(9.2644, 76.7870),
-  'idukki': LatLng(9.8490, 76.9658),
-  'wayanad': LatLng(11.6854, 76.1320),
-  'bangalore': LatLng(12.9716, 77.5946),
-  'chennai': LatLng(13.0827, 80.2707),
-  'coimbatore': LatLng(11.0168, 76.9558),
-  'mangalore': LatLng(12.9141, 74.8560),
-  'mysore': LatLng(12.2958, 76.6394),
-};
+import '../../services/location_service.dart';
 
 // ─── Mode ─────────────────────────────────────────────────────────────────────
 enum _MapMode { idle, nearest, route }
@@ -195,15 +160,15 @@ class _EVMapPageState extends State<EVMapPage> {
           final accuracy = pos.coords.accuracy;
           debugPrint('✅ [Location] Received coordinates: $lat, $lng (accuracy: ${accuracy.toStringAsFixed(0)}m)');
           
-          final bool wasLoading = _isLoadingLocation;
           setState(() {
             _userLatLng = LatLng(lat, lng);
             if (!silent) _isLocating = false;
             _isLoadingLocation = false;
           });
           
-          if (_mapReady && centerMap && !wasLoading) {
+          if (_mapReady && centerMap) {
             _mapController.move(_userLatLng!, 14.0);
+            centerMap = false; // Prevent subsequent background updates from moving the map
           }
         }.toJS,
         (web.GeolocationPositionError error) {
@@ -217,9 +182,10 @@ class _EVMapPageState extends State<EVMapPage> {
             _isLoadingLocation = false;
           });
           
-          if (_mapReady && centerMap && !wasLoading) {
+          if (_mapReady && centerMap) {
             _mapController.move(_userLatLng!, 14.0);
             _findNearestStations();
+            centerMap = false; // Prevent subsequent map moves
           }
           
           if (!silent || wasLoading) {
@@ -245,6 +211,8 @@ class _EVMapPageState extends State<EVMapPage> {
   }
 
   // ─── Reverse Geocode ───────────────────────────────────────────────────────
+  // REMOVED: Offline-only requirement. Reverse geocoding (Nominatim) is disabled.
+  /*
   Future<String?> _reverseGeocode(double lat, double lng) async {
     try {
       final url = Uri.parse(
@@ -260,15 +228,16 @@ class _EVMapPageState extends State<EVMapPage> {
     }
     return null;
   }
+  */
 
   Future<void> _onGPSShortcutClicked() async {
     if (_userLatLng != null && _mapReady) {
       _mapController.move(_userLatLng!, 15.0);
       
-      final address = await _reverseGeocode(_userLatLng!.latitude, _userLatLng!.longitude);
-      if (mounted && address != null) {
+      // Since Nominatim is disabled, we directly set to "My Location"
+      if (mounted) {
         setState(() {
-          _fromCtrl.text = address;
+          _fromCtrl.text = 'My Location';
           _fromLatLng = _userLatLng;
         });
       }
@@ -279,7 +248,7 @@ class _EVMapPageState extends State<EVMapPage> {
 
   // ─── Suggestions ────────────────────────────────────────────────────────────
   Future<void> _fetchSuggestions(String query, bool isFrom) async {
-    if (query.length < 3) {
+    if (query.length < 2) {
       setState(() {
         if (isFrom) {
           _fromSuggestions = [];
@@ -298,83 +267,23 @@ class _EVMapPageState extends State<EVMapPage> {
         final List<Map<String, dynamic>> suggestions = [];
         final Set<String> seen = {};
 
-        // 1. Local Cache Matching (Fast fallback for primary cities/hubs)
-        final lowQuery = query.toLowerCase().trim();
-        _kCities.forEach((key, pos) {
-          if (key.startsWith(lowQuery) || key.contains(lowQuery)) {
-            final displayName = "${key[0].toUpperCase()}${key.substring(1)}, Kerala";
-            if (seen.add(displayName)) {
-              suggestions.add({
-                'display': displayName,
-                'lat': pos.latitude,
-                'lng': pos.longitude,
-                'priority': key.startsWith(lowQuery) ? 2 : 1,
-              });
-            }
-          }
-        });
-
-        // 2. Nominatim API Call (Comprehensive Place Search)
-        // We use featuretype=settlement to find cities/towns/villages across all of South India
-        // viewbox=74.5,8.0,80.5,15.5 covers Kerala, TN, Karnataka, Pondicherry
-        final encodedQuery = Uri.encodeComponent(query);
-        final url = Uri.parse(
-          'https://nominatim.openstreetmap.org/search?'
-          'q=$encodedQuery&format=json&addressdetails=1&'
-          'limit=15&featuretype=settlement&countrycodes=in&'
-          'viewbox=74.5,15.5,80.5,8.0&bounded=0',
-        );
-
-        final resp = await http.get(url, headers: {'User-Agent': 'EVTaxiDemo/1.0'});
-        if (resp.statusCode == 200) {
-          final List<dynamic> data = jsonDecode(resp.body);
-          
-          for (final item in data) {
-            final lat = double.parse(item['lat']);
-            final lng = double.parse(item['lon']);
-            
-            // 2a. Strict Place Class Filtering
-            // We only want 'place' or 'boundary' results. This excludes 'amenity' (temples/banks).
-            final String cls = item['class'] ?? '';
-            final String type = item['type'] ?? '';
-            if (cls != 'place' && cls != 'boundary') continue;
-            
-            // Also ignore generic 'square' or small features if they somehow creep in
-            if (type == 'house' || type == 'building') continue;
-
-            final addr = item['address'] as Map<String, dynamic>? ?? {};
-            final String name = addr['suburb'] ?? addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['hamlet'] ?? '';
-            final String district = addr['district'] ?? addr['county'] ?? addr['state_district'] ?? '';
-            final String state = addr['state'] ?? '';
-
-            // Build a cleaner display string: "Name, District, State"
-            final List<String> parts = [];
-            if (name.isNotEmpty) parts.add(name);
-            if (district.isNotEmpty && district != name) parts.add(district);
-            if (state.isNotEmpty) parts.add(state);
-            
-            final String display = parts.join(', ');
-            if (display.isEmpty || seen.contains(display)) continue;
-            seen.add(display);
-
+        // 1. Offline Search First (Priority)
+        final offlineResults = LocationService().search(query, limit: 10);
+        for (final res in offlineResults) {
+          final display = res.displayName;
+          if (seen.add(display)) {
             suggestions.add({
               'display': display,
-              'lat': lat,
-              'lng': lng,
-              'priority': 0,
+              'lat': res.latLng?.latitude,
+              'lng': res.latLng?.longitude,
+              'suggestion': res, // Add the full object
+              'priority': 1,
             });
           }
         }
 
-        // 3. Final Sorting
-        suggestions.sort((a, b) {
-          // Priority first
-          if (a['priority'] != b['priority']) {
-            return (b['priority'] as int).compareTo(a['priority'] as int);
-          }
-          // Alphabetical for equal priority
-          return (a['display'] as String).toLowerCase().compareTo((b['display'] as String).toLowerCase());
-        });
+        // 2. Nominatim Fallback REMOVED
+        // We now strictly use the offline dataset.
 
         if (mounted) {
           setState(() {
@@ -474,38 +383,6 @@ class _EVMapPageState extends State<EVMapPage> {
   }
 
   // ─── Geocode ────────────────────────────────────────────────────────────────
-  Future<LatLng?> _geocode(String place) async {
-    final key = place.toLowerCase().trim();
-    if (key == 'my location') return _userLatLng;
-    if (_kCities.containsKey(key)) return _kCities[key];
-
-    try {
-      final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/search'
-        '?q=${Uri.encodeComponent(place)}&format=json&limit=1',
-      );
-      final resp = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'EVTaxiDemo/1.0',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (resp.statusCode == 200) {
-        final list = jsonDecode(resp.body) as List<dynamic>;
-        if (list.isNotEmpty) {
-          final first = list.first as Map<String, dynamic>;
-          final lat = double.tryParse(first['lat'] as String? ?? '');
-          final lng = double.tryParse(first['lon'] as String? ?? '');
-          if (lat != null && lng != null) return LatLng(lat, lng);
-        }
-      }
-    } catch (_) {}
-    return null;
-  }
 
   // ─── OpenChargeMap API ────────────────────────────────────────────────────
   Future<List<_Station>> _fetchOpenChargeMap(
@@ -763,7 +640,6 @@ class _EVMapPageState extends State<EVMapPage> {
   Future<void> _planRoute() async {
     final from = _fromCtrl.text.trim();
     final to = _toCtrl.text.trim();
-    final via = _viaCtrl.text.trim();
 
     if (from.isEmpty || to.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -787,25 +663,23 @@ class _EVMapPageState extends State<EVMapPage> {
     });
 
     // Geocode or use Current Location
-    LatLng? fromLL;
-    if (from.toLowerCase().trim() == 'my location' || from == 'My Location') {
-      // Ensure we have a fresh location if possible, otherwise use last known
-      fromLL = _userLatLng;
-    } else {
-      fromLL = await _geocode(from);
+    LatLng? fromLL = _fromLatLng;
+    if (fromLL == null) {
+      if (from.toLowerCase().trim() == 'my location' || from == 'My Location') {
+        fromLL = _userLatLng;
+      }
     }
     
-    final toLL = await _geocode(to);
-    LatLng? viaLL;
-    if (via.isNotEmpty) viaLL = await _geocode(via);
+    LatLng? toLL = _toLatLng;
+    LatLng? viaLL = _viaLatLng;
 
     if (fromLL == null || toLL == null) {
       if (!mounted) return;
       setState(() => _isRouting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text(
-            'Could not find "${fromLL == null ? from : to}". Check spelling.',
+            'Please select locations from the suggestions list.',
           ),
         ),
       );
@@ -1963,7 +1837,16 @@ class _EVMapPageState extends State<EVMapPage> {
               ),
               child: TextField(
                 controller: controller,
-                onChanged: (val) => _fetchSuggestions(val, isFrom),
+                onChanged: (val) {
+                  setState(() {
+                    if (isFrom) {
+                      _fromLatLng = null;
+                    } else {
+                      _toLatLng = null;
+                    }
+                  });
+                  _fetchSuggestions(val, isFrom);
+                },
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   color: const Color(0xFF111827),
@@ -2086,13 +1969,22 @@ class _EVMapPageState extends State<EVMapPage> {
                     style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF374151)),
                   ),
                   onTap: () {
+                    final suggestion = item['suggestion'] as PlaceSuggestion?;
+                    final latLng = suggestion?.latLng;
+                    
                     setState(() {
                       controller.text = item['display'];
                       if (isFrom) {
-                        _fromLatLng = LatLng(item['lat'], item['lng']);
+                        _fromLatLng = latLng;
+                        if (_fromLatLng != null) {
+                          _mapController.move(_fromLatLng!, 14.0);
+                        }
                         _showFromSuggestions = false;
                       } else {
-                        _toLatLng = LatLng(item['lat'], item['lng']);
+                        _toLatLng = latLng;
+                        if (_toLatLng != null) {
+                          _mapController.move(_toLatLng!, 14.0);
+                        }
                         _showToSuggestions = false;
                       }
                     });

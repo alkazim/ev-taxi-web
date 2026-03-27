@@ -8,6 +8,7 @@ import 'package:mappls_gl/mappls_gl.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
 import '../../theme/app_theme.dart';
+import '../../services/location_service.dart';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const _kCachePrefix = 'ev_stations_';
@@ -39,35 +40,6 @@ const _kFallbackStations = [
 // ─── Mode Enum ───────────────────────────────────────────────────────────────
 enum _MapMode { idle, nearest, route }
 
-// ─── Known Cities (fast geocode, no API needed) ──────────────────────────────
-const _kCities = <String, LatLng>{
-  'ernakulam': LatLng(9.9816, 76.2999),
-  'kochi': LatLng(9.9312, 76.2673),
-  'cochin': LatLng(9.9312, 76.2673),
-  'trivandrum': LatLng(8.4875, 76.9492),
-  'thiruvananthapuram': LatLng(8.4875, 76.9492),
-  'calicut': LatLng(11.2588, 75.7804),
-  'kozhikode': LatLng(11.2588, 75.7804),
-  'thrissur': LatLng(10.5276, 76.2144),
-  'palakkad': LatLng(10.7867, 76.6547),
-  'coimbatore': LatLng(11.0168, 76.9558),
-  'bangalore': LatLng(12.9716, 77.5946),
-  'bengaluru': LatLng(12.9716, 77.5946),
-  'mysuru': LatLng(12.2958, 76.6394),
-  'mysore': LatLng(12.2958, 76.6394),
-  'chennai': LatLng(13.0827, 80.2707),
-  'madurai': LatLng(9.9252, 78.1198),
-  'mangalore': LatLng(12.9141, 74.8560),
-  'mangaluru': LatLng(12.9141, 74.8560),
-  'salem': LatLng(11.6643, 78.1460),
-  'hubli': LatLng(15.3647, 75.1240),
-  'dharwad': LatLng(15.4589, 75.0078),
-  'tiruppur': LatLng(11.1085, 77.3411),
-  'hosur': LatLng(12.7409, 77.8253),
-  'kollam': LatLng(8.8832, 76.5940),
-  'kannur': LatLng(11.8745, 75.3704),
-};
-
 // ─── Station Model ────────────────────────────────────────────────────────────
 class _Station {
   final String name;
@@ -92,8 +64,16 @@ class _EVStationsSectionState extends State<EVStationsSection> {
   bool _isRouting = false;
 
   final _fromCtrl = TextEditingController();
-  final _viaCtrl = TextEditingController();
   final _toCtrl = TextEditingController();
+
+  LatLng? _fromLatLng;
+  LatLng? _toLatLng;
+
+  Timer? _debounceTimer;
+  List<PlaceSuggestion> _fromSuggestions = [];
+  List<PlaceSuggestion> _toSuggestions = [];
+  bool _showFromSuggestions = false;
+  bool _showToSuggestions = false;
 
   // Map elements
   final List<Circle> _drawnCircles = [];
@@ -107,8 +87,8 @@ class _EVStationsSectionState extends State<EVStationsSection> {
   @override
   void dispose() {
     _fromCtrl.dispose();
-    _viaCtrl.dispose();
     _toCtrl.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -140,9 +120,6 @@ class _EVStationsSectionState extends State<EVStationsSection> {
         (web.GeolocationPositionError err) {
           if (!mounted) return;
           if (!silent) setState(() => _isLocating = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permission denied')),
-          );
         }.toJS,
       );
     } catch (e) {
@@ -326,7 +303,6 @@ class _EVStationsSectionState extends State<EVStationsSection> {
           })
           .toList();
 
-      // Cache for 30 minutes
       final toCache = stations
           .map(
             (s) => {
@@ -348,7 +324,6 @@ class _EVStationsSectionState extends State<EVStationsSection> {
   // ─── Option 1: Find Nearest Stations ─────────────────────────────────────────
   Future<void> _findNearestStations() async {
     if (_isLocating || _isRouting) return;
-
     if (_userLocation == null) {
       setState(() => _isLocating = true);
       web.window.navigator.geolocation.getCurrentPosition(
@@ -388,10 +363,8 @@ class _EVStationsSectionState extends State<EVStationsSection> {
     final lat = user.latitude;
     final lng = user.longitude;
 
-    // Query Overpass for real charging stations (25km → 100km)
     List<_Station> found = await _fetchOverpassStations(lat, lng, 25000);
     if (found.isEmpty) found = await _fetchOverpassStations(lat, lng, 100000);
-    // Fallback to known stations sorted by distance
     if (found.isEmpty) {
       found =
           _kFallbackStations
@@ -503,7 +476,6 @@ class _EVStationsSectionState extends State<EVStationsSection> {
     return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
   }
 
-  /// Distance from point to route segment (km)
   double _distToSegKm(
     double lat,
     double lng,
@@ -519,16 +491,47 @@ class _EVStationsSectionState extends State<EVStationsSection> {
     return _distKm(lat, lng, lat1 + c * dx, lng1 + c * dy);
   }
 
+  // ─── Suggestions ────────────────────────────────────────────────────────────
+  void _fetchSuggestions(String query, bool isFrom) {
+    if (query.length < 2) {
+      setState(() {
+        if (isFrom) {
+          _fromSuggestions = [];
+          _showFromSuggestions = false;
+        } else {
+          _toSuggestions = [];
+          _showToSuggestions = false;
+        }
+      });
+      return;
+    }
+
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      final results = LocationService().search(query, limit: 10);
+      if (mounted) {
+        setState(() {
+          if (isFrom) {
+            _fromSuggestions = results;
+            _showFromSuggestions = _fromSuggestions.isNotEmpty;
+          } else {
+            _toSuggestions = results;
+            _showToSuggestions = _toSuggestions.isNotEmpty;
+          }
+        });
+      }
+    });
+  }
+
   // ─── Option 2: Plan Route ─────────────────────────────────────────────────────
   Future<void> _planRoute() async {
-    final from = _fromCtrl.text.trim();
-    final to = _toCtrl.text.trim();
-    final via = _viaCtrl.text.trim();
+    final fromLatLng = _fromLatLng;
+    final toLatLng = _toLatLng;
 
-    if (from.isEmpty || to.isEmpty) {
+    if (fromLatLng == null || toLatLng == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter both From and To locations'),
+          content: Text('Please select locations from the suggestions list.'),
         ),
       );
       return;
@@ -543,35 +546,14 @@ class _EVStationsSectionState extends State<EVStationsSection> {
     await _clearMap();
     await _drawUserDot();
 
-    final fromLatLng = await _geocode(from);
-    final toLatLng = await _geocode(to);
-    LatLng? viaLatLng;
-    if (via.isNotEmpty) viaLatLng = await _geocode(via);
-
-    if (fromLatLng == null || toLatLng == null) {
-      if (!mounted) return;
-      setState(() => _isRouting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Could not find "${fromLatLng == null ? from : to}". Check spelling.',
-          ),
-        ),
-      );
-      return;
-    }
-
     final waypoints = <LatLng>[fromLatLng];
-    if (viaLatLng != null) waypoints.add(viaLatLng);
     waypoints.add(toLatLng);
 
-    // Get driving route from OSRM
     List<LatLng> routePoints = await _fetchOsrmRoute(waypoints);
     if (routePoints.length < 2) {
-      routePoints = waypoints; // straight-line last resort
+      routePoints = waypoints;
     }
 
-    // Draw route line
     final line = await _mapController!.addLine(
       LineOptions(
         geometry: routePoints,
@@ -582,7 +564,6 @@ class _EVStationsSectionState extends State<EVStationsSection> {
     );
     _drawnRoute = line;
 
-    // Draw endpoint markers
     await _mapController!.addCircle(
       CircleOptions(
         geometry: fromLatLng,
@@ -603,20 +584,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
         circleStrokeColor: '#FFFFFF',
       ),
     );
-    if (viaLatLng != null) {
-      await _mapController!.addCircle(
-        CircleOptions(
-          geometry: viaLatLng,
-          circleRadius: 11,
-          circleColor: '#D97706',
-          circleOpacity: 1.0,
-          circleStrokeWidth: 2,
-          circleStrokeColor: '#FFFFFF',
-        ),
-      );
-    }
 
-    // ── EV stations along route: filter hardcoded list by proximity to polyline ──
     const kThresholdKm = 15.0;
     const kStep = 10;
     final List<_Station> routeStations = [];
@@ -655,19 +623,18 @@ class _EVStationsSectionState extends State<EVStationsSection> {
 
     if (mounted) setState(() => _stationList = routeStations);
 
-    // Fit camera
     final allLats = routePoints.map((p) => p.latitude).toList();
     final allLngs = routePoints.map((p) => p.longitude).toList();
     await _mapController!.animateCamera(
       CameraUpdate.newLatLngBounds(
         LatLngBounds(
           southwest: LatLng(
-            allLats.reduce(math.min) - 0.5,
-            allLngs.reduce(math.min) - 0.5,
+            allLats.reduce(math.min) - 0.1,
+            allLngs.reduce(math.min) - 0.1,
           ),
           northeast: LatLng(
-            allLats.reduce(math.max) + 0.5,
-            allLngs.reduce(math.max) + 0.5,
+            allLats.reduce(math.max) + 0.1,
+            allLngs.reduce(math.max) + 0.1,
           ),
         ),
         left: 60,
@@ -678,31 +645,6 @@ class _EVStationsSectionState extends State<EVStationsSection> {
     );
 
     if (mounted) setState(() => _isRouting = false);
-  }
-
-  // ─── Geocode ──────────────────────────────────────────────────────────────────
-  Future<LatLng?> _geocode(String place) async {
-    final key = place.toLowerCase().trim();
-    if (_kCities.containsKey(key)) return _kCities[key];
-
-    // Fallback: Nominatim (no key needed)
-    try {
-      final url =
-          'https://nominatim.openstreetmap.org/search'
-          '?q=${Uri.encodeComponent(place)}&format=json&limit=1';
-      final body = await _xhrGet(url);
-      if (body != null) {
-        final list = jsonDecode(body) as List<dynamic>;
-        if (list.isNotEmpty) {
-          final first = list.first as Map<String, dynamic>;
-          final lat = double.tryParse(first['lat'] as String? ?? '');
-          final lng = double.tryParse(first['lon'] as String? ?? '');
-          if (lat != null && lng != null) return LatLng(lat, lng);
-        }
-      }
-    } catch (_) {}
-
-    return null;
   }
 
   // ─── Build ───────────────────────────────────────────────────────────────────
@@ -722,11 +664,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
 
     if (!isModern) return _buildClassic(context, isMobile);
 
-    final hPad = isMobile
-        ? 20.0
-        : isTablet
-        ? 40.0
-        : 80.0;
+    final hPad = isMobile ? 20.0 : isTablet ? 40.0 : 80.0;
 
     return Container(
       width: double.infinity,
@@ -737,7 +675,6 @@ class _EVStationsSectionState extends State<EVStationsSection> {
       ),
       child: Column(
         children: [
-          // ── Header ──────────────────────────────────────────────────────────
           Text(
             'CHARGING NETWORK',
             style: GoogleFonts.notoSans(
@@ -752,11 +689,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
             'Powering Your Journey',
             textAlign: TextAlign.center,
             style: GoogleFonts.notoSans(
-              fontSize: isMobile
-                  ? 28
-                  : isTablet
-                  ? 38
-                  : 48,
+              fontSize: isMobile ? 28 : isTablet ? 38 : 48,
               fontWeight: FontWeight.w800,
               color: textDark,
               height: 1.1,
@@ -778,45 +711,19 @@ class _EVStationsSectionState extends State<EVStationsSection> {
           ),
           SizedBox(height: isMobile ? 40 : 60),
 
-          // ── Stats Row ────────────────────────────────────────────────────────
           Wrap(
             spacing: isMobile ? 12 : 20,
             runSpacing: isMobile ? 12 : 20,
             alignment: WrapAlignment.center,
             children: [
-              _statCard(
-                '50+',
-                'Active Stations',
-                FontAwesomeIcons.chargingStation,
-                activeGreen,
-                isMobile,
-              ),
-              _statCard(
-                '4',
-                'States Covered',
-                FontAwesomeIcons.mapLocationDot,
-                activeAmber,
-                isMobile,
-              ),
-              _statCard(
-                '24/7',
-                'Availability',
-                FontAwesomeIcons.clock,
-                const Color(0xFF3B82F6),
-                isMobile,
-              ),
-              _statCard(
-                '100%',
-                'Green Energy',
-                FontAwesomeIcons.leaf,
-                const Color(0xFF10B981),
-                isMobile,
-              ),
+              _statCard('50+', 'Active Stations', FontAwesomeIcons.chargingStation, activeGreen, isMobile),
+              _statCard('4', 'States Covered', FontAwesomeIcons.mapLocationDot, activeAmber, isMobile),
+              _statCard('24/7', 'Availability', FontAwesomeIcons.clock, const Color(0xFF3B82F6), isMobile),
+              _statCard('100%', 'Green Energy', FontAwesomeIcons.leaf, const Color(0xFF10B981), isMobile),
             ],
           ),
           SizedBox(height: isMobile ? 48 : 80),
 
-          // ── Map + Controls ───────────────────────────────────────────────────
           isDesktop
               ? Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -825,12 +732,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
                     const SizedBox(width: 40),
                     Expanded(
                       flex: 4,
-                      child: _buildControlPanel(
-                        context,
-                        isMobile,
-                        activeGreen,
-                        activeAmber,
-                      ),
+                      child: _buildControlPanel(context, isMobile, activeGreen, activeAmber),
                     ),
                   ],
                 )
@@ -838,12 +740,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
                   children: [
                     _buildMap(isMobile, activeGreen),
                     const SizedBox(height: 32),
-                    _buildControlPanel(
-                      context,
-                      isMobile,
-                      activeGreen,
-                      activeAmber,
-                    ),
+                    _buildControlPanel(context, isMobile, activeGreen, activeAmber),
                   ],
                 ),
         ],
@@ -851,8 +748,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
     );
   }
 
-  // ─── Map Widget ───────────────────────────────────────────────────────────────
-  Widget _buildMap(bool isMobile, Color activeGreen) {
+  Widget _buildMap(bool isMobile, Color green) {
     return Container(
       height: isMobile ? 320 : 560,
       decoration: BoxDecoration(
@@ -879,131 +775,69 @@ class _EVStationsSectionState extends State<EVStationsSection> {
               onMapCreated: _onMapCreated,
               onStyleLoadedCallback: _onStyleLoaded,
             ),
-
-            // Legend pill
             Positioned(
               top: 16,
               left: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.93),
                   borderRadius: BorderRadius.circular(50),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                    ),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8)],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _legendDot(const Color(0xFF1D4ED8)),
                     const SizedBox(width: 6),
-                    Text(
-                      'You',
-                      style: GoogleFonts.notoSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF374151),
-                      ),
-                    ),
+                    Text('You', style: GoogleFonts.notoSans(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF374151))),
                     const SizedBox(width: 12),
                     _legendDot(const Color(0xFF16A34A)),
                     const SizedBox(width: 6),
-                    Text(
-                      'Station',
-                      style: GoogleFonts.notoSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF374151),
-                      ),
-                    ),
+                    Text('Station', style: GoogleFonts.notoSans(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF374151))),
                     if (_mode == _MapMode.route) ...[
                       const SizedBox(width: 12),
                       _legendDot(const Color(0xFF4F46E5), size: 10),
                       const SizedBox(width: 6),
-                      Text(
-                        'Route',
-                        style: GoogleFonts.notoSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF374151),
-                        ),
-                      ),
+                      Text('Route', style: GoogleFonts.notoSans(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF374151))),
                     ],
                   ],
                 ),
               ),
             ),
-
-            // My Location button
             Positioned(
               bottom: 20,
               right: 20,
               child: FloatingActionButton.small(
-                onPressed: _isLocating
-                    ? null
-                    : () => _fetchUserLocation(centerMap: true),
+                onPressed: _isLocating ? null : () => _fetchUserLocation(centerMap: true),
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF1D4ED8),
                 elevation: 4,
                 child: _isLocating
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : const FaIcon(FontAwesomeIcons.crosshairs, size: 16),
               ),
             ),
-
-            // Spinner overlay
             if (_isRouting)
               Positioned.fill(
                 child: Container(
                   color: Colors.black.withValues(alpha: 0.18),
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 20,
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20)],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Color(0xFF4F46E5),
-                            ),
-                          ),
+                          const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF4F46E5))),
                           const SizedBox(width: 14),
                           Text(
-                            _mode == _MapMode.nearest
-                                ? 'Finding Stations...'
-                                : 'Planning Route...',
-                            style: GoogleFonts.notoSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF111827),
-                            ),
+                            _mode == _MapMode.nearest ? 'Finding Stations...' : 'Planning Route...',
+                            style: GoogleFonts.notoSans(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF111827)),
                           ),
                         ],
                       ),
@@ -1023,17 +857,10 @@ class _EVStationsSectionState extends State<EVStationsSection> {
     decoration: BoxDecoration(color: color, shape: BoxShape.circle),
   );
 
-  // ─── Control Panel ────────────────────────────────────────────────────────────
-  Widget _buildControlPanel(
-    BuildContext context,
-    bool isMobile,
-    Color green,
-    Color amber,
-  ) {
+  Widget _buildControlPanel(BuildContext context, bool isMobile, Color green, Color amber) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Option 1 ──────────────────────────────────────────────────────────
         _SectionCard(
           isActive: _mode == _MapMode.nearest,
           badgeColor: green,
@@ -1041,46 +868,25 @@ class _EVStationsSectionState extends State<EVStationsSection> {
           icon: FontAwesomeIcons.locationCrosshairs,
           iconColor: green,
           title: 'Find Nearest Stations',
-          subtitle:
-              'Show the closest EV charging stations to your current location using Mappls API.',
+          subtitle: 'Show the closest EV charging stations to your current location using Overpass API.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: (_isLocating || _isRouting)
-                      ? null
-                      : _findNearestStations,
-                  icon:
-                      (_isLocating || (_isRouting && _mode == _MapMode.nearest))
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
+                  onPressed: (_isLocating || _isRouting) ? null : _findNearestStations,
+                  icon: (_isLocating || (_isRouting && _mode == _MapMode.nearest))
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const FaIcon(FontAwesomeIcons.boltLightning, size: 16),
-                  label: Text(
-                    'Find Nearest Charging',
-                    style: GoogleFonts.notoSans(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
+                  label: Text('Find Nearest Charging', style: GoogleFonts.notoSans(fontWeight: FontWeight.w700, fontSize: 14)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: green,
-                    foregroundColor: context.isYellowTheme
-                        ? Colors.black87
-                        : Colors.white,
+                    foregroundColor: context.isYellowTheme ? Colors.black87 : Colors.white,
                     elevation: 3,
                     shadowColor: green.withValues(alpha: 0.35),
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
               ),
@@ -1091,10 +897,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
             ],
           ),
         ),
-
         const SizedBox(height: 20),
-
-        // ── Option 2 ──────────────────────────────────────────────────────────
         _SectionCard(
           isActive: _mode == _MapMode.route,
           badgeColor: const Color(0xFF4F46E5),
@@ -1102,92 +905,53 @@ class _EVStationsSectionState extends State<EVStationsSection> {
           icon: FontAwesomeIcons.route,
           iconColor: const Color(0xFF4F46E5),
           title: 'Plan Route with Chargers',
-          subtitle:
-              'Enter your journey and see the route with EV stations along the way powered by Mappls.',
+          subtitle: 'Enter your journey and see the route with EV stations along the way powered by OSRM.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _RouteField(
+              _buildRouteInputField(
                 controller: _fromCtrl,
                 label: 'From',
                 hint: 'e.g. Ernakulam',
                 icon: FontAwesomeIcons.locationDot,
                 iconColor: const Color(0xFF1D4ED8),
+                isFrom: true,
               ),
               const SizedBox(height: 10),
-              _RouteField(
-                controller: _viaCtrl,
-                label: 'Via (optional)',
-                hint: 'e.g. Coimbatore',
-                icon: FontAwesomeIcons.circleHalfStroke,
-                iconColor: const Color(0xFFD97706),
-              ),
-              const SizedBox(height: 10),
-              _RouteField(
+              _buildRouteInputField(
                 controller: _toCtrl,
                 label: 'To',
                 hint: 'e.g. Bangalore',
                 icon: FontAwesomeIcons.flagCheckered,
                 iconColor: const Color(0xFFDC2626),
+                isFrom: false,
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: (_isLocating || _isRouting) ? null : _planRoute,
                 icon: _isRouting && _mode == _MapMode.route
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const FaIcon(FontAwesomeIcons.route, size: 16),
-                label: Text(
-                  'Show Route & Stations',
-                  style: GoogleFonts.notoSans(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                ),
+                label: Text('Show Route & Stations', style: GoogleFonts.notoSans(fontWeight: FontWeight.w700, fontSize: 14)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4F46E5),
                   foregroundColor: Colors.white,
                   elevation: 3,
                   shadowColor: const Color(0xFF4F46E5).withValues(alpha: 0.35),
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
               ),
               if (_routeInfo.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(10)),
                   child: Row(
                     children: [
-                      const FaIcon(
-                        FontAwesomeIcons.route,
-                        size: 14,
-                        color: Color(0xFF4F46E5),
-                      ),
+                      const FaIcon(FontAwesomeIcons.route, size: 14, color: Color(0xFF4F46E5)),
                       const SizedBox(width: 8),
-                      Text(
-                        _routeInfo,
-                        style: GoogleFonts.notoSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF4F46E5),
-                        ),
-                      ),
+                      Text(_routeInfo, style: GoogleFonts.notoSans(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF4F46E5))),
                     ],
                   ),
                 ),
@@ -1199,10 +963,7 @@ class _EVStationsSectionState extends State<EVStationsSection> {
             ],
           ),
         ),
-
         const SizedBox(height: 20),
-
-        // Legend info
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -1212,20 +973,12 @@ class _EVStationsSectionState extends State<EVStationsSection> {
           ),
           child: Row(
             children: [
-              const FaIcon(
-                FontAwesomeIcons.circleInfo,
-                size: 15,
-                color: Color(0xFF16A34A),
-              ),
+              const FaIcon(FontAwesomeIcons.circleInfo, size: 15, color: Color(0xFF16A34A)),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Green dots = EV stations  •  Blue dot = You  •  Indigo line = Route  •  Powered by Mappls',
-                  style: GoogleFonts.notoSans(
-                    fontSize: 11.5,
-                    color: const Color(0xFF166534),
-                    height: 1.5,
-                  ),
+                  'Route calculations use real-time traffic data via OSRM.',
+                  style: GoogleFonts.notoSans(fontSize: 12, color: const Color(0xFF15803D), height: 1.4),
                 ),
               ),
             ],
@@ -1235,124 +988,128 @@ class _EVStationsSectionState extends State<EVStationsSection> {
     );
   }
 
-  Widget _buildStationList(Color accentColor) {
+  Widget _buildStationList(Color color) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 220),
+      child: ListView.builder(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
+        itemCount: _stationList.length,
+        itemBuilder: (context, index) => _StationTile(station: _stationList[index]),
+      ),
+    );
+  }
+
+  Widget _buildRouteInputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    required Color iconColor,
+    required bool isFrom,
+  }) {
+    final suggestions = isFrom ? _fromSuggestions : _toSuggestions;
+    final showSuggestions = isFrom ? _showFromSuggestions : _showToSuggestions;
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          '${_stationList.length} station${_stationList.length == 1 ? '' : 's'} found',
-          style: GoogleFonts.notoSans(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: accentColor,
+        TextField(
+          controller: controller,
+          onChanged: (val) {
+            setState(() {
+              if (isFrom) {
+                _fromLatLng = null;
+              } else {
+                _toLatLng = null;
+              }
+            });
+            _fetchSuggestions(val, isFrom);
+          },
+          style: GoogleFonts.notoSans(fontSize: 14, color: const Color(0xFF111827)),
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: hint,
+            hintStyle: GoogleFonts.notoSans(fontSize: 13, color: const Color(0xFFD1D5DB)),
+            labelStyle: GoogleFonts.notoSans(fontSize: 13, color: const Color(0xFF6B7280), fontWeight: FontWeight.w500),
+            prefixIcon: Padding(padding: const EdgeInsets.symmetric(horizontal: 14), child: FaIcon(icon, size: 16, color: iconColor)),
+            prefixIconConstraints: const BoxConstraints(minWidth: 44),
+            filled: true,
+            fillColor: const Color(0xFFF9FAFB),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2)),
           ),
         ),
-        const SizedBox(height: 8),
-        ...(_stationList.take(5).map((s) => _StationTile(station: s))),
-        if (_stationList.length > 5)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              '+ ${_stationList.length - 5} more on map',
-              style: GoogleFonts.notoSans(
-                fontSize: 11,
-                color: const Color(0xFF9CA3AF),
-              ),
+        if (showSuggestions && suggestions.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))],
+              border: Border.all(color: const Color(0xFFF3F4F6)),
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: suggestions.length,
+              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              itemBuilder: (context, index) {
+                final suggestion = suggestions[index];
+                return ListTile(
+                  dense: true,
+                  title: Text(suggestion.displayName, style: GoogleFonts.notoSans(fontSize: 13, color: const Color(0xFF374151))),
+                  onTap: () {
+                    setState(() {
+                      controller.text = suggestion.displayName;
+                      final ll = LatLng(suggestion.latLng!.latitude, suggestion.latLng!.longitude);
+                      if (isFrom) {
+                        _fromLatLng = ll;
+                        _showFromSuggestions = false;
+                      } else {
+                        _toLatLng = ll;
+                        _showToSuggestions = false;
+                      }
+                      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(ll, 12));
+                    });
+                  },
+                );
+              },
             ),
           ),
       ],
     );
   }
 
-  Widget _statCard(
-    String value,
-    String label,
-    IconData icon,
-    Color color,
-    bool isMobile,
-  ) {
+  Widget _statCard(String value, String label, IconData icon, Color color, bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 24,
-        vertical: isMobile ? 14 : 20,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 14 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: const Color(0xFFF3F4F6)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: FaIcon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: GoogleFonts.notoSans(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
-                  height: 1,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: GoogleFonts.notoSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
+          FaIcon(icon, color: color, size: isMobile ? 20 : 24),
+          const SizedBox(height: 8),
+          Text(value, style: GoogleFonts.notoSans(fontSize: isMobile ? 18 : 22, fontWeight: FontWeight.w800, color: const Color(0xFF111827))),
+          Text(label, style: GoogleFonts.notoSans(fontSize: isMobile ? 10 : 12, fontWeight: FontWeight.w600, color: const Color(0xFF6B7280))),
         ],
       ),
     );
   }
 
-  // ─── Classic Fallback ─────────────────────────────────────────────────────────
   Widget _buildClassic(BuildContext context, bool isMobile) {
-    final isV2 = context.isV2Theme;
-    final activeGreen = context.isYellowTheme
-        ? const Color(0xFFF59E0B)
-        : (isV2 ? const Color(0xFF16A34A) : AppTheme.primaryColor);
     return Container(
-      color: isV2
-          ? const Color(0xFFF9FAFB)
-          : Theme.of(context).scaffoldBackgroundColor,
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        vertical: 80,
-        horizontal: MediaQuery.of(context).size.width >= 1024 ? 80 : 20,
-      ),
+      padding: EdgeInsets.symmetric(vertical: 80, horizontal: MediaQuery.of(context).size.width >= 1024 ? 80 : 20),
       child: Column(
         children: [
-          Text(
-            'CHARGING NETWORK',
-            style: TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              color: activeGreen,
-              letterSpacing: 3,
-            ),
-          ),
+          Text('CHARGING NETWORK', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: const Color(0xFF16A34A), letterSpacing: 3)),
           const SizedBox(height: 20),
           const Text('Classic View Enabled'),
         ],
@@ -1361,7 +1118,6 @@ class _EVStationsSectionState extends State<EVStationsSection> {
   }
 }
 
-// ─── Station Tile ─────────────────────────────────────────────────────────────
 class _StationTile extends StatelessWidget {
   final _Station station;
   const _StationTile({required this.station});
@@ -1371,46 +1127,18 @@ class _StationTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFBBF7D0)),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFBBF7D0))),
       child: Row(
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: Color(0xFF16A34A),
-              shape: BoxShape.circle,
-            ),
-          ),
+          Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle)),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  station.name,
-                  style: GoogleFonts.notoSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(station.name, style: GoogleFonts.notoSans(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF111827)), maxLines: 1, overflow: TextOverflow.ellipsis),
                 if (station.address.isNotEmpty)
-                  Text(
-                    station.address,
-                    style: GoogleFonts.notoSans(
-                      fontSize: 10.5,
-                      color: const Color(0xFF6B7280),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(station.address, style: GoogleFonts.notoSans(fontSize: 10.5, color: const Color(0xFF6B7280)), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -1420,7 +1148,6 @@ class _StationTile extends StatelessWidget {
   }
 }
 
-// ─── Section Card Widget ──────────────────────────────────────────────────────
 class _SectionCard extends StatelessWidget {
   final bool isActive;
   final Color badgeColor;
@@ -1431,16 +1158,7 @@ class _SectionCard extends StatelessWidget {
   final String subtitle;
   final Widget child;
 
-  const _SectionCard({
-    required this.isActive,
-    required this.badgeColor,
-    required this.badgeLabel,
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.child,
-  });
+  const _SectionCard({required this.isActive, required this.badgeColor, required this.badgeLabel, required this.icon, required this.iconColor, required this.title, required this.subtitle, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -1450,21 +1168,8 @@ class _SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isActive
-              ? badgeColor.withValues(alpha: 0.5)
-              : Colors.black.withValues(alpha: 0.06),
-          width: isActive ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isActive
-                ? badgeColor.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.04),
-            blurRadius: isActive ? 20 : 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: isActive ? badgeColor.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.06), width: isActive ? 2 : 1),
+        boxShadow: [BoxShadow(color: isActive ? badgeColor.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.04), blurRadius: isActive ? 20 : 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1472,109 +1177,21 @@ class _SectionCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: badgeColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  badgeLabel,
-                  style: GoogleFonts.notoSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: badgeColor,
-                  ),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: badgeColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+                child: Text(badgeLabel, style: GoogleFonts.notoSans(fontSize: 11, fontWeight: FontWeight.w700, color: badgeColor)),
               ),
               const Spacer(),
               FaIcon(icon, size: 18, color: iconColor),
             ],
           ),
           const SizedBox(height: 14),
-          Text(
-            title,
-            style: GoogleFonts.notoSans(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF111827),
-            ),
-          ),
+          Text(title, style: GoogleFonts.notoSans(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF111827))),
           const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: GoogleFonts.notoSans(
-              fontSize: 12.5,
-              color: const Color(0xFF6B7280),
-              height: 1.5,
-            ),
-          ),
+          Text(subtitle, style: GoogleFonts.notoSans(fontSize: 12.5, color: const Color(0xFF6B7280), height: 1.5)),
           const SizedBox(height: 18),
           child,
         ],
-      ),
-    );
-  }
-}
-
-// ─── Route Input Field ────────────────────────────────────────────────────────
-class _RouteField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final IconData icon;
-  final Color iconColor;
-
-  const _RouteField({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    required this.icon,
-    required this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      style: GoogleFonts.notoSans(fontSize: 14, color: const Color(0xFF111827)),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        hintStyle: GoogleFonts.notoSans(
-          fontSize: 13,
-          color: const Color(0xFFD1D5DB),
-        ),
-        labelStyle: GoogleFonts.notoSans(
-          fontSize: 13,
-          color: const Color(0xFF6B7280),
-          fontWeight: FontWeight.w500,
-        ),
-        prefixIcon: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: FaIcon(icon, size: 16, color: iconColor),
-        ),
-        prefixIconConstraints: const BoxConstraints(minWidth: 44),
-        filled: true,
-        fillColor: const Color(0xFFF9FAFB),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
-        ),
       ),
     );
   }

@@ -93,7 +93,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
             child: Container(
               constraints: const BoxConstraints(maxHeight: 300),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: ListView.separated(
