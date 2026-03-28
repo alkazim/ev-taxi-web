@@ -24,13 +24,48 @@ class _Station {
   final String address;
   final LatLng position;
   final String? chargerType;
+  final String source; // 'ecabbz' or 'others'
+
   _Station({
     required this.name,
     required this.address,
     required this.position,
     this.chargerType,
+    this.source = 'others',
   });
 }
+
+// ─── ecabbz Sample Data ──────────────────────────────────────────────────────
+final List<_Station> _ecabbzStations = [
+  _Station(
+    name: 'ecabbz - Edappally',
+    address: 'Near Edappally Metro Station, Kochi',
+    position: const LatLng(10.0236, 76.3115),
+    chargerType: 'DC Fast Charger (60kW)',
+    source: 'ecabbz',
+  ),
+  _Station(
+    name: 'ecabbz - Palarivattom',
+    address: 'Palarivattom Bypass Junction, Kochi',
+    position: const LatLng(10.0075, 76.3055),
+    chargerType: 'AC Type 2 (22kW)',
+    source: 'ecabbz',
+  ),
+  _Station(
+    name: 'ecabbz - Kaloor',
+    address: 'Kaloor Stadium Road, Kochi',
+    position: const LatLng(9.9930, 76.3015),
+    chargerType: 'DC Fast Charger (30kW)',
+    source: 'ecabbz',
+  ),
+  _Station(
+    name: 'ecabbz - MG Road',
+    address: 'MG Road, Near Maharaja\'s College Kochi',
+    position: const LatLng(9.9816, 76.2999),
+    chargerType: 'AC Type 2 (7kW)',
+    source: 'ecabbz',
+  ),
+];
 
 // ─── Crosshair / GPS Painter ──────────────────────────────────────────────────
 class _CrosshairPainter extends CustomPainter {
@@ -89,6 +124,8 @@ class _EVMapPageState extends State<EVMapPage> {
   bool _isLoadingLocation = true; // Tracks the initial GPS load
   int? _watchId;
 
+  bool _showEcabbzOnly = true; // Default to showing ecabbz chargers
+
   Timer? _debounceTimer;
   List<Map<String, dynamic>> _fromSuggestions = [];
   List<Map<String, dynamic>> _toSuggestions = [];
@@ -134,8 +171,20 @@ class _EVMapPageState extends State<EVMapPage> {
   // ─── Map Ready ──────────────────────────────────────────────────────────────
   void _onMapReady() {
     setState(() => _mapReady = true);
-    if (_userLatLng != null) {
+    if (_showEcabbzOnly) {
+      _applyEcabbzFilter();
+    } else if (_userLatLng != null) {
       _findNearestStations();
+    }
+  }
+
+  void _applyEcabbzFilter() {
+    setState(() {
+      _stationList = _ecabbzStations;
+      _mode = _MapMode.nearest;
+    });
+    if (_mapReady && _stationList.isNotEmpty) {
+      _fitMap(_stationList.map((s) => s.position).toList());
     }
   }
 
@@ -540,6 +589,11 @@ class _EVMapPageState extends State<EVMapPage> {
   Future<void> _findNearestStations() async {
     if (_isLocating || _isRouting) return;
 
+    if (_showEcabbzOnly) {
+      _applyEcabbzFilter();
+      return;
+    }
+
     if (_userLatLng == null) {
       setState(() => _isLocating = true);
       await _fetchUserLocation(centerMap: true);
@@ -723,6 +777,14 @@ class _EVMapPageState extends State<EVMapPage> {
   }
 
   Future<void> _fetchStationsForRoute(List<LatLng> effectivePts) async {
+    if (_showEcabbzOnly) {
+      setState(() {
+        _stationList = _ecabbzStations;
+        _isRouting = false;
+      });
+      return;
+    }
+
     if (!mounted || effectivePts.isEmpty) {
       if (mounted) setState(() => _isRouting = false);
       return;
@@ -948,35 +1010,36 @@ class _EVMapPageState extends State<EVMapPage> {
     }
 
     for (final s in _stationList) {
+      final isEcabbz = s.source == 'ecabbz';
       markers.add(
         Marker(
           point: s.position,
-          width: 30,
-          height: 30,
+          width: 40,
+          height: 40,
           child: GestureDetector(
-            onTap: () =>
-                _openInGoogleMaps(s.position.latitude, s.position.longitude),
-            child: Tooltip(
-              message: s.address.isNotEmpty
-                  ? '${s.name}\n${s.address}\nClick for directions'
-                  : '${s.name}\nClick for directions',
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF16A34A),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF16A34A).withValues(alpha: 0.35),
-                      blurRadius: 6,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.ev_station,
-                  color: Colors.white,
-                  size: 14,
+            onTap: () => _openInGoogleMaps(s.position.latitude, s.position.longitude),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: Tooltip(
+                message: '${s.name}\n${s.address}',
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isEcabbz ? const Color(0xFF16A34A) : const Color(0xFF3B82F6),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    isEcabbz ? Icons.bolt : Icons.ev_station,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
               ),
             ),
@@ -1375,6 +1438,16 @@ class _EVMapPageState extends State<EVMapPage> {
               ),
             ),
 
+            // ── Charger Toggle ──────────────────────────────────────────────
+            Positioned(
+              top: 16,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: _buildChargerToggle(context),
+              ),
+            ),
+
             // ── Map Controls ────────────────────────────────────────────────
             Positioned(
               bottom: 20,
@@ -1485,7 +1558,78 @@ class _EVMapPageState extends State<EVMapPage> {
     );
   }
 
-  Widget _legendDot(Color color, {double size = 9}) => Container(
+  Widget _buildChargerToggle(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _toggleBtn(
+            label: 'ecabbz',
+            isSelected: _showEcabbzOnly,
+            onTap: () {
+              if (!_showEcabbzOnly) {
+                setState(() => _showEcabbzOnly = true);
+                _applyEcabbzFilter();
+              }
+            },
+            activeColor: const Color(0xFF16A34A),
+          ),
+          _toggleBtn(
+            label: 'Others',
+            isSelected: !_showEcabbzOnly,
+            onTap: () {
+              if (_showEcabbzOnly) {
+                setState(() => _showEcabbzOnly = false);
+                _findNearestStations();
+              }
+            },
+            activeColor: const Color(0xFF3B82F6),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _toggleBtn({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color activeColor,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? Colors.white : const Color(0xFF6B7280),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _legendDot(Color color, {double size = 8}) => Container(
     width: size,
     height: size,
     decoration: BoxDecoration(color: color, shape: BoxShape.circle),
