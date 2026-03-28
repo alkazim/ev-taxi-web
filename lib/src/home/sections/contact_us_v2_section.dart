@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:taxi_demo/l10n/app_localizations.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
@@ -1290,7 +1291,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
                     if (office.whatsapp != null) ...[
                       const SizedBox(height: 16),
                       _detailRow(
-                        Icons.chat_rounded,
+                        FontAwesomeIcons.whatsapp,
                         'WhatsApp',
                         office.whatsapp!,
                         accent,
@@ -1329,7 +1330,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
                           if (office.whatsapp != null) ...[
                             const SizedBox(height: 14),
                             _detailRow(
-                              Icons.chat_rounded,
+                              FontAwesomeIcons.whatsapp,
                               AppLocalizations.of(context)?.whatsApp ?? 'WhatsApp',
                               office.whatsapp!,
                               accent,
@@ -1510,7 +1511,7 @@ class _ContactUsV2SectionState extends State<ContactUsV2Section> {
         value: 'support@ecabbz.in',
       ),
       _ContactItem(
-        icon: Icons.chat_rounded,
+        icon: FontAwesomeIcons.whatsapp,
         label: AppLocalizations.of(context)?.whatsApp ?? 'WhatsApp',
         value: '+91 98765 43210',
       ),

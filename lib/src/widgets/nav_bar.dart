@@ -592,19 +592,27 @@ class _LanguageSwitcher extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.language, size: 20, color: Color(0xFF6B7280)),
-            const SizedBox(width: 10),
+            const Icon(
+              Icons.language_rounded,
+              size: 18,
+              color: Color(0xFF4B5563),
+            ),
+            const SizedBox(width: 8),
             Text(
               currentCode.toUpperCase(),
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 15,
-                color: Color(0xFF374151),
+                color: Color(0xFF111827),
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(width: 4),
-            const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF9CA3AF)),
+            const SizedBox(width: 2),
+            const Icon(
+              Icons.arrow_drop_down_rounded,
+              size: 22,
+              color: Color(0xFF9CA3AF),
+            ),
           ],
         ),
       ),

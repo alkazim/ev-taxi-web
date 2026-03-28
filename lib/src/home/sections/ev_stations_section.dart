@@ -717,9 +717,9 @@ class _EVStationsSectionState extends State<EVStationsSection> {
             alignment: WrapAlignment.center,
             children: [
               _statCard('50+', 'Active Stations', FontAwesomeIcons.chargingStation, activeGreen, isMobile),
-              _statCard('4', 'States Covered', FontAwesomeIcons.mapLocationDot, activeAmber, isMobile),
+              _statCard('4', 'States Covered', FontAwesomeIcons.map, activeAmber, isMobile),
               _statCard('24/7', 'Availability', FontAwesomeIcons.clock, const Color(0xFF3B82F6), isMobile),
-              _statCard('100%', 'Green Energy', FontAwesomeIcons.leaf, const Color(0xFF10B981), isMobile),
+              _statCard('100%', 'Reliable', FontAwesomeIcons.shieldHalved, const Color(0xFF10B981), isMobile),
             ],
           ),
           SizedBox(height: isMobile ? 48 : 80),
