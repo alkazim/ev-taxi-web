@@ -112339,7 +112339,7 @@ s=p}while(true)switch(s){case 0:p=4
 n=A.fz("https://api.openchargemap.io/v3/poi?distance="+b9+"&latitude="+A.l(b7)+"&longitude="+A.l(b8)+"&maxresults="+c0,0,null)
 a5=t.N
 s=7
-return A.M(A.b6P(n,A.aq(["Accept","application/json"],a5,a5)).p8(0,B.u4),$async$w9)
+return A.M(A.b6P(n,A.aq(["Accept","application/json","X-API-Key","9cd5a0cc-d427-4814-b027-67d22c483fd6","User-Agent","EVTaxiDemo/1.0 (contact: info@evtaxi.com)"],a5,a5)).p8(0,B.u4),$async$w9)
 case 7:m=c3
 if(m.b!==200){A.ea().$1("OpenChargeMap error "+m.b)
 a5=A.a([],t.ft)
