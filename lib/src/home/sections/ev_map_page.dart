@@ -449,7 +449,14 @@ class _EVMapPageState extends State<EVMapPage> {
         '&maxresults=$maxResults',
       );
       final resp = await http
-          .get(url, headers: {'Accept': 'application/json'})
+          .get(
+            url, 
+            headers: {
+              'Accept': 'application/json',
+              'X-API-Key': '9cd5a0cc-d427-4814-b027-67d22c483fd6',
+              'User-Agent': 'EVTaxiDemo/1.0 (contact: info@evtaxi.com)',
+            },
+          )
           .timeout(const Duration(seconds: 15));
 
       if (resp.statusCode != 200) {
