@@ -1,0 +1,502 @@
+[
+  {
+    "name": "Kazhakkoottam",
+    "lat": 8.5667,
+    "lng": 76.8833
+  },
+  {
+    "name": "Peroorkada",
+    "lat": 8.5333,
+    "lng": 76.9167
+  },
+  {
+    "name": "Vattiyoorkavu",
+    "lat": 8.55,
+    "lng": 76.9
+  },
+  {
+    "name": "Nemom",
+    "lat": 8.4833,
+    "lng": 76.9333
+  },
+  {
+    "name": "Chirayinkeezhu",
+    "lat": 8.65,
+    "lng": 76.7833
+  },
+  {
+    "name": "Vithura",
+    "lat": 8.6667,
+    "lng": 77.1167
+  },
+  {
+    "name": "Balaramapuram",
+    "lat": 8.3667,
+    "lng": 76.9667
+  },
+  {
+    "name": "Parassala",
+    "lat": 8.3411,
+    "lng": 77.1472
+  },
+  {
+    "name": "Kallambalam",
+    "lat": 8.7667,
+    "lng": 76.7833
+  },
+  {
+    "name": "Chathannoor",
+    "lat": 8.8542,
+    "lng": 76.7119
+  },
+  {
+    "name": "Kottiyam",
+    "lat": 8.8667,
+    "lng": 76.6667
+  },
+  {
+    "name": "Chandanathope",
+    "lat": 8.9333,
+    "lng": 76.65
+  },
+  {
+    "name": "Oachira",
+    "lat": 9.1333,
+    "lng": 76.5167
+  },
+  {
+    "name": "Ezhukone",
+    "lat": 8.9667,
+    "lng": 76.7167
+  },
+  {
+    "name": "Thenmala",
+    "lat": 8.9667,
+    "lng": 77.0667
+  },
+  {
+    "name": "Malayalappuzha",
+    "lat": 9.2833,
+    "lng": 76.8167
+  },
+  {
+    "name": "Kaviyoor",
+    "lat": 9.4,
+    "lng": 76.6
+  },
+  {
+    "name": "Pandalam",
+    "lat": 9.2167,
+    "lng": 76.6667
+  },
+  {
+    "name": "Vadasserikkara",
+    "lat": 9.35,
+    "lng": 76.8333
+  },
+  {
+    "name": "Aranmula",
+    "lat": 9.3333,
+    "lng": 76.6833
+  },
+  {
+    "name": "Mullackal",
+    "lat": 9.4981,
+    "lng": 76.3388
+  },
+  {
+    "name": "Railway Station",
+    "lat": 9.499,
+    "lng": 76.337
+  },
+  {
+    "name": "Punnamada",
+    "lat": 9.51,
+    "lng": 76.355
+  },
+  {
+    "name": "Aroor",
+    "lat": 9.7833,
+    "lng": 76.3
+  },
+  {
+    "name": "Mulakuzha",
+    "lat": 9.2833,
+    "lng": 76.6167
+  },
+  {
+    "name": "Krishnapuram",
+    "lat": 9.15,
+    "lng": 76.5167
+  },
+  {
+    "name": "Haripad",
+    "lat": 9.2833,
+    "lng": 76.45
+  },
+  {
+    "name": "Mankombu",
+    "lat": 9.4333,
+    "lng": 76.4333
+  },
+  {
+    "name": "Aarattupuzha",
+    "lat": 9.2148,
+    "lng": 76.4313
+  },
+  {
+    "name": "Ala",
+    "lat": 9.3241,
+    "lng": 76.6012
+  },
+  {
+    "name": "Ambalappuzha North",
+    "lat": 9.3955,
+    "lng": 76.3512
+  },
+  {
+    "name": "Ambalappuzha South",
+    "lat": 9.3782,
+    "lng": 76.3582
+  },
+  {
+    "name": "Arookutty",
+    "lat": 9.8512,
+    "lng": 76.3312
+  },
+  {
+    "name": "Aroor Junction Area",
+    "lat": 9.8712,
+    "lng": 76.3112
+  },
+  {
+    "name": "Aryad",
+    "lat": 9.5312,
+    "lng": 76.3455
+  },
+  {
+    "name": "Bharanikkavu",
+    "lat": 9.1712,
+    "lng": 76.6112
+  },
+  {
+    "name": "Budhannur",
+    "lat": 9.3312,
+    "lng": 76.5755
+  },
+  {
+    "name": "Champakkulam",
+    "lat": 9.4012,
+    "lng": 76.4112
+  },
+  {
+    "name": "Chennam Pallippuram",
+    "lat": 9.7512,
+    "lng": 76.3512
+  },
+  {
+    "name": "Chennithala Thripperuthura",
+    "lat": 9.3112,
+    "lng": 76.5312
+  },
+  {
+    "name": "Cheppad",
+    "lat": 9.2412,
+    "lng": 76.4712
+  },
+  {
+    "name": "Cheriyanad",
+    "lat": 9.3012,
+    "lng": 76.5912
+  },
+  {
+    "name": "Cherthala South",
+    "lat": 9.6612,
+    "lng": 76.3455
+  },
+  {
+    "name": "Cheruthana",
+    "lat": 9.3312,
+    "lng": 76.4412
+  },
+  {
+    "name": "Chettikulangara",
+    "lat": 9.2212,
+    "lng": 76.5112
+  },
+  {
+    "name": "Chingoli",
+    "lat": 9.2555,
+    "lng": 76.4612
+  },
+  {
+    "name": "Chunakkara",
+    "lat": 9.2312,
+    "lng": 76.5912
+  },
+  {
+    "name": "Devikulangara",
+    "lat": 9.1812,
+    "lng": 76.4912
+  },
+  {
+    "name": "Edathua",
+    "lat": 9.3612,
+    "lng": 76.4755
+  },
+  {
+    "name": "Ezhupunna",
+    "lat": 9.8312,
+    "lng": 76.3012
+  },
+  {
+    "name": "Kadakkarapally",
+    "lat": 9.7212,
+    "lng": 76.2912
+  },
+  {
+    "name": "Kainakary",
+    "lat": 9.4912,
+    "lng": 76.3812
+  },
+  {
+    "name": "Kandalloor",
+    "lat": 9.1912,
+    "lng": 76.4712
+  },
+  {
+    "name": "Kanjikkuzhy Alappuzha",
+    "lat": 9.6312,
+    "lng": 76.3512
+  },
+  {
+    "name": "Karthikapally",
+    "lat": 9.2512,
+    "lng": 76.4412
+  },
+  {
+    "name": "Karuvatta",
+    "lat": 9.2912,
+    "lng": 76.4112
+  },
+  {
+    "name": "Kavalam",
+    "lat": 9.4712,
+    "lng": 76.4612
+  },
+  {
+    "name": "Kodamthuruth",
+    "lat": 9.7812,
+    "lng": 76.3012
+  },
+  {
+    "name": "Krishnapuram Junction",
+    "lat": 9.1612,
+    "lng": 76.5112
+  },
+  {
+    "name": "Kumarapuram",
+    "lat": 9.3112,
+    "lng": 76.3912
+  },
+  {
+    "name": "Kuthiathode",
+    "lat": 9.8112,
+    "lng": 76.3112
+  },
+  {
+    "name": "Mannanchery",
+    "lat": 9.5512,
+    "lng": 76.3512
+  },
+  {
+    "name": "Mannar",
+    "lat": 9.3182,
+    "lng": 76.5655
+  },
+  {
+    "name": "Mararikkulam North",
+    "lat": 9.6112,
+    "lng": 76.3012
+  },
+  {
+    "name": "Mararikkulam South",
+    "lat": 9.5912,
+    "lng": 76.3112
+  },
+  {
+    "name": "Thamarakkulam Mavelikkara",
+    "lat": 9.1812,
+    "lng": 76.6512
+  },
+  {
+    "name": "Mavelikkara Thekkekkara",
+    "lat": 9.2312,
+    "lng": 76.5412
+  },
+  {
+    "name": "Muhamma",
+    "lat": 9.6112,
+    "lng": 76.3612
+  },
+  {
+    "name": "Mulakkuzha Central Area",
+    "lat": 9.3212,
+    "lng": 76.6412
+  },
+  {
+    "name": "Muthukulam",
+    "lat": 9.2112,
+    "lng": 76.4612
+  },
+  {
+    "name": "Muttar",
+    "lat": 9.3812,
+    "lng": 76.4612
+  },
+  {
+    "name": "Nedumudi",
+    "lat": 9.4412,
+    "lng": 76.4112
+  },
+  {
+    "name": "Neelamperoor",
+    "lat": 9.5012,
+    "lng": 76.5112
+  },
+  {
+    "name": "Nooranad",
+    "lat": 9.2112,
+    "lng": 76.6912
+  },
+  {
+    "name": "Palamel",
+    "lat": 9.1912,
+    "lng": 76.7112
+  },
+  {
+    "name": "Pallippad",
+    "lat": 9.2712,
+    "lng": 76.4912
+  },
+  {
+    "name": "Panavally",
+    "lat": 9.8112,
+    "lng": 76.3512
+  },
+  {
+    "name": "Pandanad",
+    "lat": 9.3312,
+    "lng": 76.5912
+  },
+  {
+    "name": "Pathiyoor",
+    "lat": 9.1812,
+    "lng": 76.5112
+  },
+  {
+    "name": "Pattanakkad",
+    "lat": 9.7612,
+    "lng": 76.2912
+  },
+  {
+    "name": "Perumbalam",
+    "lat": 9.8512,
+    "lng": 76.3612
+  },
+  {
+    "name": "Pulincunnu",
+    "lat": 9.4312,
+    "lng": 76.4612
+  },
+  {
+    "name": "Puliyur",
+    "lat": 9.3112,
+    "lng": 76.6112
+  },
+  {
+    "name": "Punnapra North",
+    "lat": 9.4712,
+    "lng": 76.3412
+  },
+  {
+    "name": "Punnapra South",
+    "lat": 9.4512,
+    "lng": 76.3455
+  },
+  {
+    "name": "Purakkad",
+    "lat": 9.3535,
+    "lng": 76.3653
+  },
+  {
+    "name": "Ramankary",
+    "lat": 9.4212,
+    "lng": 76.4812
+  },
+  {
+    "name": "Thakazhy",
+    "lat": 9.3812,
+    "lng": 76.4412
+  },
+  {
+    "name": "Thalavady",
+    "lat": 9.3412,
+    "lng": 76.4612
+  },
+  {
+    "name": "Thanneer Mukkam",
+    "lat": 9.6812,
+    "lng": 76.3912
+  },
+  {
+    "name": "Thazhakkara",
+    "lat": 9.2612,
+    "lng": 76.5612
+  },
+  {
+    "name": "Thiruvanvandoor",
+    "lat": 9.3512,
+    "lng": 76.5712
+  },
+  {
+    "name": "Thrikkunnappuzha",
+    "lat": 9.2886,
+    "lng": 76.3977
+  },
+  {
+    "name": "Thuravoor Alappuzha",
+    "lat": 9.7712,
+    "lng": 76.3155
+  },
+  {
+    "name": "Thycattussery",
+    "lat": 9.8112,
+    "lng": 76.3312
+  },
+  {
+    "name": "Vallikunnam",
+    "lat": 9.1612,
+    "lng": 76.6112
+  },
+  {
+    "name": "Vayalar",
+    "lat": 9.7112,
+    "lng": 76.3212
+  },
+  {
+    "name": "Veeyapuram",
+    "lat": 9.3212,
+    "lng": 76.4112
+  },
+  {
+    "name": "Veliyanad",
+    "lat": 9.4512,
+    "lng": 76.5112
+  },
+  {
+    "name": "Venmony",
+    "lat": 9.2712,
+    "lng": 76.6412
+  }
+]

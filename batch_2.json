@@ -1,0 +1,502 @@
+[
+  {
+    "name": "A K G Nagar",
+    "lat": 9.2148,
+    "lng": 76.4315
+  },
+  {
+    "name": "Arattupuzha M.E.S. Ward",
+    "lat": 9.2312,
+    "lng": 76.4112
+  },
+  {
+    "name": "Arattupuzha PHC Ward",
+    "lat": 9.2255,
+    "lng": 76.4188
+  },
+  {
+    "name": "Kallikkadu",
+    "lat": 9.2388,
+    "lng": 76.4012
+  },
+  {
+    "name": "Kanakakkunnu",
+    "lat": 9.2212,
+    "lng": 76.4112
+  },
+  {
+    "name": "Kochiyude Jetty",
+    "lat": 9.2255,
+    "lng": 76.4055
+  },
+  {
+    "name": "Mangalam",
+    "lat": 9.2312,
+    "lng": 76.4212
+  },
+  {
+    "name": "N T P C Area",
+    "lat": 9.2412,
+    "lng": 76.4312
+  },
+  {
+    "name": "Nallanikkal",
+    "lat": 9.2382,
+    "lng": 76.4155
+  },
+  {
+    "name": "Pattoli Market",
+    "lat": 9.1866,
+    "lng": 76.451
+  },
+  {
+    "name": "Perumpally Ward",
+    "lat": 9.2411,
+    "lng": 76.4112
+  },
+  {
+    "name": "Perumpally North",
+    "lat": 9.2455,
+    "lng": 76.4112
+  },
+  {
+    "name": "Ramancherry",
+    "lat": 9.2155,
+    "lng": 76.4212
+  },
+  {
+    "name": "S N Mandiram",
+    "lat": 9.2282,
+    "lng": 76.4212
+  },
+  {
+    "name": "Tharayilkadavu",
+    "lat": 9.2112,
+    "lng": 76.4312
+  },
+  {
+    "name": "Valiyazheeckal",
+    "lat": 9.1412,
+    "lng": 76.4612
+  },
+  {
+    "name": "Vattachal",
+    "lat": 9.2355,
+    "lng": 76.4188
+  },
+  {
+    "name": "Ala (Ward)",
+    "lat": 9.3241,
+    "lng": 76.6012
+  },
+  {
+    "name": "Chammath",
+    "lat": 9.3282,
+    "lng": 76.5988
+  },
+  {
+    "name": "Kinaruvila",
+    "lat": 9.3212,
+    "lng": 76.6055
+  },
+  {
+    "name": "Kodukulanji",
+    "lat": 9.3112,
+    "lng": 76.5912
+  },
+  {
+    "name": "Malamodi",
+    "lat": 9.3312,
+    "lng": 76.6112
+  },
+  {
+    "name": "Neduvaramkode",
+    "lat": 9.3155,
+    "lng": 76.5812
+  },
+  {
+    "name": "Pennukkara",
+    "lat": 9.3212,
+    "lng": 76.6212
+  },
+  {
+    "name": "Poomala Alappuzha Area",
+    "lat": 9.3355,
+    "lng": 76.6012
+  },
+  {
+    "name": "Pullamthazham",
+    "lat": 9.3182,
+    "lng": 76.6112
+  },
+  {
+    "name": "Thevarakkode",
+    "lat": 9.3282,
+    "lng": 76.6112
+  },
+  {
+    "name": "Ummath",
+    "lat": 9.3312,
+    "lng": 76.5912
+  },
+  {
+    "name": "Utharapally",
+    "lat": 9.3255,
+    "lng": 76.6082
+  },
+  {
+    "name": "Valappuzha",
+    "lat": 9.3312,
+    "lng": 76.6112
+  },
+  {
+    "name": "Beach Ward Alappuzha",
+    "lat": 9.3955,
+    "lng": 76.3412
+  },
+  {
+    "name": "Kakkazham H S Ward",
+    "lat": 9.4012,
+    "lng": 76.3512
+  },
+  {
+    "name": "Kakkazham West Ward",
+    "lat": 9.4012,
+    "lng": 76.3455
+  },
+  {
+    "name": "Kambivalappu Ward",
+    "lat": 9.3982,
+    "lng": 76.3512
+  },
+  {
+    "name": "Kanjipadam South side",
+    "lat": 9.3782,
+    "lng": 76.3688
+  },
+  {
+    "name": "Kanjippadam North side",
+    "lat": 9.3882,
+    "lng": 76.3688
+  },
+  {
+    "name": "Kuravanthodu East Area",
+    "lat": 9.4082,
+    "lng": 76.3612
+  },
+  {
+    "name": "M C H Ward Area",
+    "lat": 9.4112,
+    "lng": 76.3555
+  },
+  {
+    "name": "Neerkkunnam East",
+    "lat": 9.4212,
+    "lng": 76.3582
+  },
+  {
+    "name": "Neerkkunnam West",
+    "lat": 9.4212,
+    "lng": 76.3482
+  },
+  {
+    "name": "Panchayath Office Ward Alappuzha",
+    "lat": 9.3955,
+    "lng": 76.3555
+  },
+  {
+    "name": "Shisu Vihar Area",
+    "lat": 9.4055,
+    "lng": 76.3582
+  },
+  {
+    "name": "T D M C Ward Area",
+    "lat": 9.4112,
+    "lng": 76.3512
+  },
+  {
+    "name": "Valanjavazhi East side",
+    "lat": 9.4312,
+    "lng": 76.3555
+  },
+  {
+    "name": "Valanjavazhi West side",
+    "lat": 9.4312,
+    "lng": 76.3455
+  },
+  {
+    "name": "Vandanam Coastal Area",
+    "lat": 9.4182,
+    "lng": 76.3412
+  },
+  {
+    "name": "Vandanam East Area",
+    "lat": 9.4182,
+    "lng": 76.3612
+  },
+  {
+    "name": "Vandanam South side",
+    "lat": 9.4082,
+    "lng": 76.3555
+  },
+  {
+    "name": "Amayida",
+    "lat": 9.3755,
+    "lng": 76.3588
+  },
+  {
+    "name": "Amayida West Area",
+    "lat": 9.3755,
+    "lng": 76.3512
+  },
+  {
+    "name": "Ambalappuzha Central",
+    "lat": 9.3812,
+    "lng": 76.3555
+  },
+  {
+    "name": "Kakkazham East side",
+    "lat": 9.4012,
+    "lng": 76.3612
+  },
+  {
+    "name": "Kakkazham West Area",
+    "lat": 9.4012,
+    "lng": 76.3412
+  },
+  {
+    "name": "Kanjipadam Junction Area",
+    "lat": 9.3812,
+    "lng": 76.3682
+  },
+  {
+    "name": "Karumadi Padinjaru side",
+    "lat": 9.3855,
+    "lng": 76.3712
+  },
+  {
+    "name": "Karumadi Ward Area",
+    "lat": 9.3855,
+    "lng": 76.3782
+  },
+  {
+    "name": "Kattakkuzhy",
+    "lat": 9.3712,
+    "lng": 76.3512
+  },
+  {
+    "name": "Komana",
+    "lat": 9.3655,
+    "lng": 76.3555
+  },
+  {
+    "name": "Komana South Area",
+    "lat": 9.3582,
+    "lng": 76.3555
+  },
+  {
+    "name": "Komana North side",
+    "lat": 9.3712,
+    "lng": 76.3555
+  },
+  {
+    "name": "Komana West side",
+    "lat": 9.3655,
+    "lng": 76.3455
+  },
+  {
+    "name": "Panchayath Office Area",
+    "lat": 9.3812,
+    "lng": 76.3555
+  },
+  {
+    "name": "Saktheeswari side",
+    "lat": 9.3712,
+    "lng": 76.3655
+  },
+  {
+    "name": "C H C Arookutty",
+    "lat": 9.8512,
+    "lng": 76.3382
+  },
+  {
+    "name": "High School Arookutty Area",
+    "lat": 9.8555,
+    "lng": 76.3312
+  },
+  {
+    "name": "Kannarapally",
+    "lat": 9.8455,
+    "lng": 76.3412
+  },
+  {
+    "name": "Kattilamadam",
+    "lat": 9.8412,
+    "lng": 76.3312
+  },
+  {
+    "name": "Kattupuram side",
+    "lat": 9.8582,
+    "lng": 76.3355
+  },
+  {
+    "name": "Kotoorpalli Area",
+    "lat": 9.8512,
+    "lng": 76.3212
+  },
+  {
+    "name": "Kudapuram side",
+    "lat": 9.8612,
+    "lng": 76.3312
+  },
+  {
+    "name": "Madhurakulam side",
+    "lat": 9.8482,
+    "lng": 76.3455
+  },
+  {
+    "name": "Mathanam",
+    "lat": 9.8512,
+    "lng": 76.3488
+  },
+  {
+    "name": "Moolamkuzhy Aroor side",
+    "lat": 9.8382,
+    "lng": 76.3312
+  },
+  {
+    "name": "Naduvath Nagar",
+    "lat": 9.8412,
+    "lng": 76.3255
+  },
+  {
+    "name": "Arookutty Office Area",
+    "lat": 9.8512,
+    "lng": 76.3312
+  },
+  {
+    "name": "St Antonys Area",
+    "lat": 9.8582,
+    "lng": 76.3282
+  },
+  {
+    "name": "Ammanezham Area",
+    "lat": 9.8755,
+    "lng": 76.3082
+  },
+  {
+    "name": "Anjilikkad side",
+    "lat": 9.8712,
+    "lng": 76.3155
+  },
+  {
+    "name": "Arabic College Area",
+    "lat": 9.8812,
+    "lng": 76.3055
+  },
+  {
+    "name": "Aroor Govt High School Ward",
+    "lat": 9.8712,
+    "lng": 76.3112
+  },
+  {
+    "name": "Ayurveda Hospital Aroor Area",
+    "lat": 9.8782,
+    "lng": 76.3112
+  },
+  {
+    "name": "Chettuthara Ward",
+    "lat": 9.8655,
+    "lng": 76.3012
+  },
+  {
+    "name": "Convent Ward Area",
+    "lat": 9.8712,
+    "lng": 76.3212
+  },
+  {
+    "name": "Daivaveli Kshethram",
+    "lat": 9.8755,
+    "lng": 76.3155
+  },
+  {
+    "name": "Govt Hospital Ward Aroor",
+    "lat": 9.8782,
+    "lng": 76.3155
+  },
+  {
+    "name": "Govt Fisheries School Ward",
+    "lat": 9.8855,
+    "lng": 76.3112
+  },
+  {
+    "name": "Gurumandiram side",
+    "lat": 9.8682,
+    "lng": 76.3082
+  },
+  {
+    "name": "High School Ward Area",
+    "lat": 9.8712,
+    "lng": 76.3112
+  },
+  {
+    "name": "Keltas Ward side",
+    "lat": 9.8812,
+    "lng": 76.3182
+  },
+  {
+    "name": "Kottappuram Alappuzha Area",
+    "lat": 9.8612,
+    "lng": 76.3112
+  },
+  {
+    "name": "Kumbanji Area",
+    "lat": 9.8712,
+    "lng": 76.2955
+  },
+  {
+    "name": "Mulakkal Parambu Area",
+    "lat": 9.8812,
+    "lng": 76.3012
+  },
+  {
+    "name": "Multipurpose Society Ward",
+    "lat": 9.8755,
+    "lng": 76.3112
+  },
+  {
+    "name": "Project Colony Area",
+    "lat": 9.8712,
+    "lng": 76.3255
+  },
+  {
+    "name": "Puthanangadi Area",
+    "lat": 9.8612,
+    "lng": 76.3212
+  },
+  {
+    "name": "St Francis School Area",
+    "lat": 9.8755,
+    "lng": 76.3012
+  },
+  {
+    "name": "Vattakkeri Area",
+    "lat": 9.8682,
+    "lng": 76.3182
+  },
+  {
+    "name": "Vijayambika Area",
+    "lat": 9.8712,
+    "lng": 76.3112
+  },
+  {
+    "name": "A. S .Kanal side",
+    "lat": 9.5312,
+    "lng": 76.3512
+  },
+  {
+    "name": "Ashan Smaraka Grandashala",
+    "lat": 9.5355,
+    "lng": 76.3582
+  }
+]

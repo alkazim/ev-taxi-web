@@ -4,6 +4,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/responsive_widget.dart';
 import 'package:taxi_demo/l10n/app_localizations.dart';
 import '../forms/franchise_application_dialog.dart';
+import '../forms/driver_application_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class HeroSection extends StatefulWidget {
@@ -295,10 +296,11 @@ class _HeroSectionState extends State<HeroSection>
   }
 
   Widget _buildFranchiseShortcuts(bool isDesktop) {
-    final title = AppLocalizations.of(context)?.franchiseOpportunities ?? 'Franchise Opportunities';
+    final title = AppLocalizations.of(context)?.partnerWithUs ?? 'Partner With Us';
     final green = const Color(0xFF16A34A);
     final amber = const Color(0xFFF59E0B);
     final blue = const Color(0xFF3B82F6);
+    final purple = const Color(0xFF8B5CF6);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,6 +340,13 @@ class _HeroSectionState extends State<HeroSection>
               isDesktop: isDesktop,
               onTap: () => _openFranchiseDialog(AppLocalizations.of(context)?.superFranchise ?? 'Super Franchise'),
             ),
+            _FranchiseButton(
+              label: AppLocalizations.of(context)?.applyAsDriver ?? 'Apply as Driver',
+              icon: FontAwesomeIcons.idCard,
+              color: purple,
+              isDesktop: isDesktop,
+              onTap: _openDriverDialog,
+            ),
           ],
         ),
       ],
@@ -348,6 +357,13 @@ class _HeroSectionState extends State<HeroSection>
     showDialog(
       context: context,
       builder: (context) => FranchiseApplicationDialog(franchiseType: type),
+    );
+  }
+
+  void _openDriverDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const DriverApplicationDialog(),
     );
   }
 

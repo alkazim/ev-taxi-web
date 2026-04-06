@@ -1566,46 +1566,82 @@ class _EVMapPageState extends State<EVMapPage> {
   }
 
   Widget _buildChargerToggle(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1D4ED8),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1D4ED8).withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _toggleBtn(
-            label: 'ecabbz',
-            isSelected: _showEcabbzOnly,
-            onTap: () {
-              if (!_showEcabbzOnly) {
-                setState(() => _showEcabbzOnly = true);
-                _applyEcabbzFilter();
-              }
-            },
-            activeColor: const Color(0xFF16A34A),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.ev_station, color: Colors.white, size: 12),
+              const SizedBox(width: 6),
+              Text(
+                AppLocalizations.of(context)?.evStations.toUpperCase() ?? 'EV STATIONS',
+                style: GoogleFonts.poppins(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
           ),
-          _toggleBtn(
-            label: 'Others',
-            isSelected: !_showEcabbzOnly,
-            onTap: () {
-              if (_showEcabbzOnly) {
-                setState(() => _showEcabbzOnly = false);
-                _findNearestStations();
-              }
-            },
-            activeColor: const Color(0xFF3B82F6),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _toggleBtn(
+                label: 'ecabbz',
+                isSelected: _showEcabbzOnly,
+                onTap: () {
+                  if (!_showEcabbzOnly) {
+                    setState(() => _showEcabbzOnly = true);
+                    _applyEcabbzFilter();
+                  }
+                },
+                activeColor: const Color(0xFF16A34A),
+              ),
+              _toggleBtn(
+                label: 'Others',
+                isSelected: !_showEcabbzOnly,
+                onTap: () {
+                  if (_showEcabbzOnly) {
+                    setState(() => _showEcabbzOnly = false);
+                    _findNearestStations();
+                  }
+                },
+                activeColor: const Color(0xFF3B82F6),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
